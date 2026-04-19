@@ -374,7 +374,7 @@ def send_image_view(request, image_id):
             if box and label and len(box) == 4:
                 try:
                     Annotation.objects.create(
-                        image=image_obj,
+                        job_image=image_obj,
                         label=label,
                         x_min=box[0],
                         y_min=box[1],
