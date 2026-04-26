@@ -1,339 +1,475 @@
 {% extends 'base_master.html' %}
 {% block content %}
-    {% csrf_token %}
-    <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h1 class="text-xl md:text-2xl font-bold mb-4 sm:mb-0">Roles and Job</h1>
+{% csrf_token %}
+
+<div class="space-y-6">
+
+    <!-- ====================================================
+         HEADER
+         ==================================================== -->
+    <div>
+        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Roles Management</h1>
+        <p class="text-sm text-gray-500 mt-1">Kelola role semua user dalam satu halaman</p>
+    </div>
+
+    <!-- ====================================================
+         STATS CARDS — biar user langsung tau yang perlu attention
+         ==================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div class="text-xs text-gray-500 uppercase">Total User</div>
+            <div class="text-2xl font-bold mt-1" id="statTotal">{{ new_members|length|add:members|length }}</div>
         </div>
-        
-        <!-- Tab Navigation -->
-        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
-            <button id="rolesButton" class="py-2 md:py-3 px-4 md:px-6 bg-blue-500 text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="showRoles()">Roles</button>
-            <button id="membersButton" class="py-2 md:py-3 px-4 md:px-6 bg-gray-200 text-gray-700 rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="showMembers()">Member</button>
+        <div class="bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200">
+            <div class="text-xs text-yellow-700 uppercase">Guest (Perlu Assign)</div>
+            <div class="text-2xl font-bold mt-1 text-yellow-700" id="statGuest">{{ new_members|length }}</div>
         </div>
-        
-        <!-- Roles Section -->
-        <div id="rolesSection">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-2 sm:space-y-0">
-                <h2 class="text-lg md:text-xl font-semibold">New Member</h2>
-                <button class="py-2 md:py-3 px-4 md:px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="saveChanges()">Save</button>
-            </div>
-            
-            <!-- Mobile Card Layout -->
-            <div class="block lg:hidden space-y-4">
-                {% for user in new_members %}
-                <div class="bg-white shadow-lg rounded-lg p-4">
-                    <div class="mb-3">
-                        <div class="font-medium text-sm md:text-base">{{ user.email }}</div>
-                        <div class="text-gray-500 text-xs md:text-sm">{{ user.phone_number }}</div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
-                            <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full text-sm" data-user-id="{{ user.id }}">
+        <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+            <div class="text-xs text-blue-700 uppercase">Annotator</div>
+            <div class="text-2xl font-bold mt-1 text-blue-700" id="statAnnotator">0</div>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+            <div class="text-xs text-green-700 uppercase">Reviewer</div>
+            <div class="text-2xl font-bold mt-1 text-green-700" id="statReviewer">0</div>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+            <div class="text-xs text-purple-700 uppercase">Master</div>
+            <div class="text-2xl font-bold mt-1 text-purple-700" id="statMaster">0</div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         FILTER BAR — search + role chips
+         ==================================================== -->
+    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 space-y-3">
+        <!-- Search -->
+        <input type="text" id="searchInput"
+               placeholder="Cari by email / phone..."
+               class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+        <!-- Role filter chips -->
+        <div class="flex flex-wrap gap-2">
+            <button class="role-chip active px-3 py-1 rounded-full text-sm border" data-role="all">Semua</button>
+            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="guest">Guest</button>
+            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="annotator">Annotator</button>
+            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="reviewer">Reviewer</button>
+            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="master">Master</button>
+            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="member">Member</button>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         BULK ACTION BAR — hanya muncul kalau ada yang di-select
+         ==================================================== -->
+    <div id="bulkActionBar" class="hidden bg-blue-600 text-white p-3 rounded-lg flex flex-col md:flex-row md:items-center gap-3">
+        <span class="text-sm"><span id="bulkCount">0</span> user dipilih</span>
+        <div class="flex items-center gap-2 flex-1">
+            <select id="bulkRoleSelect" class="text-gray-800 p-2 rounded-lg text-sm">
+                <option value="">Ganti role ke...</option>
+                <option value="guest">Guest</option>
+                <option value="annotator">Annotator</option>
+                <option value="reviewer">Reviewer</option>
+                <option value="master">Master</option>
+                <option value="member">Member</option>
+            </select>
+            <button onclick="applyBulkRole()" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Apply</button>
+            <button onclick="clearBulkSelection()" class="text-white/80 hover:text-white text-sm ml-auto">Clear</button>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         SAVE BAR — cuma muncul kalau ada perubahan pending
+         ==================================================== -->
+    <div id="saveBar" class="hidden bg-yellow-50 border border-yellow-300 text-yellow-800 p-3 rounded-lg flex items-center justify-between">
+        <span class="text-sm"><strong id="pendingCount">0</strong> perubahan belum disimpan</span>
+        <div class="flex gap-2">
+            <button onclick="discardChanges()" class="px-3 py-1 border border-yellow-400 rounded-lg text-sm hover:bg-yellow-100">Batal</button>
+            <button onclick="saveAllChanges()" class="px-4 py-1 bg-[#4527A0] text-white rounded-lg text-sm font-medium hover:bg-purple-900">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         USER TABLE (responsive — table di desktop, card di mobile)
+         ==================================================== -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <!-- Desktop Table -->
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-100 text-gray-600 text-sm">
+                    <tr>
+                        <th class="py-3 px-4 text-left w-10">
+                            <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+                        </th>
+                        <th class="py-3 px-4 text-left font-semibold">Email / Phone</th>
+                        <th class="py-3 px-4 text-left font-semibold">Role</th>
+                        <th class="py-3 px-4 text-left font-semibold">Projects</th>
+                        <th class="py-3 px-4 text-left font-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody" class="text-gray-700 text-sm">
+                    {# Merge new_members + members jadi satu loop #}
+                    {% for user in new_members %}
+                    <tr class="user-row hover:bg-gray-50 border-b"
+                        data-user-id="{{ user.id }}"
+                        data-original-role="{{ user.role }}"
+                        data-email="{{ user.email|lower }}"
+                        data-phone="{{ user.phone_number }}"
+                        data-role="{{ user.role }}">
+                        <td class="py-3 px-4">
+                            <input type="checkbox" class="row-check" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-medium flex items-center gap-2">
+                                {{ user.email }}
+                                <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full">NEW</span>
+                            </div>
+                            <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 text-sm focus:ring-2 focus:ring-[#4527A0]"
+                                    data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
                                 <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
                                 <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                                 <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
                                 <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
+                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
                             </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
-                            <div class="text-sm">{{ user.project_count }} <span class="text-gray-500">(All)</span></div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
-                            <div class="text-sm">-</div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <!-- Desktop Table Layout -->
-            <div class="hidden lg:block bg-white shadow-lg rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-200 text-gray-600">
-                            <tr>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Default Role</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Project</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Group</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-700">
-                            {% for user in new_members %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="py-4 px-6 border-b">
-                                    <div class="font-medium">{{ user.email }}</div>
-                                    <div class="text-gray-500 mt-1 text-sm">{{ user.phone_number }}</div>
-                                </td>
-                                <td class="py-4 px-6 border-b">
-                                    <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full" data-user-id="{{ user.id }}">
-                                        <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
-                                        <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
-                                        <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                        <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
-                                    </select>
-                                </td>
-                                <td class="py-4 px-6 border-b">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
-                                <td class="py-4 px-6 border-b">-</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="font-medium">{{ user.project_count }}</span>
+                            <span class="text-gray-400 text-xs">proj</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Perlu Di-assign</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for user in members %}
+                    <tr class="user-row hover:bg-gray-50 border-b"
+                        data-user-id="{{ user.id }}"
+                        data-original-role="{{ user.role }}"
+                        data-email="{{ user.email|lower }}"
+                        data-phone="{{ user.phone_number }}"
+                        data-role="{{ user.role }}">
+                        <td class="py-3 px-4">
+                            <input type="checkbox" class="row-check" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-medium">{{ user.email }}</div>
+                            <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 text-sm focus:ring-2 focus:ring-[#4527A0]"
+                                    data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
+                                <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                                <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                                <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                                <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
+                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                            </select>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="font-medium">{{ user.project_count }}</span>
+                            <span class="text-gray-400 text-xs">proj</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Assigned</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        
-        <!-- Members Section -->
-        <div id="membersSection" class="hidden">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-2 sm:space-y-0">
-                <h2 class="text-lg md:text-xl font-semibold">Members</h2>
-                <button class="py-2 md:py-3 px-4 md:px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="saveMemberChanges()">Save Changes</button>
-            </div>
-            
-            <!-- Filters -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <input type="text" id="searchInput" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" placeholder="Search by email/No.hp" onkeyup="filterMembers()">
-                <select id="roleFilter" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" onchange="filterMembers()">
-                    <option value="">Default Role</option>
-                    <option value="guest">Guest</option>
-                    <option value="annotator">Annotator</option>
-                    <option value="reviewer">Reviewer</option>
-                    <option value="master">Master</option>
-                </select>
-                <select id="groupFilter" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" onchange="filterMembers()">
-                    <option value="">Group</option>
-                    <!-- Add group options here -->
-                </select>
-            </div>
-            
-            <!-- Mobile Card Layout -->
-            <div id="membersTableMobile" class="block lg:hidden space-y-4">
-                {% for member in members %}
-                <div class="bg-white shadow-lg rounded-lg p-4 member-item" data-email="{{ member.email }}" data-role="{{ member.role }}" data-group="{{ member.group }}">
-                    <div class="mb-3">
-                        <div class="font-medium text-sm md:text-base">{{ member.email }}</div>
-                        <div class="text-gray-500 text-xs md:text-sm">{{ member.phone_number }}</div>
+
+        <!-- Mobile Cards -->
+        <div class="lg:hidden divide-y">
+            {% for user in new_members %}
+            <div class="user-card p-4"
+                 data-user-id="{{ user.id }}"
+                 data-original-role="{{ user.role }}"
+                 data-email="{{ user.email|lower }}"
+                 data-phone="{{ user.phone_number }}"
+                 data-role="{{ user.role }}">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium flex items-center gap-2">
+                            <span class="truncate">{{ user.email }}</span>
+                            <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full flex-shrink-0">NEW</span>
+                        </div>
+                        <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
-                            <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full text-sm member-role-select" data-member-id="{{ member.id }}">
-                                <option value="guest" {% if member.role == 'guest' %}selected{% endif %}>Guest</option>
-                                <option value="annotator" {% if member.role == 'annotator' %}selected{% endif %}>Annotator</option>
-                                <option value="reviewer" {% if member.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                <option value="master" {% if member.role == 'master' %}selected{% endif %}>Master</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
-                            <div class="text-sm">{{ member.project_count }} <span class="text-gray-500">(All)</span></div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
-                            <div class="text-sm">{{ member.group|default:"-" }}</div>
-                        </div>
+                    <input type="checkbox" class="row-check flex-shrink-0 ml-2" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Role</label>
+                        <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 w-full text-sm"
+                                data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
+                            <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                            <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                            <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                            <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
+                            <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Projects</label>
+                        <div class="text-sm font-medium py-1.5">{{ user.project_count }} proj</div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            
-            <!-- Desktop Table Layout -->
-            <div class="hidden lg:block bg-white shadow-lg rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-200 text-gray-600">
-                            <tr>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Default Role</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Project</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold">Group</th>
-                            </tr>
-                        </thead>
-                        <tbody id="membersTable" class="text-gray-700">
-                            {% for member in members %}
-                            <tr class="hover:bg-gray-50 member-item" data-email="{{ member.email }}" data-role="{{ member.role }}" data-group="{{ member.group }}">
-                                <td class="py-4 px-6 border-b">
-                                    <div class="font-medium">{{ member.email }}</div>
-                                    <div class="text-gray-500 mt-1 text-sm">{{ member.phone_number }}</div>
-                                </td>
-                                <td class="py-4 px-6 border-b">
-                                    <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full member-role-select" data-member-id="{{ member.id }}">
-                                        <option value="guest" {% if member.role == 'guest' %}selected{% endif %}>Guest</option>
-                                        <option value="annotator" {% if member.role == 'annotator' %}selected{% endif %}>Annotator</option>
-                                        <option value="reviewer" {% if member.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                        <option value="master" {% if member.role == 'master' %}selected{% endif %}>Master</option>
-                                    </select>
-                                </td>
-                                <td class="py-4 px-6 border-b">{{ member.project_count }} <span class="text-gray-500">(All)</span></td>
-                                <td class="py-4 px-6 border-b">{{ member.group|default:"-" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            {% endfor %}
+
+            {% for user in members %}
+            <div class="user-card p-4"
+                 data-user-id="{{ user.id }}"
+                 data-original-role="{{ user.role }}"
+                 data-email="{{ user.email|lower }}"
+                 data-phone="{{ user.phone_number }}"
+                 data-role="{{ user.role }}">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium truncate">{{ user.email }}</div>
+                        <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
+                    </div>
+                    <input type="checkbox" class="row-check flex-shrink-0 ml-2" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Role</label>
+                        <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 w-full text-sm"
+                                data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
+                            <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                            <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                            <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                            <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
+                            <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Projects</label>
+                        <div class="text-sm font-medium py-1.5">{{ user.project_count }} proj</div>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty state -->
+        <div id="noResults" class="hidden p-8 text-center text-gray-500">
+            Gak ada user yang cocok dengan filter
+        </div>
+    </div>
+</div>
+
+<style>
+    .role-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+    .role-chip:hover { background: #f3f4f6; }
+    .role-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+
+    /* Highlight row yang ada perubahan pending */
+    .user-row.changed, .user-card.changed {
+        background: #fef3c7 !important;
+    }
+</style>
 
 <script>
-    function showRoles() {
-        document.getElementById('rolesSection').classList.remove('hidden');
-        document.getElementById('membersSection').classList.add('hidden');
-        document.getElementById('rolesButton').classList.remove('bg-gray-200', 'text-gray-700');
-        document.getElementById('rolesButton').classList.add('bg-blue-500', 'text-white');
-        document.getElementById('membersButton').classList.remove('bg-blue-500', 'text-white');
-        document.getElementById('membersButton').classList.add('bg-gray-200', 'text-gray-700');
-    }
+// =========================================================
+// STATE TRACKING
+// =========================================================
+const pendingChanges = new Map(); // userId -> newRole
 
-    function showMembers() {
-        document.getElementById('rolesSection').classList.add('hidden');
-        document.getElementById('membersSection').classList.remove('hidden');
-        document.getElementById('membersButton').classList.remove('bg-gray-200', 'text-gray-700');
-        document.getElementById('membersButton').classList.add('bg-blue-500', 'text-white');
-        document.getElementById('rolesButton').classList.remove('bg-blue-500', 'text-white');
-        document.getElementById('rolesButton').classList.add('bg-gray-200', 'text-gray-700');
-    }
+function getCSRF() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
 
-    function filterMembers() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const roleFilter = document.getElementById('roleFilter').value;
-        const groupFilter = document.getElementById('groupFilter').value;
-        
-        // Filter desktop table
-        const tableRows = document.querySelectorAll('#membersTable .member-item');
-        // Filter mobile cards
-        const mobileCards = document.querySelectorAll('#membersTableMobile .member-item');
-        
-        [...tableRows, ...mobileCards].forEach(item => {
-            const email = item.dataset.email.toLowerCase();
-            const role = item.dataset.role;
-            const group = item.dataset.group;
-            
-            const matchesSearch = email.includes(searchTerm);
-            const matchesRole = !roleFilter || role === roleFilter;
-            const matchesGroup = !groupFilter || group === groupFilter;
-            
-            if (matchesSearch && matchesRole && matchesGroup) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
+// =========================================================
+// INIT — hitung stats per role
+// =========================================================
+document.addEventListener('DOMContentLoaded', function () {
+    updateStats();
+
+    // Attach search listener
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+    // Attach role chip listeners
+    document.querySelectorAll('.role-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            applyFilters();
         });
-    }
+    });
+});
 
-    function saveMemberChanges() {
-        const selects = document.querySelectorAll('.member-role-select[data-member-id]');
-        const updates = [];
-        
-        selects.forEach(select => {
-            const memberId = select.dataset.memberId;
-            const newRole = select.value;
-            updates.push({ userId: memberId, newRole: newRole });
-        });
-        
-        if (updates.length === 0) {
-            alert('No members to update.');
-            return;
+function updateStats() {
+    // Hitung semua row (desktop + mobile duplikat, jadi pake Set by user-id)
+    const seen = new Set();
+    const counts = { guest: 0, annotator: 0, reviewer: 0, master: 0, member: 0 };
+    document.querySelectorAll('[data-user-id][data-role]').forEach(el => {
+        const uid = el.dataset.userId;
+        if (seen.has(uid)) return;
+        seen.add(uid);
+        const role = el.dataset.role;
+        if (counts[role] !== undefined) counts[role]++;
+    });
+    document.getElementById('statTotal').textContent = seen.size;
+    document.getElementById('statGuest').textContent = counts.guest;
+    document.getElementById('statAnnotator').textContent = counts.annotator;
+    document.getElementById('statReviewer').textContent = counts.reviewer;
+    document.getElementById('statMaster').textContent = counts.master;
+}
+
+// =========================================================
+// FILTER & SEARCH
+// =========================================================
+function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const activeChip = document.querySelector('.role-chip.active');
+    const filterRole = activeChip ? activeChip.dataset.role : 'all';
+
+    let visibleCount = 0;
+    document.querySelectorAll('.user-row, .user-card').forEach(el => {
+        const email = el.dataset.email || '';
+        const phone = el.dataset.phone || '';
+        const role = el.dataset.role || '';
+
+        const matchSearch = !search || email.includes(search) || phone.includes(search);
+        const matchRole = filterRole === 'all' || role === filterRole;
+
+        if (matchSearch && matchRole) {
+            el.style.display = '';
+            visibleCount++;
+        } else {
+            el.style.display = 'none';
         }
-        
-        // Show loading state
-        const saveButton = event.target;
-        const originalText = saveButton.textContent;
-        saveButton.textContent = 'Saving...';
-        saveButton.disabled = true;
-        
-        // Get CSRF token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        // Send AJAX request to save the changes
-        fetch('/update-user-roles/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-            },
-            body: JSON.stringify({ updates: updates })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success' || data.status === 'partial_success') {
-                alert(data.message);
-                // Refresh the page to show updated data
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while saving changes. Please try again.');
-        })
-        .finally(() => {
-            // Restore button state
-            saveButton.textContent = originalText;
-            saveButton.disabled = false;
-        });
+    });
+    document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
+}
+
+// =========================================================
+// ROLE CHANGE HANDLER — detect & track pending changes
+// =========================================================
+function onRoleChange(selectEl) {
+    const userId = selectEl.dataset.userId;
+    const newRole = selectEl.value;
+
+    // Find row/card — semua yang punya data-user-id yang sama
+    const rows = document.querySelectorAll(`[data-user-id="${userId}"]`);
+    const originalRole = rows[0]?.dataset.originalRole;
+
+    if (newRole === originalRole) {
+        // Kembali ke original — remove pending
+        pendingChanges.delete(userId);
+        rows.forEach(r => r.classList.remove('changed'));
+    } else {
+        // Ada perubahan
+        pendingChanges.set(userId, newRole);
+        rows.forEach(r => r.classList.add('changed'));
     }
 
-    function saveChanges() {
-        const selects = document.querySelectorAll('select[data-user-id]');
-        const updates = [];
-        
-        selects.forEach(select => {
-            const userId = select.dataset.userId;
-            const newRole = select.value;
-            updates.push({ userId, newRole });
-        });
-        
-        if (updates.length === 0) {
-            alert('No changes to save.');
-            return;
+    // Sync dropdown antara desktop row & mobile card
+    rows.forEach(r => {
+        const sel = r.querySelector('.role-select');
+        if (sel && sel !== selectEl) sel.value = newRole;
+    });
+
+    updateSaveBar();
+}
+
+function updateSaveBar() {
+    const bar = document.getElementById('saveBar');
+    const count = pendingChanges.size;
+    document.getElementById('pendingCount').textContent = count;
+    bar.classList.toggle('hidden', count === 0);
+}
+
+function discardChanges() {
+    if (!confirm('Batal semua perubahan?')) return;
+    location.reload();
+}
+
+function saveAllChanges() {
+    if (pendingChanges.size === 0) return;
+
+    const updates = [];
+    pendingChanges.forEach((newRole, userId) => {
+        updates.push({ userId: userId, newRole: newRole });
+    });
+
+    fetch("{% url 'master:update_user_roles' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+        body: JSON.stringify({ updates: updates })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success' || data.status === 'partial_success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'unknown'));
         }
-        
-        // Show loading state
-        const saveButton = event.target;
-        const originalText = saveButton.textContent;
-        saveButton.textContent = 'Saving...';
-        saveButton.disabled = true;
-        
-        // Get CSRF token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        // Send AJAX request to save the changes
-        fetch('/update-user-roles/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-            },
-            body: JSON.stringify({ updates: updates })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success' || data.status === 'partial_success') {
-                alert(data.message);
-                // Refresh the page to show updated data
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while saving changes. Please try again.');
-        })
-        .finally(() => {
-            // Restore button state
-            saveButton.textContent = originalText;
-            saveButton.disabled = false;
-        });
-    }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error saving: ' + err.message);
+    });
+}
 
-    // Initialize with roles section visible
-    showRoles();
+// =========================================================
+// BULK ACTIONS — select multiple + change all to same role
+// =========================================================
+function toggleSelectAll(checkbox) {
+    document.querySelectorAll('.row-check').forEach(cb => {
+        const row = cb.closest('.user-row, .user-card');
+        if (row && row.style.display !== 'none') {
+            cb.checked = checkbox.checked;
+        }
+    });
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    // Count unique user IDs (desktop + mobile duplikat)
+    const checked = new Set();
+    document.querySelectorAll('.row-check:checked').forEach(cb => {
+        checked.add(cb.dataset.userId);
+    });
+    const bar = document.getElementById('bulkActionBar');
+    document.getElementById('bulkCount').textContent = checked.size;
+    bar.classList.toggle('hidden', checked.size === 0);
+}
+
+function clearBulkSelection() {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+    const selAll = document.getElementById('selectAll');
+    if (selAll) selAll.checked = false;
+    updateBulkBar();
+}
+
+function applyBulkRole() {
+    const newRole = document.getElementById('bulkRoleSelect').value;
+    if (!newRole) { alert('Pilih role dulu'); return; }
+
+    const selectedIds = new Set();
+    document.querySelectorAll('.row-check:checked').forEach(cb => {
+        selectedIds.add(cb.dataset.userId);
+    });
+
+    if (selectedIds.size === 0) { alert('Gak ada user yang dipilih'); return; }
+
+    selectedIds.forEach(uid => {
+        document.querySelectorAll(`.role-select[data-user-id="${uid}"]`).forEach(sel => {
+            sel.value = newRole;
+            onRoleChange(sel);
+        });
+    });
+
+    clearBulkSelection();
+    document.getElementById('bulkRoleSelect').value = '';
+}
 </script>
-{% endblock %}
 
+{% endblock %}

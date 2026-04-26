@@ -1,181 +1,375 @@
+{% load static %}
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <title>{% block title %}Master — Anotasi Image{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* === MASTER ROLE — UNGU MUDA === */
+            --cu-side-grad-1: #C4B5FD;
+            --cu-side-grad-2: #A78BFA;
+            --cu-side-text:   rgba(255,255,255,0.92);
+            --cu-side-muted:  rgba(255,255,255,0.65);
+            --cu-side-icon:   rgba(255,255,255,0.85);
+
+            --cu-active-bg:   #F5F3FF;
+            --cu-active-text: #4C1D95;
+            --cu-active-icon: #6D28D9;
+
+            --cu-page-bg:     #F5F3FF;
+            --cu-text:        #1F2937;
+            --cu-text-muted:  #64748B;
+            --cu-card-bg:     #FFFFFF;
+            --cu-border:      #E5E7EB;
+
+            --cu-curve-radius: 28px;
+        }
+
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background: var(--cu-page-bg);
+            color: var(--cu-text);
+        }
+
+        /* =========================================================
+           SIDEBAR shell
+           ========================================================= */
+        .cu-sidebar {
+            background: linear-gradient(180deg,
+                var(--cu-side-grad-1) 0%,
+                var(--cu-side-grad-2) 100%);
+            box-shadow: 4px 0 24px rgba(124, 58, 237, 0.18);
+        }
+
+        /* =========================================================
+           CURVED-OUTSIDE MENU ITEM
+           Pattern: active item is "pulled out" with rounded LEFT
+           and a curved transition above + below using radial-gradient
+           pseudo-elements.
+           ========================================================= */
+        .cu-menu-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px 12px 22px;
+            color: var(--cu-side-text);
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+            margin: 4px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .cu-menu-item i { color: var(--cu-side-icon); width: 20px; text-align: center; }
+        .cu-menu-item:hover {
+            background: rgba(255,255,255,0.10);
+            color: #fff;
+        }
+
+        /* === Active state — the magic happens here === */
+        .cu-menu-item.active {
+    background: var(--cu-active-bg);
+    color: var(--cu-active-text);
+    font-weight: 600;
+    border-radius: 10px;
+    margin: 4px 8px;
+}
+.cu-menu-item.active i { color: var(--cu-active-icon); }
+
+
+        /* Submenu */
+        .cu-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin: 0 8px;
+        }
+        .cu-submenu.open { max-height: 500px; }
+
+        .cu-submenu-link {
+            display: block;
+            padding: 9px 14px 9px 46px;
+            color: var(--cu-side-muted);
+            font-size: 13px;
+            position: relative;
+            border-radius: 8px;
+            transition: all 0.18s;
+        }
+        .cu-submenu-link::before {
+            content: "";
+            position: absolute;
+            left: 26px;
+            top: 50%;
+            width: 6px;
+            height: 1px;
+            background: rgba(255,255,255,0.35);
+        }
+        .cu-submenu-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.06);
+        }
+        .cu-submenu-link.active {
+            color: var(--cu-active-text);
+            background: var(--cu-active-bg);
+            font-weight: 600;
+        }
+        .cu-submenu-link.active::before {
+            background: var(--cu-active-icon);
+            width: 12px;
+        }
+
+        .cu-menu-item .chevron { transition: transform 0.25s ease; margin-left: auto; opacity: 0.7; }
+        .cu-menu-item.submenu-open .chevron { transform: rotate(90deg); }
+
+        .cu-section-label {
+            padding: 0 22px;
+            margin: 14px 0 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--cu-side-muted);
+        }
+
+        .cu-divider {
+            margin: 10px 16px;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent, rgba(255,255,255,0.2), transparent);
+        }
+
+        /* Custom scrollbar in sidebar */
+        nav.cu-nav::-webkit-scrollbar { width: 4px; }
+        nav.cu-nav::-webkit-scrollbar-track { background: transparent; }
+        nav.cu-nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.25);
+            border-radius: 4px;
+        }
+
+        /* =========================================================
+           Cards & buttons (Modern Flat)
+           ========================================================= */
+        .cu-card {
+            background: var(--cu-card-bg);
+            border: 1px solid var(--cu-border);
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+            transition: all 0.18s;
+        }
+        .cu-card:hover {
+            box-shadow: 0 6px 16px rgba(124,58,237,0.10);
+            border-color: var(--cu-side-grad-2);
+        }
+
+        .cu-btn-primary {
+            background: var(--cu-side-grad-2);
+            color: #fff;
+            font-weight: 600;
+            transition: background 0.18s;
+        }
+        .cu-btn-primary:hover { background: #8B5CF6; }
+
+        /* Mobile responsive */
         @media (max-width: 768px) {
-            .sidebar {
+            .cu-sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease-in-out;
             }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .overlay {
-                opacity: 0;
-                visibility: hidden;
+            .cu-sidebar.open { transform: translateX(0); }
+            .cu-overlay {
+                opacity: 0; visibility: hidden;
                 transition: opacity 0.3s ease-in-out;
             }
-            .overlay.show {
-                opacity: 1;
-                visibility: visible;
-            }
+            .cu-overlay.show { opacity: 1; visibility: visible; }
         }
-        .content-area {
-            transition: margin-left 0.3s ease-in-out;
-        }
+        .cu-content-area { transition: margin-left 0.3s ease-in-out; }
         @media (min-width: 769px) {
-            .content-area {
-                margin-left: 16rem; /* 64 * 0.25rem = 16rem */
-            }
-
-            body.sidebar-collapsed .sidebar {
-                transform: translateX(-100%);
-            }
-
-            body.sidebar-collapsed .content-area {
-                margin-left: 0;
-            }
+            .cu-content-area { margin-left: 17rem; }
+            body.sidebar-collapsed .cu-sidebar { transform: translateX(-100%); }
+            body.sidebar-collapsed .cu-content-area { margin-left: 0; }
         }
+
+        {% block extra_css %}{% endblock %}
     </style>
 </head>
-<body class="h-screen bg-white overflow-hidden">
-    <!-- Mobile Overlay -->
-    <div id="overlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"></div>
-    
-    <!-- Mobile Menu Button -->
-    <button id="mobile-menu-btn" class="fixed top-4 left-4 z-50 bg-[#4527A0] text-white p-3 rounded-lg shadow-lg">
-        <i class="fas fa-bars text-xl"></i>
+<body class="h-screen overflow-hidden">
+
+    <!-- Mobile overlay -->
+    <div id="cu-overlay" class="cu-overlay fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"></div>
+
+    <!-- Mobile menu button -->
+    <button id="cu-mobile-btn"
+            class="fixed top-4 left-4 z-50 text-white p-3 rounded-xl shadow-lg
+                   bg-gradient-to-br from-purple-400 to-purple-600 hover:shadow-xl transition md:hidden">
+        <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar h-screen w-64 bg-[#4527A0] text-white fixed flex flex-col rounded-tr-[25px] rounded-br-[25px] z-50 md:z-30">
-        <!-- Close button for mobile -->
-        <div class="flex items-center justify-between h-20 border-b border-gray-700 px-4 md:justify-center">
-            <img src="/static/images/trisakti.png" alt="Logo Trisakti" class="h-12">
-            <button id="close-sidebar-btn" class="md:hidden text-white p-2">
-                <i class="fas fa-times text-xl"></i>
+    <!-- ============================== SIDEBAR ============================== -->
+    <aside id="cu-sidebar"
+           class="cu-sidebar fixed top-0 left-0 h-screen w-[17rem] flex flex-col
+                  z-50 md:z-30 overflow-hidden">
+
+        <!-- Brand header -->
+        <div class="flex items-center gap-3 px-5 py-5 border-b border-white/15">
+            <img src="{% static 'images/logo.png' %}"
+     alt="Logo" class="w-18 h-16 rounded-xl object-contain bg-white/20 p-1">
+            <div class="flex-1 min-w-0">
+                <div class="text-[15px] font-bold text-white truncate">Anotasi Image</div>
+                <div class="text-[11px] text-white/70 font-medium tracking-wide uppercase">Master Portal</div>
+            </div>
+            <button id="cu-close"
+                    class="md:hidden text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition">
+                <i class="fas fa-times"></i>
             </button>
         </div>
-        
-        <!-- Navigation -->
-        <nav class="flex-1 px-4 py-6 md:py-20 space-y-2 overflow-y-auto">
-            <a href="{% url 'master:home' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-home mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Home</span>
+
+        <!-- Nav -->
+        <nav class="cu-nav flex-1 py-3 overflow-y-auto">
+
+            <div class="cu-section-label">Workspace</div>
+
+            <a href="{% url 'master:home' %}" class="cu-menu-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
             </a>
-            <a href="{% url 'master:assign_roles' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-user-cog mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Assign Roles</span>
+
+            <a href="{% url 'master:assign_roles' %}" class="cu-menu-item">
+                <i class="fas fa-user-cog"></i>
+                <span>Assign Roles</span>
             </a>
-            <a href="{% url 'master:job_settings' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-cogs mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Job Settings</span>
+
+            <a href="{% url 'master:job_settings' %}" class="cu-menu-item">
+                <i class="fas fa-cogs"></i>
+                <span>Job Settings</span>
             </a>
-            <a href="{% url 'master:issue_solving' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-tools mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Issue Solving</span>
+
+            <a href="{% url 'master:issue_solving' %}" class="cu-menu-item">
+                <i class="fas fa-tools"></i>
+                <span>Issue Solving</span>
             </a>
-            <a href="{% url 'master:process_validations' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-check-circle mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Process Validation</span>
+
+            <a href="{% url 'master:process_validations' %}" class="cu-menu-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Process Validation</span>
             </a>
-            <a href="{% url 'master:performance' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-chart-line mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Performance</span>
-            </a>
+
+            <!-- Performance with submenu -->
+            <button type="button" class="cu-menu-item cu-submenu-toggle w-full text-left" data-target="cu-sub-perf">
+                <i class="fas fa-chart-line"></i>
+                <span>Performance</span>
+                <i class="fas fa-chevron-right chevron text-[10px]"></i>
+            </button>
+            <div id="cu-sub-perf" class="cu-submenu">
+                <a href="{% url 'master:performance' %}" class="cu-submenu-link">Team Overview</a>
+                <a href="#" class="cu-submenu-link">Individual View</a>
+            </div>
+
+            <div class="cu-divider"></div>
+
+            <div class="cu-section-label">System</div>
+
+            <button type="button" class="cu-menu-item cu-submenu-toggle w-full text-left" data-target="cu-sub-set">
+                <i class="fas fa-sliders-h"></i>
+                <span>Settings</span>
+                <i class="fas fa-chevron-right chevron text-[10px]"></i>
+            </button>
+            <div id="cu-sub-set" class="cu-submenu">
+                <a href="#" class="cu-submenu-link">Profile</a>
+                <a href="#" class="cu-submenu-link">Preferences</a>
+            </div>
         </nav>
-        
+
         <!-- Logout -->
-        <div class="px-4 py-4 md:py-6 border-t border-gray-700">
-            <a href="{% url 'master:logout' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
-                <i class="fas fa-sign-out-alt mr-3 text-lg md:text-xl"></i> 
-                <span class="truncate">Logout</span>
+        <div class="px-3 py-3 border-t border-white/15">
+            <a href="{% url 'master:logout' %}" class="cu-menu-item" style="color: #FECACA;">
+                <i class="fas fa-sign-out-alt" style="color: #FECACA;"></i>
+                <span>Logout</span>
             </a>
         </div>
-    </div>
+    </aside>
 
-    <!-- Main Content Area -->
-    <div class="content-area flex-1 h-screen overflow-auto">
-        <div class="p-4 md:p-6 lg:p-8 h-full">
-            {% block content %}
-            {% endblock %}
+    <!-- ============================== MAIN ============================== -->
+    <div class="cu-content-area flex-1 h-screen overflow-auto">
+        <div class="p-4 md:p-6 lg:p-8 min-h-full">
+            {% block content %}{% endblock %}
         </div>
     </div>
 
-    <!-- JavaScript for sidebar toggle -->
+    <!-- ============================== JS ============================== -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const sidebar  = document.getElementById('cu-sidebar');
+            const overlay  = document.getElementById('cu-overlay');
+            const mobBtn   = document.getElementById('cu-mobile-btn');
+            const closeBtn = document.getElementById('cu-close');
 
-            function isMobile() {
-                return window.innerWidth < 769;
-            }
+            const isMobile = () => window.innerWidth < 769;
 
-            function setDesktopSidebarState(collapsed) {
-                document.body.classList.toggle('sidebar-collapsed', collapsed);
-                localStorage.setItem('masterSidebarCollapsed', collapsed ? 'true' : 'false');
-            }
-
-            function applyDesktopSidebarPreference() {
-                if (!isMobile()) {
-                    const collapsed = localStorage.getItem('masterSidebarCollapsed') === 'true';
-                    document.body.classList.toggle('sidebar-collapsed', collapsed);
-                }
-            }
-
-            // Toggle sidebar
-            mobileMenuBtn.addEventListener('click', function() {
+            mobBtn?.addEventListener('click', () => {
                 if (isMobile()) {
                     sidebar.classList.add('open');
                     overlay.classList.add('show');
-                    document.body.style.overflow = 'hidden';
-                    return;
+                } else {
+                    document.body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('masterSidebarCollapsed',
+                        document.body.classList.contains('sidebar-collapsed'));
                 }
-
-                const willCollapse = !document.body.classList.contains('sidebar-collapsed');
-                setDesktopSidebarState(willCollapse);
             });
-
-            // Close sidebar functions
-            function closeSidebar() {
+            const closeSidebar = () => {
                 sidebar.classList.remove('open');
                 overlay.classList.remove('show');
-                document.body.style.overflow = 'auto';
+            };
+            closeBtn?.addEventListener('click', closeSidebar);
+            overlay?.addEventListener('click', closeSidebar);
+            window.addEventListener('resize', () => { if (window.innerWidth >= 769) closeSidebar(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMobile()) closeSidebar(); });
+
+            if (!isMobile() && localStorage.getItem('masterSidebarCollapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
             }
 
-            // Close sidebar when close button clicked
-            closeSidebarBtn.addEventListener('click', closeSidebar);
+            // Submenu toggle
+            document.querySelectorAll('.cu-submenu-toggle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = document.getElementById(this.dataset.target);
+                    if (!target) return;
+                    const open = target.classList.toggle('open');
+                    this.classList.toggle('submenu-open', open);
+                    localStorage.setItem('cu-' + this.dataset.target, open ? '1' : '0');
+                });
+            });
 
-            // Close sidebar when overlay clicked
-            overlay.addEventListener('click', closeSidebar);
-
-            // Close sidebar when window is resized to desktop
-            window.addEventListener('resize', function() {
-                if (window.innerWidth >= 768) {
-                    closeSidebar();
-                    applyDesktopSidebarPreference();
+            // Restore submenu state
+            document.querySelectorAll('.cu-submenu-toggle').forEach(btn => {
+                if (localStorage.getItem('cu-' + btn.dataset.target) === '1') {
+                    document.getElementById(btn.dataset.target)?.classList.add('open');
+                    btn.classList.add('submenu-open');
                 }
             });
 
-            // Handle escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && window.innerWidth < 768) {
-                    closeSidebar();
+            // Auto-highlight active link
+            const path = window.location.pathname;
+            document.querySelectorAll('.cu-menu-item, .cu-submenu-link').forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                if (path === href || (href !== '/' && path.startsWith(href))) {
+                    link.classList.add('active');
+                    const parentSub = link.closest('.cu-submenu');
+                    if (parentSub) {
+                        parentSub.classList.add('open');
+                        document.querySelector(`[data-target="${parentSub.id}"]`)?.classList.add('submenu-open');
+                    }
                 }
             });
-
-            applyDesktopSidebarPreference();
         });
     </script>
 
-    {% block extra_js %}
-    {% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

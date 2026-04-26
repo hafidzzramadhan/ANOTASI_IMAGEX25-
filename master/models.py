@@ -145,7 +145,8 @@ class JobProfile(models.Model):
         choices=[
             ('not_assign', 'Not Assigned'),
             ('in_progress', 'In Progress'),
-            ('finish', 'Finished')
+            ('finish', 'Finished'),
+            ('in_review', 'In Review'),
         ],
         default='not_assign'
     )

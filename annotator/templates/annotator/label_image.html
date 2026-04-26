@@ -1,238 +1,619 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Labeling Image</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans text-sm">
-  <div class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center">
-      <a href="{% url 'annotator:job_detail' job.id %}" class="mr-3 text-white hover:text-gray-200 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-      </a>
-      <strong>{{ job.title }}</strong> &gt; Labeling &gt;
-      <span class="text-gray-200">{{ image.image.name|default:"Image" }}</span>
-    </div>
-  </div>
-
-  <div class="bg-white border-b px-6 py-3 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <button class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded" onclick="navigateImage('prev')">&lt;</button>
-      <span class="font-medium">{{ current_image_index }} / {{ total_image }}</span>
-      <button class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded" onclick="navigateImage('next')">&gt;</button>
-    </div>
-    <div class="flex items-center gap-2">
-      <button class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 text-sm" onclick="finishAnnotation()">Finish</button>
-      <button id="labelStatusBtn" class="inline-block text-xs px-3 py-1 rounded cursor-pointer bg-red-500 text-white transition" onclick="toggleLabelStatus()">
-        Label Assist 🔴
-      </button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-7 gap-4 px-6 py-4 text-center">
-    <div class="bg-gray-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.unannotated }}</div><div class="text-gray-500 text-sm">Unannotated</div></div>
-    <div class="bg-yellow-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.in_progress }}</div><div class="text-gray-500 text-sm">In Progress</div></div>
-    <div class="bg-blue-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.annotated }}</div><div class="text-gray-500 text-sm">Annotated</div></div>
-    <div class="bg-purple-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.in_review }}</div><div class="text-gray-500 text-sm">In Review</div></div>
-    <div class="bg-orange-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.in_rework }}</div><div class="text-gray-500 text-sm">In Rework</div></div>
-    <div class="bg-green-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.finished }}</div><div class="text-gray-500 text-sm">Finished</div></div>
-    <div class="bg-red-100 p-3 rounded shadow"><div class="text-xl font-bold">{{ status_counts.issue }}</div><div class="text-gray-500 text-sm">Issue</div></div>
-  </div>
-
-  <div class="flex gap-4 px-6 pb-10">
-    <div class="w-1/4 bg-white rounded shadow p-4">
-      <h2 class="text-sm font-semibold mb-2 text-gray-700">Annotations</h2>
-      <input type="text" placeholder="Search class..." class="w-full px-2 py-1 border rounded text-sm mb-4">
-      <ul id="classesList" class="space-y-1">
-        {% for cls in classes %}
-          <li class="px-2 py-1 bg-gray-100 border rounded text-gray-700 text-sm capitalize">{{ cls }}</li>
-        {% empty %}
-          <li class="px-2 py-1 bg-gray-50 border rounded text-gray-500 text-sm">No classes yet</li>
-        {% endfor %}
-      </ul>
-
-      <div class="mt-6">
-        <h3 class="text-xs text-gray-500 font-semibold uppercase border-b pb-1">Job Segmentation Type</h3>
-        <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-          <div class="font-medium text-blue-800">{{ job.segmentation_type|title }}</div>
-          <div class="text-xs text-blue-600 mt-1">Set by Master for this job</div>
-        </div>
-        {% if job.segmentation_type == 'semantic' %}
-          <div class="mt-2 text-xs text-gray-600"><strong>Instructions:</strong> Label each pixel region by class.</div>
-        {% elif job.segmentation_type == 'instance' %}
-          <div class="mt-2 text-xs text-gray-600"><strong>Instructions:</strong> Label each individual object separately.</div>
-        {% elif job.segmentation_type == 'panoptic' %}
-          <div class="mt-2 text-xs text-gray-600"><strong>Instructions:</strong> Combine semantic and instance labeling.</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="relative w-3/4 bg-white rounded shadow p-4 flex flex-col items-center">
-      {% if image.image %}
-        <img id="labelingImage" src="{{ image.image.url }}" alt="Image to label" class="max-w-full max-h-[75vh] border rounded" />
-        <canvas id="annotationsCanvas" class="absolute pointer-events-none"></canvas>
-        <p class="mt-2 text-xs text-gray-400 break-all">URL: {{ image.image.url }}</p>
-      {% else %}
-        <p class="text-red-500 text-sm">Image is not available.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <script>
-    function navigateImage(direction) {
-      const prevImageId = {{ prev_image_id|default:'null' }};
-      const nextImageId = {{ next_image_id|default:'null' }};
-      let targetImageId = null;
-      if (direction === 'prev' && prevImageId) targetImageId = prevImageId;
-      if (direction === 'next' && nextImageId) targetImageId = nextImageId;
-      if (targetImageId) {
-        window.location.href = `{% url 'annotator:label_image' job.id 0 %}`.replace('0', targetImageId);
-      }
-    }
-
-    function updateSidebarClasses(allAnnotations) {
-      const classes = [...new Set(allAnnotations.map(ann => ann.label).filter(Boolean))].sort();
-      const classesList = document.getElementById('classesList');
-      if (!classesList) return;
-      classesList.innerHTML = '';
-      if (!classes.length) {
-        classesList.innerHTML = '<li class="px-2 py-1 bg-gray-50 border rounded text-gray-500 text-sm">No classes yet</li>';
-        return;
-      }
-      classes.forEach(cls => {
-        const li = document.createElement('li');
-        li.className = 'px-2 py-1 bg-gray-100 border rounded text-gray-700 text-sm capitalize';
-        li.textContent = cls;
-        classesList.appendChild(li);
-      });
-    }
-
-    function drawAllAnnotations(annotationsToDraw) {
-      const image = document.getElementById('labelingImage');
-      const canvas = document.getElementById('annotationsCanvas');
-      if (!image || !canvas || !image.naturalWidth) return;
-
-      const ctx = canvas.getContext('2d');
-      canvas.width = image.clientWidth;
-      canvas.height = image.clientHeight;
-      canvas.style.width = image.clientWidth + 'px';
-      canvas.style.height = image.clientHeight + 'px';
-
-      const imgRect = image.getBoundingClientRect();
-      const parentRect = image.parentElement.getBoundingClientRect();
-      canvas.style.left = (imgRect.left - parentRect.left) + 'px';
-      canvas.style.top = (imgRect.top - parentRect.top) + 'px';
-
-      const scaleX = canvas.width / image.naturalWidth;
-      const scaleY = canvas.height / image.naturalHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      annotationsToDraw.forEach(ann => {
-        const box = ann.bbox ? ann.bbox : [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
-        const x = box[0] * scaleX;
-        const y = box[1] * scaleY;
-        const width = (box[2] - box[0]) * scaleX;
-        const height = (box[3] - box[1]) * scaleY;
-        const label = ann.label || 'Unknown';
-        const color = ann.is_auto_generated ? '#f59e0b' : '#34D399';
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, width, height);
-        ctx.font = '12px sans-serif';
-        const textMetrics = ctx.measureText(label);
-        ctx.fillStyle = color;
-        ctx.fillRect(x - 1, y - 17, textMetrics.width + 8, 16);
-        ctx.fillStyle = 'white';
-        ctx.textBaseline = 'top';
-        ctx.fillText(label, x + 3, y - 15);
-      });
-    }
-
-    function toggleLabelStatus() {
-      const btn = document.getElementById('labelStatusBtn');
-      const isActive = btn.classList.contains('bg-green-500');
-      const initialAnnotations = JSON.parse('{{ annotations_json|safe }}');
-
-      if (isActive) {
-        btn.classList.remove('bg-green-500');
-        btn.classList.add('bg-red-500');
-        btn.textContent = 'Label Assist 🔴';
-        drawAllAnnotations(initialAnnotations);
-        return;
-      }
-
-      btn.classList.remove('bg-red-500');
-      btn.classList.add('bg-green-500');
-      btn.textContent = 'Processing... ⏳';
-      btn.disabled = true;
-
-      fetch("{% url 'annotator:send_image' image.id %}", {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) throw new Error(data.error || 'Unknown error');
-        return fetch("{% url 'annotator:get_result_json' image.id %}");
-      })
-      .then(res => res.json())
-      .then(newAnnotations => {
-        const allAnnotations = initialAnnotations.concat(newAnnotations);
-        drawAllAnnotations(allAnnotations);
-        updateSidebarClasses(allAnnotations);
-        btn.textContent = 'Label Assist 🟢';
-        btn.disabled = false;
-      })
-      .catch(err => {
-        alert('Failed processing image: ' + err.message);
-        btn.classList.remove('bg-green-500');
-        btn.classList.add('bg-red-500');
-        btn.textContent = 'Label Assist 🔴';
-        btn.disabled = false;
-      });
-    }
-
-    function finishAnnotation() {
-      if (!confirm('Finish this annotation and send it to reviewer?')) return;
-      fetch(`/annotator/finish-annotation/{{ image.id }}/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}',
-          'Content-Type': 'application/json',
-        },
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert('Annotation marked finished and sent for review.');
-          location.reload();
-        } else {
-          alert(data.error || data.message || 'Failed to finish annotation');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labeling — {{ job.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pa-lav-50:  #FFFFFF;
+            --pa-lav-100: #F5F3FF;
+            --pa-lav-200: #EDE9FE;
+            --pa-lav-300: #DDD6FE;
+            --pa-lav-400: #C4B5FD;
+            --pa-lav-500: #A78BFA;
+            --pa-lav-600: #7C3AED;
+            --pa-lav-700: #7C3AED;
+            --pa-lav-800: #6D28D9;
+            --pa-lav-900: #4C1D95;
+            --pa-mint:    #A7F3D0;
+            --pa-mint-d:  #10B981;
+            --pa-peach:   #FED7AA;
+            --pa-peach-d: #EA580C;
+            --pa-rose:    #FECDD3;
+            --pa-rose-d:  #E11D48;
+            --pa-sky:     #BAE6FD;
+            --pa-sky-d:   #0284C7;
         }
-      })
-      .catch(() => alert('Network error occurred.'));
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            background:
+                radial-gradient(circle at 0% 0%, #EDE9FE 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, #DDD6FE 0%, transparent 40%),
+                #FFFFFF;
+            min-height: 100vh;
+            color: #0F172A;
+        }
+        .pa-card {
+            background: white;
+            border: 1px solid var(--pa-lav-200);
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px rgba(76, 29, 149, 0.04);
+        }
+        .pa-pill-mint  { background: #D1FAE5; color: #065F46; }
+        .pa-pill-peach { background: #FFEDD5; color: #9A3412; }
+        .pa-pill-rose  { background: #FFE4E6; color: #9F1239; }
+        .pa-pill-lav   { background: var(--pa-lav-100); color: var(--pa-lav-800); }
+        .pa-pill-sky   { background: #E0F2FE; color: #075985; }
+        .pa-pill-gray  { background: #F3F4F6; color: #374151; }
+
+        .pa-btn-primary {
+            background: linear-gradient(135deg, #A78BFA, #7C3AED);
+            color: white;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+            transition: all 0.18s;
+        }
+        .pa-btn-primary:hover {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        .pa-btn-ghost {
+            background: var(--pa-lav-100);
+            color: var(--pa-lav-800);
+            transition: all 0.18s;
+        }
+        .pa-btn-ghost:hover {
+            background: var(--pa-lav-200);
+        }
+        .pa-btn-mint {
+            background: #34D399;
+            color: white;
+            transition: all 0.18s;
+        }
+        .pa-btn-mint:hover { background: #10B981; }
+        .pa-btn-rose {
+            background: #FB7185;
+            color: white;
+            transition: all 0.18s;
+        }
+        .pa-btn-rose:hover { background: #E11D48; }
+
+        .pa-input {
+            background: var(--pa-lav-50);
+            border: 1.5px solid var(--pa-lav-200);
+            transition: all 0.18s;
+            color: var(--pa-lav-900);
+        }
+        .pa-input:focus {
+            background: white;
+            border-color: var(--pa-lav-500);
+            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+            outline: none;
+        }
+
+        .topbar-pastel {
+            background: linear-gradient(120deg, #C4B5FD 0%, #A78BFA 60%, #7C3AED 100%);
+            color: white;
+        }
+
+        /* Mode buttons inactive state */
+        .mode-btn-inactive {
+            background: var(--pa-lav-100);
+            color: var(--pa-lav-700);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation (purple gradient) -->
+<div class="topbar-pastel px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
+    <div class="flex items-center gap-3 min-w-0">
+        <a href="{% url 'annotator:job_detail' job.id %}"
+           class="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition flex-shrink-0">
+            <i class="fas fa-arrow-left text-sm"></i>
+        </a>
+
+        <div class="min-w-0">
+            <div class="flex items-center gap-2 text-xs text-white/80">
+                <span class="truncate">{{ job.title }}</span>
+                <span class="opacity-60">/</span>
+                <span>Labeling</span>
+            </div>
+            <div class="text-sm font-semibold truncate">
+                <i class="fas fa-image opacity-80 mr-1"></i>
+                {{ image.image.name|default:"Image" }}
+            </div>
+        </div>
+    </div>
+
+    <button id="labelStatusBtn"
+            onclick="toggleLabelStatus()"
+            class="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition cursor-pointer">
+        <span class="w-2 h-2 rounded-full bg-rose-300" id="labelAssistDot"></span>
+        Label Assist
+    </button>
+</div>
+
+<!-- Sub-toolbar -->
+<div class="bg-white/80 backdrop-blur-sm border-b border-[#EDE4FB] px-6 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+        <button onclick="navigateImage('prev')"
+                class="pa-btn-ghost w-9 h-9 rounded-xl text-sm flex items-center justify-center font-bold">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="px-3 py-1.5 rounded-xl bg-[#FFFFFF] border border-[#EDE4FB] text-xs font-semibold text-slate-900">
+            <i class="fas fa-images mr-1 opacity-60"></i>
+            {{ current_image_index }} <span class="opacity-50">/</span> {{ total_image }}
+        </div>
+        <button onclick="navigateImage('next')"
+                class="pa-btn-ghost w-9 h-9 rounded-xl text-sm flex items-center justify-center font-bold">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <button onclick="finishAnnotation()"
+            class="pa-btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold">
+        <i class="fas fa-check"></i> Finish
+    </button>
+</div>
+
+<!-- STATUS COUNTS -->
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 px-6 py-4">
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.unannotated }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-300"></span> Unannotated
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.in_progress }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-300"></span> In Progress
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.annotated }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span> Annotated
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.in_review }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-300"></span> In Review
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.in_rework }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-300"></span> In Rework
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.finished }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Finished
+        </div>
+    </div>
+    <div class="pa-card px-3 py-3 text-center">
+        <div class="text-xl font-bold text-slate-900">{{ status_counts.issue }}</div>
+        <div class="text-[11px] text-[#6D28D9]/70 mt-0.5 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Issue
+        </div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="flex flex-col lg:flex-row gap-4 px-6 pb-10">
+
+    <!-- SIDEBAR -->
+    <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
+
+        <!-- Class + Mode -->
+        <div class="pa-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-900">
+                    <i class="fas fa-tag text-[#A78BFA] mr-1"></i>
+                    Annotation
+                </h2>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-lav uppercase tracking-wide">Active</span>
+            </div>
+
+            <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Label Class</label>
+            <select id="labelSelect"
+                    class="pa-input w-full px-3 py-2.5 rounded-xl text-sm mb-4">
+                {% for cls in classes %}
+                    <option value="{{ cls }}">{{ cls }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Mode</label>
+            <div class="flex gap-2">
+                <button id="modeDraw"
+                        class="pa-btn-mint flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+                <button id="modeDelete"
+                        class="mode-btn-inactive flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+            <p class="text-[11px] text-[#6D28D9]/60 mt-2 inline-flex items-center gap-1">
+                <i class="fas fa-circle-info"></i>
+                Current mode: <span id="modeText" class="font-semibold text-slate-900">Add</span>
+            </p>
+        </div>
+
+        <!-- Job segmentation type -->
+        <div class="pa-card p-5">
+            <h3 class="text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-2">
+                Job Segmentation Type
+            </h3>
+
+            <div class="px-3 py-2.5 rounded-xl bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] border border-[#DDD6FE] flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center">
+                    <i class="fas fa-shapes text-[#7C3AED] text-sm"></i>
+                </div>
+                <div class="text-sm font-semibold text-slate-900">{{ job.segmentation_type|title }}</div>
+            </div>
+
+            {% if job.segmentation_type == 'semantic' %}
+                <div class="mt-3 text-xs text-[#6D28D9]/80 leading-relaxed">
+                    <strong class="text-slate-900">Instructions:</strong>
+                    Label each pixel region by class.
+                </div>
+            {% elif job.segmentation_type == 'instance' %}
+                <div class="mt-3 text-xs text-[#6D28D9]/80 leading-relaxed">
+                    <strong class="text-slate-900">Instructions:</strong>
+                    Label each object separately.
+                </div>
+            {% elif job.segmentation_type == 'panoptic' %}
+                <div class="mt-3 text-xs text-[#6D28D9]/80 leading-relaxed">
+                    <strong class="text-slate-900">Instructions:</strong>
+                    Combine semantic and instance labeling.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tips card -->
+        <div class="pa-card p-5 bg-gradient-to-br from-[#FFFFFF] to-[#F5F3FF]">
+            <h3 class="text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-3">
+                <i class="fas fa-lightbulb text-amber-400 mr-1"></i>
+                Quick Tips
+            </h3>
+            <ul class="space-y-2 text-xs text-[#6D28D9]/80">
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+                    <span>Pilih label class dulu, baru klik di gambar</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+                    <span>Switch ke mode <strong>Delete</strong> untuk hapus box</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+                    <span>Pakai <strong>Label Assist</strong> untuk auto-detect</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+                    <span>Klik <strong>Finish</strong> kalo udah selesai</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- IMAGE CANVAS -->
+    <div class="flex-1 pa-card p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-900">
+                <i class="fas fa-image text-[#A78BFA] mr-1"></i>
+                Canvas
+            </h2>
+            <div class="text-[11px] text-[#6D28D9]/60">
+                Click on image to add box ({{ image.status|default:"unannotated"|title }})
+            </div>
+        </div>
+
+        <div class="relative w-full bg-[#FFFFFF] rounded-2xl border border-[#EDE4FB] flex flex-col items-center justify-center min-h-[400px] p-4">
+            {% if image.image %}
+                <div class="relative inline-block">
+                    <img id="labelingImage"
+                         src="{{ image.image.url }}"
+                         class="max-w-full max-h-[70vh] rounded-xl shadow-sm select-none"
+                         draggable="false"/>
+                    <canvas id="annotationsCanvas"
+                            class="absolute top-0 left-0 cursor-crosshair"></canvas>
+                </div>
+
+                <p class="text-[11px] text-[#6D28D9]/40 mt-3 truncate max-w-full">
+                    <i class="fas fa-link mr-1"></i> {{ image.image.url }}
+                </p>
+            {% else %}
+                <div class="py-16 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-50 mb-3">
+                        <i class="fas fa-image-slash text-rose-400 text-2xl"></i>
+                    </div>
+                    <p class="text-rose-500 font-semibold text-sm">Image tidak tersedia</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+    let currentMode = 'add';
+
+    const canvas = document.getElementById('annotationsCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const image = document.getElementById('labelingImage');
+
+    // ============================
+    // MODE BUTTON
+    // ============================
+    document.getElementById('modeDraw').addEventListener('click', function () {
+        currentMode = 'add';
+        setActiveButton('modeDraw');
+    });
+
+    document.getElementById('modeDelete').addEventListener('click', function () {
+        currentMode = 'delete';
+        setActiveButton('modeDelete');
+    });
+
+    // ============================
+    // SETUP CANVAS
+    // ============================
+    function setupCanvas() {
+        if (!image || !canvas) return;
+        canvas.style.width = image.clientWidth + 'px';
+        canvas.style.height = image.clientHeight + 'px';
+        canvas.width = image.clientWidth;
+        canvas.height = image.clientHeight;
     }
+
+    // ============================
+    // CLICK CANVAS
+    // ============================
+    if (canvas) {
+        canvas.addEventListener('click', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            if (currentMode === 'delete') {
+                deleteAnnotation(clickX, clickY);
+                return;
+            }
+
+            const label = document.getElementById('labelSelect').value;
+
+            const boxSize = 80;
+            const x1 = clickX - boxSize / 2;
+            const y1 = clickY - boxSize / 2;
+            const x2 = clickX + boxSize / 2;
+            const y2 = clickY + boxSize / 2;
+
+            drawBox(x1, y1, x2, y2, label);
+            saveAnnotation(x1, y1, x2, y2, label);
+        });
+    }
+
+    // ============================
+    // DRAW BOX
+    // ============================
+    function drawBox(x1, y1, x2, y2, label) {
+        ctx.strokeStyle = '#34D399';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+        ctx.fillStyle = '#34D399';
+        ctx.font = '12px "Plus Jakarta Sans", Arial';
+        ctx.fillText(label, x1, y1 - 5);
+    }
+
+    // ============================
+    // DRAW ALL ANNOTATIONS
+    // ============================
+    function drawAllAnnotations(annotations) {
+        if (!image || !canvas || !image.naturalWidth) return;
+
+        const scaleX = canvas.width / image.naturalWidth;
+        const scaleY = canvas.height / image.naturalHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        annotations.forEach(ann => {
+            const box = ann.bbox || [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
+
+            const x = box[0] * scaleX;
+            const y = box[1] * scaleY;
+            const w = (box[2] - box[0]) * scaleX;
+            const h = (box[3] - box[1]) * scaleY;
+
+            const color = ann.is_auto_generated ? '#f59e0b' : '#34D399';
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.fillStyle = color;
+            ctx.font = '12px "Plus Jakarta Sans", Arial';
+            ctx.fillText(ann.label, x + 3, y - 5);
+        });
+    }
+
+    // ============================
+    // SAVE ANNOTATION
+    // ============================
+    function saveAnnotation(x1, y1, x2, y2, label) {
+        const scaleX = image.naturalWidth / image.clientWidth;
+        const scaleY = image.naturalHeight / image.clientHeight;
+
+        const data = {
+            x_min: x1 * scaleX,
+            y_min: y1 * scaleY,
+            x_max: x2 * scaleX,
+            y_max: y2 * scaleY,
+            label: label
+        };
+
+        fetch("{% url 'annotator:save_annotation' image.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(res => console.log('Saved:', res))
+        .catch(err => console.error(err));
+    }
+
+    // ============================
+    // DELETE ANNOTATION
+    // ============================
+    function deleteAnnotation(x, y) {
+        fetch("{% url 'annotator:get_result_json' image.id %}")
+            .then(r => r.json())
+            .then(data => {
+
+                const scaleX = canvas.width / image.naturalWidth;
+                const scaleY = canvas.height / image.naturalHeight;
+
+                let target = null;
+
+                data.forEach(ann => {
+                    const bx = ann.x_min * scaleX;
+                    const by = ann.y_min * scaleY;
+                    const bw = (ann.x_max - ann.x_min) * scaleX;
+                    const bh = (ann.y_max - ann.y_min) * scaleY;
+
+                    if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
+                        target = ann;
+                    }
+                });
+
+                if (!target) return;
+
+                fetch("{% url 'annotator:delete_annotation' image.id %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(target)
+                })
+                .then(() => {
+                    const updated = data.filter(a => a !== target);
+                    drawAllAnnotations(updated);
+                });
+            });
+    }
+
+    // ============================
+    // LABEL ASSIST
+    // ============================
+    function toggleLabelStatus() {
+        const btn = document.getElementById('labelStatusBtn');
+        const dot = document.getElementById('labelAssistDot');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        fetch("{% url 'annotator:send_image' image.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(r => r.json())
+        .then(() => fetch("{% url 'annotator:get_result_json' image.id %}"))
+        .then(r => r.json())
+        .then(data => {
+            drawAllAnnotations(data);
+            btn.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-300"></span> Label Assist';
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-300"></span> Label Assist';
+        });
+    }
+
+    // ============================
+    // FINISH
+    // ============================
+    function finishAnnotation() {
+        fetch(`/annotator/finish-annotation/{{ image.id }}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(r => r.json())
+        .then(d => {
+            alert(d.message || 'Annotation finished');
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ============================
+    // INIT DRAW
+    // ============================
+    window.addEventListener('load', function () {
+        if (!image) return;
+        if (image.complete) {
+            setupCanvas();
+            runDrawing();
+        } else {
+            image.onload = function () {
+                setupCanvas();
+                runDrawing();
+            };
+        }
+    });
+
+    // Re-fit canvas on window resize so the overlay tracks the image
+    window.addEventListener('resize', function () {
+        if (!image || !image.naturalWidth) return;
+        setupCanvas();
+        runDrawing();
+    });
 
     function runDrawing() {
-      const initialAnnotations = JSON.parse('{{ annotations_json|safe }}');
-      drawAllAnnotations(initialAnnotations);
+        try {
+            const data = JSON.parse('{{ annotations_json|safe }}');
+            drawAllAnnotations(data);
+        } catch (e) {
+            console.warn('No annotations to draw', e);
+        }
     }
 
-    window.addEventListener('load', () => {
-      const image = document.getElementById('labelingImage');
-      if (!image) return;
-      if (image.complete && image.naturalWidth > 0) {
-        runDrawing();
-      } else {
-        image.onload = runDrawing;
-      }
-      window.onresize = runDrawing;
-    });
-  </script>
+    // ============================
+    // BUTTON STYLE
+    // ============================
+    function setActiveButton(activeId) {
+        const drawBtn = document.getElementById('modeDraw');
+        const deleteBtn = document.getElementById('modeDelete');
+
+        drawBtn.classList.remove('pa-btn-mint', 'pa-btn-rose', 'mode-btn-inactive');
+        deleteBtn.classList.remove('pa-btn-mint', 'pa-btn-rose', 'mode-btn-inactive');
+
+        if (activeId === 'modeDraw') {
+            drawBtn.classList.add('pa-btn-mint');
+            deleteBtn.classList.add('mode-btn-inactive');
+            document.getElementById('modeText').innerText = 'Add';
+        } else {
+            deleteBtn.classList.add('pa-btn-rose');
+            drawBtn.classList.add('mode-btn-inactive');
+            document.getElementById('modeText').innerText = 'Delete';
+        }
+    }
+</script>
+
 </body>
 </html>

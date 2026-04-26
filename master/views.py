@@ -263,12 +263,17 @@ def home_view(request):
             'finished': {'count': finished_count, 'height': calculate_chart_height(finished_count, max_count)}
         }
     }
+
+    issues_count = JobImage.objects.filter(status='Issue').count()
+    in_progress_count = in_review_count + in_rework_count
     
     context = {
         'users': CustomUser.objects.all(),
         'datasets': Dataset.objects.all().order_by('-date_created'),
         'status_list': status_list,
         'assignment_stats': assignment_stats,
+        'in_progress_count': in_progress_count,
+        'issues_count': issues_count,
     }
     return render(request, 'master/home.html', context)
 
@@ -711,6 +716,11 @@ def add_dataset(request):
 
 @master_required
 def add_dataset_view(request):
+    """
+    Endpoint: POST /master/add_dataset/
+    Menerima form upload dataset dari master/home.html modal Add Dataset.
+    Required fields: name, labeler (user id), dataset_file (file).
+    """
     if request.method == 'POST':
         try:
             name = request.POST.get('name')
@@ -720,26 +730,22 @@ def add_dataset_view(request):
             if not all([name, labeler_id, dataset_file]):
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Missing required fields'
+                    'message': 'Missing required fields (name, labeler, dataset_file)'
                 }, status=400)
 
-            # Save file
-            fs = FileSystemStorage()
-            filename = fs.save(f'datasets/{dataset_file.name}', dataset_file)
-            file_path = fs.url(filename)
-
-            # Create dataset
+            # Assign file instance langsung ke FileField.
+            # Django otomatis save ke MEDIA_ROOT/datasets/ sesuai upload_to di model.
             dataset = Dataset.objects.create(
                 name=name,
                 labeler_id=labeler_id,
-                file_path=file_path,
-                count=0  # You can update this based on your needs
+                file_path=dataset_file,
+                count=0,
             )
 
             return JsonResponse({
                 'status': 'success',
                 'message': 'Dataset added successfully',
-                'id': dataset.id
+                'id': dataset.id,
             })
 
         except Exception as e:
@@ -817,9 +823,13 @@ def job_profile_detail(request, job_id):
         print(f"Error in job_profile_detail: {str(e)}")  # Debug log
         return JsonResponse({'error': str(e)}, status=500)
 
-# Daataset flow for edit and delete
+# Dataset flow for edit and delete
 @login_required
 def edit_dataset_view(request, dataset_id):
+    """
+    Endpoint: POST /master/edit_dataset/<id>/
+    Update dataset (name, labeler, optional file baru).
+    """
     dataset = get_object_or_404(Dataset, id=dataset_id)
 
     if request.method == 'POST':
@@ -827,12 +837,10 @@ def edit_dataset_view(request, dataset_id):
             dataset.name = request.POST.get('name')
             dataset.labeler_id = request.POST.get('labeler')
 
+            # Kalau user upload file baru, replace file_path dengan file instance.
+            # Kalau ga upload file baru, file_path lama tetep.
             if 'dataset_file' in request.FILES:
-                # Handle new file upload if provided
-                dataset_file = request.FILES['dataset_file']
-                fs = FileSystemStorage()
-                filename = fs.save(f'datasets/{dataset_file.name}', dataset_file)
-                dataset.file_path = fs.url(filename)
+                dataset.file_path = request.FILES['dataset_file']
 
             dataset.save()
 
@@ -1358,7 +1366,35 @@ def performance_individual_view(request, user_id):
     else:
         user_status = "Not Ready"
         status_class = "bg-gray-500"
-    
+
+# === BUILD JOB LIST dengan progress percentage per job ===
+    user_jobs_list = []
+    for job in user_jobs.order_by('-date_created'):
+        # Hitung progress per job (finished / total images)
+        job_images_qs = JobImage.objects.filter(job=job)
+        total_img = job_images_qs.count()
+        finished_img = job_images_qs.filter(status='finished').count()
+        progress = round((finished_img / total_img * 100)) if total_img > 0 else 0
+ 
+        # Ambil URL first image (buat thumbnail di template)
+        first_image = job_images_qs.first()
+        first_image_url = None
+        if first_image and first_image.image:
+            try:
+                first_image_url = first_image.image.url
+            except Exception:
+                first_image_url = None
+ 
+        user_jobs_list.append({
+            'id': job.id,
+            'title': job.title,
+            'description': job.description or '',
+            'status': job.status,
+            'image_count': total_img,
+            'progress_percentage': progress,
+            'first_image_url': first_image_url,
+        })
+
     # Prepare context data
     context = {
         'user_profile': {
@@ -1373,6 +1409,7 @@ def performance_individual_view(request, user_id):
             'total_images': total_images,
             'chart_data': job_chart_data,
             'image_chart_data': image_chart_data,
+            'user_jobs_list': user_jobs_list,
         }
     }
     
@@ -1444,3 +1481,108 @@ def update_user_roles(request):
             'status': 'error',
             'message': f'Server error: {str(e)}'
         }, status=500)
+    
+"""
+SNIPPET — Edit & Delete Job Profile
+===================================
+Copy 2 fungsi di bawah ini, paste ke AKHIR file master/views.py
+(sebelum atau sesudah view yang udah ada, bebas)
+
+Decorator @login_required dan @require_http_methods udah di-import di
+views.py lu (dipakai oleh create_job_profile), jadi gak perlu import
+tambahan.
+"""
+
+
+# ========================================================
+# EDIT JOB PROFILE
+# ========================================================
+@login_required
+@require_http_methods(["GET", "POST"])
+def edit_job_profile(request, job_id):
+    """
+    GET  -> return current job data (buat prefill form edit)
+    POST -> update job & return success
+    """
+    try:
+        job = JobProfile.objects.get(id=job_id)
+    except JobProfile.DoesNotExist:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Job profile tidak ditemukan'},
+            status=404
+        )
+
+    if request.method == 'GET':
+        return JsonResponse({
+            'status': 'success',
+            'data': {
+                'id': job.id,
+                'title': job.title,
+                'description': job.description or '',
+                'segmentation_type': job.segmentation_type or '',
+                'shape_type': job.shape_type or '',
+                'color': job.color or '#000000',
+                'priority': job.priority or 'medium',
+                'start_date': job.start_date.strftime('%Y-%m-%d') if job.start_date else '',
+                'end_date': job.end_date.strftime('%Y-%m-%d') if job.end_date else '',
+            }
+        })
+
+    # POST — update
+    try:
+        job.title = request.POST.get('title', job.title)
+        job.description = request.POST.get('description', job.description)
+        job.segmentation_type = request.POST.get('segmentation', job.segmentation_type)
+        job.shape_type = request.POST.get('shape', job.shape_type)
+        job.color = request.POST.get('color', job.color)
+        job.priority = request.POST.get('priority', job.priority)
+
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        if start_date:
+            job.start_date = start_date
+        if end_date:
+            job.end_date = end_date
+
+        job.save()
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Job profile berhasil di-update',
+            'id': job.id,
+        })
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'error', 'message': str(e)},
+            status=500
+        )
+
+
+# ========================================================
+# DELETE JOB PROFILE
+# ========================================================
+@login_required
+@require_http_methods(["POST"])
+def delete_job_profile(request, job_id):
+    """
+    Hard-delete job profile. Juga hapus semua JobImage, Annotation, dll
+    yang berelasi (on_delete=CASCADE di model).
+    """
+    try:
+        job = JobProfile.objects.get(id=job_id)
+        job_title = job.title
+        job.delete()
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Job profile "{job_title}" berhasil dihapus'
+        })
+    except JobProfile.DoesNotExist:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Job profile tidak ditemukan'},
+            status=404
+        )
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'error', 'message': str(e)},
+            status=500
+        )
+    

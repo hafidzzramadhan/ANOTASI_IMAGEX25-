@@ -1,222 +1,416 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>TrisaktiAnnotate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Annotator — Anotasi Image{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        #appSidebar,
-        #mainContent {
-            transition: all 0.25s ease-in-out;
+        :root {
+            /* === ANNOTATOR ROLE — HITAM SOFT === */
+            --cu-side-grad-1: #c8a80cbc;
+            --cu-side-grad-2: #000000;
+            --cu-side-text:   rgba(255,255,255,0.85);
+            --cu-side-muted:  rgba(255,255,255,0.55);
+            --cu-side-icon:   rgba(255,255,255,0.75);
+
+            --cu-active-bg:   #FFFFFF;
+            --cu-active-text: #18181B;
+            --cu-active-icon: #3F3F46;
+
+            --cu-page-bg:     #F9FAFB;
+            --cu-text:        #111827;
+            --cu-text-muted:  #6B7280;
+            --cu-card-bg:     #FFFFFF;
+            --cu-border:      #E5E7EB;
+
+            --cu-curve-radius: 28px;
+
+            /* === Status pills (Modern Flat) — keep child templates working === */
+            --pa-emerald-50:#ECFDF5; --pa-emerald-700:#047857;
+            --pa-amber-50:#FFFBEB;   --pa-amber-700:#B45309;
+            --pa-red-50:#FEF2F2;     --pa-red-700:#B91C1C;
+            --pa-blue-50:#EFF6FF;    --pa-blue-700:#1D4ED8;
+            --pa-purple-50:#F5F3FF;  --pa-purple-600:#6D28D9;
+            --pa-slate-100:#F1F5F9;  --pa-slate-600:#475569;
         }
 
-        /* Desktop behavior */
-        @media (min-width: 768px) {
-            body.sidebar-collapsed #appSidebar {
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background: var(--cu-page-bg);
+            color: var(--cu-text);
+        }
+
+        /* =========================================================
+           SIDEBAR shell — soft black gradient
+           ========================================================= */
+        .cu-sidebar,
+        .pa-sidebar {
+            background: linear-gradient(180deg,
+                var(--cu-side-grad-1) 0%,
+                var(--cu-side-grad-2) 100%);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+        }
+
+        /* =========================================================
+           CURVED-OUTSIDE MENU ITEM
+           ========================================================= */
+        .cu-menu-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px 12px 22px;
+            color: var(--cu-side-text);
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+            margin: 4px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .cu-menu-item i { color: var(--cu-side-icon); width: 20px; text-align: center; }
+        .cu-menu-item:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+
+        /* === Active state === */
+        .cu-menu-item.active {
+    background: var(--cu-active-bg);
+    color: var(--cu-active-text);
+    font-weight: 600;
+    border-radius: 10px;
+    margin: 4px 8px;
+}
+.cu-menu-item.active i { color: var(--cu-active-icon); }
+
+        /* Submenu */
+        .cu-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin: 0 8px;
+        }
+        .cu-submenu.open { max-height: 500px; }
+
+        .cu-submenu-link {
+            display: block;
+            padding: 9px 14px 9px 46px;
+            color: var(--cu-side-muted);
+            font-size: 13px;
+            position: relative;
+            border-radius: 8px;
+            transition: all 0.18s;
+        }
+        .cu-submenu-link::before {
+            content: "";
+            position: absolute;
+            left: 26px;
+            top: 50%;
+            width: 6px;
+            height: 1px;
+            background: rgba(255,255,255,0.3);
+        }
+        .cu-submenu-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        .cu-submenu-link.active {
+            color: var(--cu-active-text);
+            background: var(--cu-active-bg);
+            font-weight: 600;
+        }
+        .cu-submenu-link.active::before {
+            background: var(--cu-active-icon);
+            width: 12px;
+        }
+
+        .cu-menu-item .chevron { transition: transform 0.25s ease; margin-left: auto; opacity: 0.6; }
+        .cu-menu-item.submenu-open .chevron { transform: rotate(90deg); }
+
+        .cu-section-label {
+            padding: 0 22px;
+            margin: 14px 0 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--cu-side-muted);
+        }
+
+        .cu-divider {
+            margin: 10px 16px;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent, rgba(255,255,255,0.15), transparent);
+        }
+
+        nav.cu-nav::-webkit-scrollbar { width: 4px; }
+        nav.cu-nav::-webkit-scrollbar-track { background: transparent; }
+        nav.cu-nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+
+        /* =========================================================
+           Cards / pills / buttons — Modern Flat (kept from prev redesign)
+           ========================================================= */
+        .pa-card, .cu-card {
+            background: var(--cu-card-bg);
+            border: 1px solid var(--cu-border);
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+            transition: all 0.18s;
+        }
+        .pa-card:hover, .cu-card:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            border-color: #71717A;
+        }
+
+        .pa-pill-mint    { background: var(--pa-emerald-50); color: var(--pa-emerald-700); }
+        .pa-pill-peach   { background: var(--pa-amber-50);   color: var(--pa-amber-700); }
+        .pa-pill-rose    { background: var(--pa-red-50);     color: var(--pa-red-700); }
+        .pa-pill-sky     { background: var(--pa-blue-50);    color: var(--pa-blue-700); }
+        .pa-pill-lav     { background: var(--pa-purple-50);  color: var(--pa-purple-600); }
+        .pa-pill-gray    { background: var(--pa-slate-100);  color: var(--pa-slate-600); }
+
+        .pa-btn-primary, .cu-btn-primary {
+            background: #18181B;
+            color: #fff;
+            font-weight: 600;
+            transition: background 0.18s;
+        }
+        .pa-btn-primary:hover, .cu-btn-primary:hover { background: #3F3F46; }
+
+        .pa-btn-soft {
+            background: #F4F4F5;
+            color: #18181B;
+            font-weight: 600;
+        }
+        .pa-btn-soft:hover { background: #E4E4E7; }
+
+        .pa-btn-outline {
+            background: transparent;
+            border: 1px solid var(--cu-border);
+            color: var(--cu-text);
+            font-weight: 500;
+        }
+        .pa-btn-outline:hover { border-color: #18181B; background: #F4F4F5; }
+
+        .pa-btn-danger {
+            background: var(--pa-red-700);
+            color: #fff;
+            font-weight: 600;
+        }
+        .pa-btn-danger:hover { background: #991B1B; }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .cu-sidebar, .pa-sidebar {
                 transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
             }
-
-            body.sidebar-collapsed #mainContent {
-                padding-left: 0;
+            .cu-sidebar.open, .pa-sidebar.open { transform: translateX(0); }
+            .cu-overlay, .pa-overlay {
+                opacity: 0; visibility: hidden;
+                transition: opacity 0.3s ease-in-out;
             }
+            .cu-overlay.show, .pa-overlay.show { opacity: 1; visibility: visible; }
+        }
+        .cu-content-area, .pa-content-area { transition: margin-left 0.3s ease-in-out; }
+        @media (min-width: 769px) {
+            .cu-content-area, .pa-content-area { margin-left: 17rem; }
+            body.sidebar-collapsed .cu-sidebar,
+            body.sidebar-collapsed .pa-sidebar { transform: translateX(-100%); }
+            body.sidebar-collapsed .cu-content-area,
+            body.sidebar-collapsed .pa-content-area { margin-left: 0; }
         }
 
-        /* Mobile behavior */
-        @media (max-width: 767px) {
-            #appSidebar {
-                transform: translateX(-100%);
-                width: 16rem;
-                z-index: 40;
-            }
-
-            body.sidebar-open #appSidebar {
-                transform: translateX(0);
-            }
-
-            #mainContent {
-                padding-left: 0;
-            }
-
-            body.sidebar-open #sidebarOverlay {
-                display: block;
-            }
-        }
+        {% block extra_css %}{% endblock %}
     </style>
 </head>
-<body class="bg-white font-sans">
-    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/40 z-30"></div>
+<body class="h-screen overflow-hidden">
 
-    <!-- Topbar Full Width -->
-    <div class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-6 z-20">
-        <button id="sidebarToggleBtn" type="button" class="mr-3 p-2 rounded-md border border-gray-200 hover:bg-gray-100" aria-label="Toggle sidebar">
-            <span class="material-icons text-gray-700">menu</span>
-        </button>
-        <!-- Logo and Brand -->
-        <div class="flex items-center gap-3">
-            <img src="{% static 'images/pin.png' %}" alt="Trisakti Logo" class="h-14 w-14">
-            <span class="text-lg font-bold text-gray-900">TrisaktiAnnotate</span>
+    <!-- Mobile overlay -->
+    <div id="cu-overlay" class="cu-overlay pa-overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"></div>
+
+    <!-- Mobile menu button -->
+    <button id="cu-mobile-btn"
+            class="fixed top-4 left-4 z-50 text-white p-3 rounded-xl shadow-lg
+                   bg-gradient-to-br from-zinc-700 to-zinc-900 hover:shadow-xl transition md:hidden">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ============================== SIDEBAR ============================== -->
+    <aside id="cu-sidebar"
+           class="cu-sidebar pa-sidebar fixed top-0 left-0 h-screen w-[17rem] flex flex-col
+                  z-50 md:z-30 overflow-hidden">
+
+        <!-- Brand header -->
+        <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+            <img src="{% static 'images/logo.png' %}"
+     alt="Logo" class="w-18 h-16 rounded-xl object-contain bg-white/20 p-1">
+            <div class="flex-1 min-w-0">
+                <div class="text-[15px] font-bold text-white truncate">Anotasi Image</div>
+                <div class="text-[11px] text-white/60 font-medium tracking-wide uppercase">Annotator Portal</div>
+            </div>
+            <button id="cu-close"
+                    class="md:hidden text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-    </div>
 
-    <!-- Sidebar -->
-    <div id="appSidebar" class="fixed top-16 left-0 bottom-0 w-44 bg-white border-r border-gray-200 flex flex-col justify-between z-10">
-        <!-- Sidebar Menu -->
-        <nav class="px-2 pt-4">
-            <ul>
-                <li>
-                    <a href="{% url 'annotator:annotate' %}" class="flex items-center gap-2 px-2 py-2 rounded {% if request.resolver_match.url_name == 'annotate' or request.resolver_match.url_name == 'home' %}bg-blue-50 text-blue-600 border-r-2 border-blue-600{% else %}hover:bg-gray-100 text-gray-900{% endif %} text-base">
-                        <span class="material-icons align-middle">crop_square</span>
-                        Annotate
-                    </a>
-                </li>
-            </ul>
+        <!-- Nav -->
+        <nav class="cu-nav flex-1 py-3 overflow-y-auto">
+
+            <div class="cu-section-label">Workspace</div>
+
+            <a href="{% url 'annotator:annotate' %}" class="cu-menu-item">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <button type="button" class="cu-menu-item cu-submenu-toggle w-full text-left" data-target="cu-sub-jobs">
+                <i class="fas fa-briefcase"></i>
+                <span>My Jobs</span>
+                <i class="fas fa-chevron-right chevron text-[10px]"></i>
+            </button>
+            <div id="cu-sub-jobs" class="cu-submenu">
+                <a href="{% url 'annotator:annotate' %}" class="cu-submenu-link">All Jobs</a>
+                <a href="{% url 'annotator:annotate' %}?status=in_progress" class="cu-submenu-link">In Progress</a>
+                <a href="{% url 'annotator:annotate' %}?status=in_rework" class="cu-submenu-link">In Rework</a>
+                <a href="{% url 'annotator:annotate' %}?status=completed" class="cu-submenu-link">Completed</a>
+            </div>
+
+            <a href="{% url 'annotator:notifications' %}" class="cu-menu-item">
+                <i class="fas fa-bell"></i>
+                <span class="flex-1">Notifications</span>
+                {% if unread_notifications_count and unread_notifications_count > 0 %}
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                        {{ unread_notifications_count }}
+                    </span>
+                {% endif %}
+            </a>
+
+            <div class="cu-divider"></div>
+
+            <div class="cu-section-label">Account</div>
+
+            <button type="button" class="cu-menu-item cu-submenu-toggle w-full text-left" data-target="cu-sub-profile">
+                <i class="fas fa-user-circle"></i>
+                <span>Profile</span>
+                <i class="fas fa-chevron-right chevron text-[10px]"></i>
+            </button>
+            <div id="cu-sub-profile" class="cu-submenu">
+                <a href="#" class="cu-submenu-link">My Profile</a>
+                <a href="#" class="cu-submenu-link">Preferences</a>
+            </div>
+
+            <a href="#" class="cu-menu-item">
+                <i class="fas fa-circle-question"></i>
+                <span>Help &amp; Tips</span>
+            </a>
         </nav>
-        <!-- Sidebar Bottom: Notifications & User -->
-        <div class="px-2 pb-3">
-            <button onclick="window.location.href='/annotator/notifications'" class="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md {% if request.resolver_match.url_name == 'notifications' %}bg-blue-50 text-blue-600 border-blue-300{% else %}bg-white hover:bg-gray-50{% endif %} mb-5 text-base">
-                <span class="material-icons">notifications</span>
-                Notifications
-            </button>
-            <!-- User Info - Clickable for Modal -->
-            <button id="userProfileBtn" class="w-full flex items-center gap-2 mb-3 hover:bg-gray-50 p-2 rounded-md transition-colors cursor-pointer">
-                <span class="material-icons text-2xl">account_circle</span>
-                <div class="flex-1 min-w-0 text-left">
-                    <div class="font-semibold text-sm uppercase truncate">{{ user.username|default:"GUEST" }}</div>
-                    <div class="text-xs text-gray-500 break-words leading-tight overflow-hidden">{{ user.email|default:"Not logged in" }}</div>
-                </div>
-            </button>
-        </div>
-    </div>
 
-    <!-- Main Content -->
-    <div id="mainContent" class="pt-16 pl-44 min-h-screen bg-white">
-        <div class="p-7 min-h-[calc(100vh-64px)]">
-            {% block content %}
-            <!-- Annotate page content goes here -->
-            {% endblock %}
-        </div>
-    </div>
-
-    <!-- User Profile Modal -->
-    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full">
-                <!-- Modal Header -->
-                <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center gap-3">
-                        <span class="material-icons text-3xl text-gray-600">account_circle</span>
-                        <div>
-                            <h3 class="font-semibold text-lg text-gray-900">{{ user.username|default:"Guest" }}</h3>
-                            <p class="text-sm text-gray-500 break-words">{{ user.email|default:"Not logged in" }}</p>
-                        </div>
-                    </div>
-                    {% if user.is_authenticated %}
-                    <div class="mt-3">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                            Annotator
-                        </span>
-                    </div>
-                    {% endif %}
+        <!-- User card + logout -->
+        <div class="px-3 py-3 border-t border-white/10">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 border border-white/10 mb-2">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800 flex items-center justify-center text-white text-xs font-bold uppercase">
+                    {{ user.username|slice:":2"|default:"AN" }}
                 </div>
-                
-                <!-- Modal Menu Items -->
-                <div class="p-4">
-                    <div class="space-y-2">
-                        <button class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                            <span class="material-icons text-gray-600">person</span>
-                            <span class="text-gray-700">User profile</span>
-                        </button>
-                        
-                        <button class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                            <span class="material-icons text-gray-600">swap_horiz</span>
-                            <span class="text-gray-700">Switch role</span>
-                            <span class="material-icons text-gray-400 ml-auto">chevron_right</span>
-                        </button>
-                        
-                        {% if user.is_authenticated %}
-                        <button onclick="window.location.href='/annotator/signout'" class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors text-red-600">
-                            <span class="material-icons text-red-600">logout</span>
-                            <span>Log out</span>
-                        </button>
-                        {% endif %}
-                    </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-[13px] font-semibold text-white truncate">{{ user.username|default:"Guest" }}</div>
+                    <div class="text-[11px] text-white/50 truncate">{{ user.email|default:"-" }}</div>
                 </div>
             </div>
+            <a href="{% url 'annotator:signout' %}" class="cu-menu-item" style="color:#FCA5A5;">
+                <i class="fas fa-sign-out-alt" style="color:#FCA5A5;"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ============================== MAIN ============================== -->
+    <div class="cu-content-area pa-content-area flex-1 h-screen overflow-auto">
+        <div class="p-4 md:p-6 lg:p-8 min-h-full">
+            {% block content %}{% endblock %}
         </div>
     </div>
 
-    <!-- JavaScript for Modal -->
+    <!-- ============================== JS ============================== -->
     <script>
-        const userProfileBtn = document.getElementById('userProfileBtn');
-        const userModal = document.getElementById('userModal');
-        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const body = document.body;
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar  = document.getElementById('cu-sidebar');
+            const overlay  = document.getElementById('cu-overlay');
+            const mobBtn   = document.getElementById('cu-mobile-btn');
+            const closeBtn = document.getElementById('cu-close');
 
-        function isMobile() {
-            return window.innerWidth < 768;
-        }
+            const isMobile = () => window.innerWidth < 769;
 
-        function closeMobileSidebar() {
-            body.classList.remove('sidebar-open');
-        }
-
-        function applyDesktopPreference() {
-            const saved = localStorage.getItem('annotatorSidebarCollapsed');
-            if (saved === 'true' && !isMobile()) {
-                body.classList.add('sidebar-collapsed');
-            } else {
-                body.classList.remove('sidebar-collapsed');
-            }
-        }
-
-        applyDesktopPreference();
-        
-        userProfileBtn.addEventListener('click', function() {
-            userModal.classList.remove('hidden');
-        });
-        
-        userModal.addEventListener('click', function(e) {
-            if (e.target === userModal) {
-                userModal.classList.add('hidden');
-            }
-        });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                userModal.classList.add('hidden');
+            mobBtn?.addEventListener('click', () => {
                 if (isMobile()) {
-                    closeMobileSidebar();
+                    sidebar.classList.add('open');
+                    overlay.classList.add('show');
+                } else {
+                    document.body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('annotatorSidebarCollapsed',
+                        document.body.classList.contains('sidebar-collapsed'));
                 }
+            });
+            const closeSidebar = () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            };
+            closeBtn?.addEventListener('click', closeSidebar);
+            overlay?.addEventListener('click', closeSidebar);
+            window.addEventListener('resize', () => { if (window.innerWidth >= 769) closeSidebar(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMobile()) closeSidebar(); });
+
+            if (!isMobile() && localStorage.getItem('annotatorSidebarCollapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
             }
-        });
 
-        sidebarToggleBtn.addEventListener('click', function() {
-            if (isMobile()) {
-                body.classList.toggle('sidebar-open');
-                return;
-            }
+            document.querySelectorAll('.cu-submenu-toggle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = document.getElementById(this.dataset.target);
+                    if (!target) return;
+                    const open = target.classList.toggle('open');
+                    this.classList.toggle('submenu-open', open);
+                    localStorage.setItem('cu-' + this.dataset.target, open ? '1' : '0');
+                });
+            });
 
-            body.classList.toggle('sidebar-collapsed');
-            localStorage.setItem(
-                'annotatorSidebarCollapsed',
-                body.classList.contains('sidebar-collapsed') ? 'true' : 'false'
-            );
-        });
+            document.querySelectorAll('.cu-submenu-toggle').forEach(btn => {
+                if (localStorage.getItem('cu-' + btn.dataset.target) === '1') {
+                    document.getElementById(btn.dataset.target)?.classList.add('open');
+                    btn.classList.add('submenu-open');
+                }
+            });
 
-        sidebarOverlay.addEventListener('click', closeMobileSidebar);
-
-        window.addEventListener('resize', function() {
-            if (!isMobile()) {
-                closeMobileSidebar();
-                applyDesktopPreference();
-            }
+            const path = window.location.pathname + window.location.search;
+            document.querySelectorAll('.cu-menu-item, .cu-submenu-link').forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                const matches = href.includes('?')
+                    ? path === href || path.startsWith(href)
+                    : window.location.pathname === href ||
+                      (href !== '/' && window.location.pathname.startsWith(href) && !path.includes('?status='));
+                if (matches) {
+                    link.classList.add('active');
+                    const parentSub = link.closest('.cu-submenu');
+                    if (parentSub) {
+                        parentSub.classList.add('open');
+                        document.querySelector(`[data-target="${parentSub.id}"]`)?.classList.add('submenu-open');
+                    }
+                }
+            });
         });
     </script>
 
-    <!-- Optional: Material Icons CDN for icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

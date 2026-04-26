@@ -1,67 +1,397 @@
-{% extends 'base_reviewer.html' %} {% load static %}
+{% extends 'base_reviewer.html' %}
+{% load static %}
 
-{% block sidebar %}
-<div class="ms-2 me-0 ps-0 pe-2 border-end border-dark d-flex flex-column" style="width: max-content;">
-    <div class="" >
-        <div class="mt-5 d-flex rounded align-items-center" style="width: 100%; height: 36px; background-color: rgba(7,38,144,0.2);">
-          <span class="ps-2">In Review</span>
-          <span class="ms-auto pe-2">{{ total_images }}</span>
+{% block title %}Review Task #{{ profile_id }} — Reviewer{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data>
+
+    <!-- ===========================================================
+         BREADCRUMB + HERO
+         =========================================================== -->
+    <div>
+        <a href="{% url 'reviewer:home_reviewer' %}"
+           class="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5">
+            <i class="fas fa-arrow-left text-[10px]"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-mono text-gray-400">JOB #{{ profile_id }}</span>
+                <span class="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                    In Review
+                </span>
+            </div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Review Task</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ total_images }} image{{ total_images|pluralize }} siap di-review. Klik gambar buat buka canvas, atau buat issue kalau ada masalah.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'reviewer:done_task' profile_id %}"
+               onclick="return confirm('Mark seluruh job sebagai SELESAI dan kirim ke Master?');"
+               class="cu-btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <i class="fas fa-circle-check"></i> Done All Task
+            </a>
+            <a href="{% url 'reviewer:drop_task' profile_id %}"
+               onclick="return confirm('Drop task ini? Status balik ke In Progress.');"
+               class="px-4 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50 transition flex items-center gap-2">
+                <i class="fas fa-rotate-left"></i> Drop Task
+            </a>
         </div>
     </div>
-    <div class="w-100 mt-auto">
-        <div class="d-flex align-items-center  pt-2 pb-2 ps-1 pe-2 " style="width: fit-content;">
-            <div class="d-flex justify-content-center align-items-center  " style="width: 35px; height: 35px;">
-                <img src="{{ nav_username_base64 }}" alt="user" style="width: 100%; height: auto;">
+
+    <!-- ===========================================================
+         IMAGE GRID
+         =========================================================== -->
+    <div class="cu-card p-4 md:p-6">
+
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-base md:text-lg font-semibold text-gray-900">Daftar Image</h2>
+                <p class="text-xs text-gray-500 mt-1">Per image lu bisa buat issue (kirim balik ke annotator) atau finish review.</p>
             </div>
-            <div class="flex-grow-1 ps-1">
-                <p class="mb-0 fw-bold">{{ username }}</p>
-                <div class="scroll-hidden">
-                    <p class="mb-0 text-muted" style="font-size: 12px; min-width: max-content;">{{ number_email }}</p>
+            <a href="{% url 'reviewer:isu_anotasi' 0 %}?profile_id={{ profile_id }}"
+               class="hidden md:inline-flex cu-btn-soft px-3.5 py-2 rounded-lg text-xs items-center gap-1.5">
+                <i class="fas fa-pen-ruler"></i> Buka Canvas Pertama
+            </a>
+        </div>
+
+        {% if data_job %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+
+            {% for item in data_job %}
+            <div class="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md hover:border-blue-300 transition group">
+
+                <!-- Thumbnail -->
+                <a href="{% url 'reviewer:isu_anotasi' forloop.counter0 %}?profile_id={{ profile_id }}"
+                   class="block relative aspect-video bg-gray-100 overflow-hidden">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.image.name }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-image text-3xl"></i>
+                        </div>
+                    {% endif %}
+
+                    <!-- Status badge overlay -->
+                    <div class="absolute top-2 left-2">
+                        {% if item.status == 'finished' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">Finished</span>
+                        {% elif item.status == 'in_review' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-sm">In Review</span>
+                        {% elif item.status == 'in_rework' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500 text-white shadow-sm">Rework</span>
+                        {% elif item.status == 'annotated' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-500 text-white shadow-sm">Annotated</span>
+                        {% elif item.status == 'in_progress' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">In Progress</span>
+                        {% elif item.status == 'issue' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">Issue</span>
+                        {% else %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-500 text-white shadow-sm">{{ item.status|title }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Hover overlay -->
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
+                        <span class="opacity-0 group-hover:opacity-100 transition bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5">
+                            <i class="fas fa-pen-ruler"></i> Buka Canvas
+                        </span>
+                    </div>
+                </a>
+
+                <!-- Body -->
+                <div class="p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-mono text-gray-400">#{{ item.id }}</div>
+                            <div class="text-sm font-semibold text-gray-900 truncate" title="{{ item.image.name }}">
+                                {% with jid=item.job.id|stringformat:"s" %}{{ item.image.name|cut:"job_images/"|cut:jid|cut:"/" }}{% endwith %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-2 text-[11px] text-gray-500">
+                        <span class="flex items-center gap-1" title="Annotator">
+                            <i class="fas fa-user-pen text-blue-400"></i>
+                            {{ item.annotator.username|default:"—" }}
+                        </span>
+                        {% if item.label_time %}
+                        <span class="flex items-center gap-1" title="Label time">
+                            <i class="fas fa-stopwatch text-blue-400"></i>
+                            {{ item.label_time }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-1.5 mt-3 pt-2 border-t border-gray-100">
+                        <button type="button"
+                                onclick="openIssueModal({{ item.id }}, '{{ item.image.name|escapejs }}')"
+                                class="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] border border-amber-200 text-amber-700 hover:bg-amber-50 transition flex items-center justify-center gap-1.5"
+                                title="Buat issue & kirim balik ke annotator">
+                            <i class="fas fa-flag"></i> Issue
+                        </button>
+                        {% if item.status != 'finished' %}
+                        <button type="button"
+                                onclick="finishReview({{ item.id }}, this)"
+                                class="flex-1 cu-btn-primary px-2.5 py-1.5 rounded-lg text-[11px] flex items-center justify-center gap-1.5"
+                                title="Mark as finished">
+                            <i class="fas fa-check"></i> Finish
+                        </button>
+                        {% else %}
+                        <span class="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] bg-emerald-50 text-emerald-700 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-circle-check"></i> Finished
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="text-center py-12 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4">
+                <i class="fas fa-image text-2xl text-blue-400"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900">Belum ada image di job ini</h3>
+            <p class="text-sm text-gray-500 mt-1">Master belum upload image ke job ini.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
 
-{% block content1 %}
-<div class="ps-2 pe-1">
-  <div>
-    <p class="ms-3 mt-2 mb-0" style="font-size: 30px">Notifications</p>
-  </div>
-  <div>
-    <p class="ms-3" style="font-size: 15px; font-weight: bolder">
-      In Review ({{ total_images }} Image)
-    </p>
-  </div>
-  <div class="border border-dark border-bottom-0 rounded overflow-hidden">
-    <table class="table mb-0 border-dark">
-      <thead>
-        <tr>
-          <th scope="col-3" class="text-center">Images ID</th>
-          <th scope="col-3" class="text-center">Workflow Status</th>
-          <th scope="col-3" class="text-center">Label Time</th>
-          <th scope="col-3" class="text-center">Review Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in data_job %}
-        <tr>
-          <td class="text-center">{{ item.image.name }}</td>
-          <td class="text-center">
-            <p class="btn btn-warning mb-0">{{ item.status|title }}</p>
-          </td>
-          <td class="text-center">{{ item.label_time|default:"0s" }}</td>
-          <td class="text-center">{{ item.review_time|default:"-" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="mt-3 me-3 text-end">
-    <a href="{% url 'reviewer:isu_anotasi' 0 %}?profile_id={{ profile_id }}" class="btn btn-primary text-white"style="width: 104px">Next</a
-    >
-  </div>
+<!-- ===========================================================
+     ISSUE MODAL — POST JSON to make_issue endpoint
+     =========================================================== -->
+<div id="issueModal"
+     class="fixed inset-0 z-[100] bg-black/50 hidden items-center justify-center p-4"
+     onclick="if(event.target === this) closeIssueModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+        <!-- Header -->
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Buat Issue</h3>
+                    <p class="text-xs text-gray-500" id="issueImageHint">—</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeIssueModal()" class="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="issueForm" class="p-5 space-y-4" onsubmit="submitIssue(event)">
+            <input type="hidden" id="issueImageId" value="">
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Judul Issue</label>
+                <input type="text" id="issueTitle"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                       placeholder="Contoh: Polygon kurang akurat di area kanan">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Deskripsi <span class="text-red-500">*</span>
+                </label>
+                <textarea id="issueNote" rows="4" required
+                          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none"
+                          placeholder="Jelasin apa yang harus diperbaiki annotator..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-2">Priority</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="priority" value="low" class="peer sr-only">
+                        <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-300 transition">
+                            Low
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="priority" value="medium" class="peer sr-only" checked>
+                        <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:border-amber-300 transition">
+                            Medium
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="priority" value="high" class="peer sr-only">
+                        <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 transition">
+                            High
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div id="issueError" class="hidden text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"></div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="closeIssueModal()"
+                        class="flex-1 px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                    Batal
+                </button>
+                <button type="submit" id="issueSubmitBtn"
+                        class="flex-1 cu-btn-primary px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i> Kirim ke Annotator
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
+<!-- Toast container -->
+<div id="toastBox" class="fixed bottom-6 right-6 z-[110] space-y-2"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // CSRF helper
+    // ============================================================
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+    const CSRF = getCookie('csrftoken') || '{{ csrf_token }}';
+
+    // ============================================================
+    // Toast
+    // ============================================================
+    function showToast(msg, type = 'success') {
+        const box = document.getElementById('toastBox');
+        const tone = type === 'error'
+            ? 'bg-red-600 text-white'
+            : type === 'warn'
+                ? 'bg-amber-500 text-white'
+                : 'bg-emerald-600 text-white';
+        const t = document.createElement('div');
+        t.className = `${tone} px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 transition transform translate-x-4 opacity-0`;
+        t.innerHTML = `<i class="fas fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> ${msg}`;
+        box.appendChild(t);
+        requestAnimationFrame(() => {
+            t.classList.remove('translate-x-4', 'opacity-0');
+        });
+        setTimeout(() => {
+            t.classList.add('translate-x-4', 'opacity-0');
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+
+    // ============================================================
+    // Issue modal
+    // ============================================================
+    function openIssueModal(imageId, imageName) {
+        document.getElementById('issueImageId').value = imageId;
+        document.getElementById('issueImageHint').textContent = `Image: ${imageName}`;
+        document.getElementById('issueTitle').value = `Issue on image ${imageId}`;
+        document.getElementById('issueNote').value = '';
+        document.getElementById('issueError').classList.add('hidden');
+        document.querySelector('input[name="priority"][value="medium"]').checked = true;
+        const m = document.getElementById('issueModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        setTimeout(() => document.getElementById('issueNote').focus(), 100);
+    }
+
+    function closeIssueModal() {
+        const m = document.getElementById('issueModal');
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeIssueModal();
+    });
+
+    async function submitIssue(e) {
+        e.preventDefault();
+        const imageId = document.getElementById('issueImageId').value;
+        const title = document.getElementById('issueTitle').value.trim();
+        const note = document.getElementById('issueNote').value.trim();
+        const priority = document.querySelector('input[name="priority"]:checked').value;
+        const errorBox = document.getElementById('issueError');
+        const btn = document.getElementById('issueSubmitBtn');
+
+        if (!note) {
+            errorBox.textContent = 'Deskripsi tidak boleh kosong.';
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+
+        try {
+            const res = await fetch(`/reviewer/make_issue/${imageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF,
+                },
+                body: JSON.stringify({ title, note, priority }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                closeIssueModal();
+                showToast('Issue dibuat — annotator sudah dinotifikasi.');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                errorBox.textContent = data.error || 'Gagal membuat issue.';
+                errorBox.classList.remove('hidden');
+            }
+        } catch (err) {
+            errorBox.textContent = 'Network error: ' + err.message;
+            errorBox.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim ke Annotator';
+        }
+    }
+
+    // ============================================================
+    // Finish review
+    // ============================================================
+    async function finishReview(imageId, btnEl) {
+        if (!confirm('Mark image ini sebagai FINISHED?')) return;
+
+        const original = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch(`/reviewer/finish_review/${imageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF,
+                },
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(data.job_completed ? 'Image finished — JOB SELESAI!' : 'Image finished.');
+                setTimeout(() => window.location.reload(), 700);
+            } else {
+                showToast(data.error || 'Gagal finish review', 'error');
+                btnEl.disabled = false;
+                btnEl.innerHTML = original;
+            }
+        } catch (err) {
+            showToast('Network error: ' + err.message, 'error');
+            btnEl.disabled = false;
+            btnEl.innerHTML = original;
+        }
+    }
+</script>
 {% endblock %}

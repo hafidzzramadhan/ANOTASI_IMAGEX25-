@@ -45,4 +45,8 @@ urlpatterns = [
     path('process_validations/<int:job_id>/', views.process_validations_view, name='process_validation_detail'),
     path('finish-image/', views.finish_image, name='finish_image'),
     path('finish-job/', views.finish_job, name='finish_job'),
+    
+    #edit&job
+    path('edit-job-profile/<int:job_id>/', views.edit_job_profile, name='edit_job_profile'),
+    path('delete-job-profile/<int:job_id>/', views.delete_job_profile, name='delete_job_profile'),
 ]

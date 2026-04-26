@@ -1,141 +1,266 @@
-{% extends 'base_reviewer.html' %} 
+{% extends 'base_reviewer.html' %}
+{% load static %}
 
+{% block title %}Issue Management — Reviewer{% endblock %}
 
-{% block sidebar %}
-<div class="ms-2 ps-0 pe-0 border-end border-dark d-flex flex-column" style="width: 200px;">
-    <div>
-        <a href="{% url 'reviewer:isu' %}" class="mt-2 w-100  border border-dark rounded text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
-            <img src="{{ nav_isu_base64 }}" alt="nav_isu" class="me-2">
-            Isu
+{% block content %}
+<div class="space-y-6">
+
+    <!-- ===========================================================
+         HERO
+         =========================================================== -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Issue Management</h1>
+            <p class="text-sm text-gray-500 mt-1">Semua issue yang lu kasih ke annotator. Pantau status reworkingnya di sini.</p>
+        </div>
+        <a href="{% url 'reviewer:home_reviewer' %}"
+           class="cu-btn-soft px-4 py-2 rounded-lg text-sm flex items-center gap-2 self-start md:self-auto">
+            <i class="fas fa-arrow-left text-xs"></i> Kembali ke Dashboard
         </a>
     </div>
-    <div>
-        <a href="" class="mt-2 pt-1 pb-1 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
-            <img src="{{ nav_proses_base64 }}" alt="nav_proses" class="me-2">
-            Proses Review
-        </a>
+
+    {% if messages %}
+    <div class="space-y-2">
+        {% for message in messages %}
+        <div class="cu-card p-3 flex items-center gap-3
+                    {% if message.tags == 'error' %}border-red-200 bg-red-50{% elif message.tags == 'warning' %}border-amber-200 bg-amber-50{% else %}border-emerald-200 bg-emerald-50{% endif %}">
+            <i class="fas fa-circle-info {% if message.tags == 'error' %}text-red-500{% elif message.tags == 'warning' %}text-amber-500{% else %}text-emerald-500{% endif %}"></i>
+            <span class="text-sm">{{ message }}</span>
+        </div>
+        {% endfor %}
     </div>
-    <div class="" >
-        <a href="{% url 'reviewer:home_reviewer' %}" class="mt-2 mb-2 pt-1 pb-1 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
-            <img src="{{ nav_notif_base64 }}" alt="nav_notif" class="me-2">
-            Notifications
-        </a>
-    </div>
-    <div class="w-100 mt-auto">
-        <div class="d-flex align-items-center  pt-2 pb-2 ps-1 pe-2 " style="width: fit-content;">
-            <div class="d-flex justify-content-center align-items-center " style="width: 35px; height: 35px;">
-                <img src="{{ nav_username_base64 }}" alt="user" style="width: 100%; height: auto;">
-            </div>
-            <div class="flex-grow-1 ps-1">
-                <p class="mb-0 fw-bold">{{ username }}</p>
-                <div class="scroll-hidden">
-                    <p class="mb-0 text-muted" style="font-size: 12px; min-width: max-content;">{{ number_email }}</p>
+    {% endif %}
+
+    <!-- ===========================================================
+         KPI CARDS — issue counts
+         =========================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+
+        <div class="cu-card p-4 md:p-5">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-blue-50 text-blue-600">
+                    <i class="fas fa-list"></i>
                 </div>
             </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Issue</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ issue_counts.total|default:issues|length }}</div>
+            </div>
         </div>
+
+        <div class="cu-card p-4 md:p-5">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-amber-50 text-amber-600">
+                    <i class="fas fa-circle-dot"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Open</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ issue_counts.open|default:0 }}</div>
+            </div>
+        </div>
+
+        <div class="cu-card p-4 md:p-5">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                    <i class="fas fa-rotate"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Reworking</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ issue_counts.reworking|default:0 }}</div>
+            </div>
+        </div>
+
+        <div class="cu-card p-4 md:p-5">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Closed</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ issue_counts.closed|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===========================================================
+         FILTER BAR
+         =========================================================== -->
+    <div class="cu-card p-3 md:p-4">
+        <div class="flex flex-col md:flex-row gap-2 md:items-center">
+
+            <div class="relative flex-1">
+                <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text"
+                       id="issueSearch"
+                       placeholder="Cari issue, judul, atau annotator..."
+                       class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+            </div>
+
+            <div class="flex gap-2">
+                <select id="filterStatus"
+                        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    <option value="all">Semua Status</option>
+                    <option value="open">Open</option>
+                    <option value="eskalasi">Eskalasi</option>
+                    <option value="reworking">Reworking</option>
+                    <option value="closed">Closed</option>
+                </select>
+
+                <select id="filterPriority"
+                        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    <option value="all">Semua Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===========================================================
+         ISSUE LIST
+         =========================================================== -->
+    <div class="cu-card p-4 md:p-6">
+        {% if issues %}
+        <div id="issueList" class="space-y-3">
+            {% for issue in issues %}
+            <div class="issue-row border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition bg-white"
+                 data-status="{{ issue.status }}"
+                 data-priority="{{ issue.priority }}"
+                 data-search="{{ issue.title|lower }} {{ issue.assigned_to.username|lower }} {{ issue.job.title|lower }} {{ issue.description|lower|truncatechars:100 }}">
+
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="text-xs font-mono text-gray-400">#{{ issue.id }}</span>
+
+                            {% if issue.priority == 'high' %}
+                                <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-100">High</span>
+                            {% elif issue.priority == 'medium' %}
+                                <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Medium</span>
+                            {% else %}
+                                <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Low</span>
+                            {% endif %}
+
+                            {% if issue.status == 'open' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1">
+                                    <i class="fas fa-circle-dot text-[8px]"></i> Open
+                                </span>
+                            {% elif issue.status == 'eskalasi' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100 flex items-center gap-1">
+                                    <i class="fas fa-arrow-up text-[8px]"></i> Eskalasi
+                                </span>
+                            {% elif issue.status == 'reworking' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1">
+                                    <i class="fas fa-rotate text-[8px]"></i> Reworking
+                                </span>
+                            {% elif issue.status == 'closed' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
+                                    <i class="fas fa-circle-check text-[8px]"></i> Closed
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <h3 class="text-base font-bold text-gray-900">{{ issue.title }}</h3>
+
+                        <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ issue.description|truncatechars:160 }}</p>
+
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fas fa-folder text-blue-400"></i>
+                                {{ issue.job.title|truncatechars:30 }}
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <i class="fas fa-user-pen text-blue-400"></i>
+                                {{ issue.assigned_to.username }}
+                            </span>
+                            {% if issue.image %}
+                            <span class="flex items-center gap-1.5">
+                                <i class="fas fa-image text-blue-400"></i>
+                                Image #{{ issue.image.id }}
+                            </span>
+                            {% endif %}
+                            <span class="flex items-center gap-1.5">
+                                <i class="fas fa-clock text-blue-400"></i>
+                                {{ issue.created_at|date:"d M Y H:i" }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex md:flex-col gap-2 md:min-w-[140px]">
+                        {% if issue.image %}
+                        <a href="{% url 'reviewer:isu_image' %}?image_id={{ issue.image.id }}"
+                           class="cu-btn-soft px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1.5">
+                            <i class="fas fa-eye"></i> Lihat Image
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'reviewer:task_review' issue.job.id %}"
+                           class="px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1.5">
+                            <i class="fas fa-folder-open"></i> Buka Job
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="emptyFiltered" class="hidden text-center py-12 px-4">
+            <i class="fas fa-filter-circle-xmark text-3xl text-gray-300 mb-3"></i>
+            <h3 class="text-base font-semibold text-gray-900">Tidak ada issue cocok</h3>
+            <p class="text-sm text-gray-500 mt-1">Coba ubah filter atau search query.</p>
+        </div>
+
+        {% else %}
+        <div class="text-center py-12 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-4">
+                <i class="fas fa-circle-check text-2xl text-emerald-500"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900">Belum ada issue</h3>
+            <p class="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+                Lu belum bikin issue apapun. Buka task review dan klik "Issue" di image yang bermasalah buat kirim feedback ke annotator.
+            </p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
-{% block content1 %}
-<div class="col ps-2 pe-1" style="background-color: #faeeee">
-  <div class="ms-3">
-    <div
-      class="btn border border-dark text-center"
-      style="background-color: #ffffff; width: 100%"
-    >
-      <p class="mb-0">Isu_Data Pekerjaan</p>
-    </div>
-    <div class="d-flex mt-2">
-      <div class="d-flex align-item-center bg-light border border-dark rounded">
-        <span class="btn border border-end-0 p-1 rounded-start">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M3 17.962v-1h9.558v1zm0-4.789v-1h4.462v1zm0-4.788v-1h4.462v1zM20.292 18l-3.888-3.83q-.543.405-1.178.627q-.636.222-1.303.222q-1.684 0-2.87-1.164q-1.188-1.164-1.188-2.845t1.188-2.845Q12.242 7 13.928 7t2.869 1.165T17.981 11q0 .667-.222 1.303q-.223.636-.648 1.159L21 17.292zm-6.369-3.98q1.274 0 2.166-.876q.892-.875.892-2.135t-.892-2.134T13.923 8t-2.166.875t-.892 2.135t.892 2.134t2.166.875"/>
-          </svg>
-        </span>
-        <input type="search" class="border border-start-0 rounded-end" placeholder="Search Data" style="width: 100%;">
-      </div>
-      <div class="ms-2"></div>
-      <div class="d-flex align-item-center btn-group dropend">
-        <button
-          type="button"
-          class="btn border border-dark rounded"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          style="background-color: #ffffff"
-        >
-          <span>
-            Status
-          </span>
-          <span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="23" height="17" viewBox="0 0 20 20">
-              <path fill="currentColor" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z"/>
-            </svg>
-          </span>
-        </button>
-        <ul class="dropdown-menu w-100" style="min-width: 100px">
-          <li><a class="dropdown-item" href="#">Done</a></li>
-          <li><a class="dropdown-item" href="#">Drop</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="mt-2">
-      <div class="border border-dark rounded">
-        <table class="table mb-0 rounded" style="background-color: #ffffff">
-          <thead>
-            <tr>
-              <th scope="col" class="text-center">ID Data</th>
-              <th scope="col" class="text-center">User</th>
-              <th scope="col" class="text-center">ISU</th>
-              <th scope="col" class="text-center">Proses</th>
-              <th scope="col" class="text-center">Tanggal</th>
-              <th scope="col" class="text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="height: 60px;">
-              <td scope="col">
-                <div class="d-flex align-items-center" style="height: 100%;">
-                  <span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M20 17V7c0-2.168-3.663-4-8-4S4 4.832 4 7v10c0 2.168 3.663 4 8 4s8-1.832 8-4M12 5c3.691 0 5.931 1.507 6 1.994C17.931 7.493 15.691 9 12 9S6.069 7.493 6 7.006C6.069 6.507 8.309 5 12 5M6 9.607C7.479 10.454 9.637 11 12 11s4.521-.546 6-1.393v2.387c-.069.499-2.309 2.006-6 2.006s-5.931-1.507-6-2zM6 17v-2.393C7.479 15.454 9.637 16 12 16s4.521-.546 6-1.393v2.387c-.069.499-2.309 2.006-6 2.006s-5.931-1.507-6-2"/>
-                  </svg>
-                </span>
-                <span>Data_1</span>
-                </div>
-              </td>
-              <td scope="col" class="" style="height: 60px;">
-                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                  <span>Accounts@gmail.com</span>
-                </div>
-              </td>
-              <td scope="col" class="" style="height: 60px;">
-                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                  <span>4 Isu</span>
-                </div>
-              </td>
-              <td scope="col" class="" style="height: 60px;">
-                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                  <a href="{% url 'reviewer:isu_image' %}">Riview</a>
-                </div>
-              </td>
-              <td scope="col" class="" style="height: 60px;">
-                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                  <span>16/03/2025</span>
-                </div>
-              </td>
-              <td scope="col" class="" style="height: 60px;">
-                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                  <a href="">Drop</a>
-                  <span>/</span>
-                  <a href="">Done</a>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+{% block extra_js %}
+<script>
+    // ============================================================
+    // Filter + search
+    // ============================================================
+    const search = document.getElementById('issueSearch');
+    const fStatus = document.getElementById('filterStatus');
+    const fPrio = document.getElementById('filterPriority');
+    const rows = document.querySelectorAll('.issue-row');
+    const empty = document.getElementById('emptyFiltered');
+
+    function applyFilter() {
+        if (!rows.length) return;
+        const q = (search?.value || '').trim().toLowerCase();
+        const s = fStatus?.value || 'all';
+        const p = fPrio?.value || 'all';
+
+        let shown = 0;
+        rows.forEach(r => {
+            const matchQ = !q || (r.dataset.search || '').includes(q);
+            const matchS = s === 'all' || r.dataset.status === s;
+            const matchP = p === 'all' || r.dataset.priority === p;
+            const ok = matchQ && matchS && matchP;
+            r.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+
+        if (empty) empty.classList.toggle('hidden', shown !== 0);
+    }
+
+    [search, fStatus, fPrio].forEach(el => el?.addEventListener('input', applyFilter));
+    [search, fStatus, fPrio].forEach(el => el?.addEventListener('change', applyFilter));
+</script>
 {% endblock %}

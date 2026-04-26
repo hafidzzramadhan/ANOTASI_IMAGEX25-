@@ -2,368 +2,633 @@
 {% load static %}
 
 {% block content %}
-<!-- Mobile/Tablet First Layout -->
+
 <div class="space-y-6">
-    <!-- Status Section -->
-    <div class="bg-white shadow-lg p-4 md:p-6 rounded-lg">
-        <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6">Status</h2>
-        <div class="space-y-2 md:space-y-4 max-h-60 md:max-h-96 overflow-y-auto">
-            {% for user_status in status_list %}
-            <div class="flex items-center justify-between py-2 text-sm md:text-base lg:text-xl">
-                <span class="truncate mr-2">{{ user_status.name }}</span>
-                <span class="px-2 md:px-3 py-1 rounded-full text-xs md:text-sm {{ user_status.status_class }} whitespace-nowrap">{{ user_status.status }}</span>
-            </div>
-            {% endfor %}
+
+    <!-- ====================================================
+         HEADER + QUICK ACTIONS
+         ==================================================== -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Ringkasan project anotasi image hari ini</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'master:job_settings' %}"
+               class="bg-[#4527A0] hover:bg-[#311B92] text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Bikin Job Baru
+            </a>
+            <a href="{% url 'master:assign_roles' %}"
+               class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                Assign Roles
+            </a>
         </div>
     </div>
 
-    <!-- Assignment Stats Card -->
-    <div class="bg-gray-100 p-4 md:p-6 lg:p-10 rounded-lg">
-        <h2 class="text-2xl md:text-3xl lg:text-5xl font-bold mb-4 md:mb-6 lg:mb-8">Entire Assignment</h2>
-        
-        <!-- Mobile Layout (Stacked) -->
-        <div class="lg:hidden space-y-6">
-            <div class="text-center">
-                <div class="text-4xl md:text-5xl font-bold text-[#4527A0]">{{ assignment_stats.total|floatformat:0 }}</div>
+    <!-- ====================================================
+         KPI CARDS — 5 stats clickable
+         ==================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+
+        <!-- Total Images -->
+        <a href="{% url 'master:process_validations' %}"
+           class="group bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition cursor-pointer">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-blue-50 text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
             </div>
-            
-            <div class="w-full h-48 md:h-64">
-                <canvas id="assignmentChart" class="w-full h-full"></canvas>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Images</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ assignment_stats.total|default:0 }}</div>
             </div>
-            
-            <div class="grid grid-cols-2 gap-3 md:gap-4 text-sm md:text-base">
-                <div class="flex items-center">
-                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full bg-[#4B5563] mr-2 md:mr-3"></div>
-                    <span class="truncate">Assign ({{ assignment_stats.assign }})</span>
+        </a>
+
+        <!-- Unannotated -->
+        <a href="{% url 'master:process_validations' %}"
+           class="group bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-300 transition cursor-pointer">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-gray-100 text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full bg-[#3B82F6] mr-2 md:mr-3"></div>
-                    <span class="truncate">Progress ({{ assignment_stats.progress }})</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Belum Di-anotasi</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ unannotated_count|default:0 }}</div>
+            </div>
+        </a>
+
+        <!-- In Progress -->
+        <a href="{% url 'master:process_validations' %}"
+           class="group bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-200 transition cursor-pointer">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full bg-[#4F46E5] mr-2 md:mr-3"></div>
-                    <span class="truncate">Reviewing ({{ assignment_stats.reviewing }})</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Sedang Berjalan</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ in_progress_count|default:0 }}</div>
+            </div>
+        </a>
+
+        <!-- Issues -->
+        <a href="{% url 'master:issue_solving' %}"
+           class="group bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-red-200 transition cursor-pointer relative">
+            {% if issues_count|default:0 > 0 %}
+            <span class="absolute top-2 right-2 flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            {% endif %}
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-red-50 text-red-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full bg-[#7C3AED] mr-2 md:mr-3"></div>
-                    <span class="truncate">Finished ({{ assignment_stats.finished }})</span>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-red-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Issue Butuh Review</div>
+                <div class="text-2xl md:text-3xl font-bold {% if issues_count|default:0 > 0 %}text-red-600{% else %}text-gray-900{% endif %} mt-1">
+                    {{ issues_count|default:0 }}
                 </div>
             </div>
-        </div>
-        
-        <!-- Desktop Layout (Horizontal) -->
-        <div class="hidden lg:flex lg:space-x-12 lg:items-center">
-            <div class="text-6xl font-bold text-[#4527A0]">{{ assignment_stats.total|floatformat:0 }}</div>
-            <div class="flex-1 relative" style="height: 200px; min-height: 200px;">
-                <canvas id="assignmentChartDesktop" class="w-full h-full"></canvas>
+        </a>
+
+        <!-- Finished -->
+        <a href="{% url 'master:process_validations' %}"
+           class="group bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition cursor-pointer">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-green-50 text-green-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-green-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
             </div>
-            <div class="flex flex-col justify-center text-xl space-y-4">
-                <div class="flex items-center">
-                    <div class="w-4 h-4 rounded-full bg-[#4B5563] mr-3"></div>
-                    <span>Assign ({{ assignment_stats.assign }})</span>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Selesai</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ assignment_stats.finished|default:0 }}</div>
+                {% if assignment_stats.total|default:0 > 0 %}
+                <div class="text-xs text-green-600 mt-1">
+                    {% widthratio assignment_stats.finished|default:0 assignment_stats.total 100 %}% complete
                 </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 rounded-full bg-[#3B82F6] mr-3"></div>
-                    <span>Progress ({{ assignment_stats.progress }})</span>
-                </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 rounded-full bg-[#4F46E5] mr-3"></div>
-                    <span>Reviewing ({{ assignment_stats.reviewing }})</span>
-                </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 rounded-full bg-[#7C3AED] mr-3"></div>
-                    <span>Finished ({{ assignment_stats.finished }})</span>
-                </div>
+                {% endif %}
             </div>
-        </div>
+        </a>
     </div>
 
-    <!-- Dataset Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="p-4 md:p-6">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
-                <h2 class="text-lg md:text-xl font-semibold">Dataset</h2>
-                <button onclick="openAddDatasetModal()" class="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-600 text-sm md:text-base">
-                    Add New Dataset
-                </button>
+    <!-- ====================================================
+         MAIN: PIPELINE + TEAM STATUS
+         ==================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+
+        <!-- PIPELINE -->
+        <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg md:text-xl font-semibold">Pipeline Annotation</h2>
+                    <p class="text-xs text-gray-500 mt-1">Alur image melalui setiap tahap</p>
+                </div>
+                <a href="{% url 'master:process_validations' %}"
+                   class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                    Lihat Detail →
+                </a>
             </div>
-            
-            <!-- Mobile Card Layout -->
-            <div class="block md:hidden space-y-3">
-                {% for dataset in datasets %}
-                <div class="bg-gray-50 p-4 rounded-lg border">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-semibold text-sm truncate mr-2">{{ dataset.name }}</h3>
-                        <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
-                            <button @click="open = !open" class="text-gray-600 hover:text-gray-900 p-1">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div x-show="open" 
-                                 @click.away="open = false"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="opacity-0 scale-90"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-75" 
-                                 x-transition:leave-start="opacity-100 scale-100"
-                                 x-transition:leave-end="opacity-0 scale-90"
-                                 class="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg z-50"
-                                 style="display: none;">
-                                <button @click="open = false" 
-                                        onclick="openEditDatasetModal({{ dataset.id }}, '{{ dataset.name }}', {{ dataset.labeler.id }})" 
-                                        class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
-                                    Edit
-                                </button>
-                                <button @click="open = false"
-                                        onclick="deleteDataset({{ dataset.id }})" 
-                                        class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 text-sm">
-                                    Delete
-                                </button>
+
+            <div class="space-y-4">
+                <div class="space-y-3">
+                    <!-- Unannotated -->
+                    <div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                <span class="font-medium text-gray-700">Unannotated</span>
                             </div>
+                            <span class="text-gray-600 font-semibold">{{ unannotated_count|default:0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                            <div class="bg-gray-400 h-full rounded-full transition-all duration-500"
+                                 style="width: {% widthratio unannotated_count|default:0 assignment_stats.total 100 %}%"></div>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="text-xs text-gray-600 space-y-1">
-                        <div><span class="font-medium">Labeler:</span> {{ dataset.labeler }}</div>
-                        <div><span class="font-medium">Date:</span> {{ dataset.date }}</div>
-                        <div><span class="font-medium">Data:</span> {{ dataset.count }}</div>
+
+                    <!-- In Review -->
+                    <div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span class="font-medium text-gray-700">In Review</span>
+                            </div>
+                            <span class="text-gray-600 font-semibold">{{ assignment_stats.progress|default:0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                            <div class="bg-blue-500 h-full rounded-full transition-all duration-500"
+                                 style="width: {% widthratio assignment_stats.progress|default:0 assignment_stats.total 100 %}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- In Rework -->
+                    <div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                <span class="font-medium text-gray-700">In Rework</span>
+                            </div>
+                            <span class="text-gray-600 font-semibold">{{ assignment_stats.reviewing|default:0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                            <div class="bg-orange-500 h-full rounded-full transition-all duration-500"
+                                 style="width: {% widthratio assignment_stats.reviewing|default:0 assignment_stats.total 100 %}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Issues -->
+                    <div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="font-medium text-gray-700">Issues</span>
+                            </div>
+                            <span class="text-red-600 font-semibold">{{ issues_count|default:0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                            <div class="bg-red-500 h-full rounded-full transition-all duration-500"
+                                 style="width: {% widthratio issues_count|default:0 assignment_stats.total 100 %}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Finished -->
+                    <div>
+                        <div class="flex justify-between items-center text-sm mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="font-medium text-gray-700">Finished</span>
+                            </div>
+                            <span class="text-green-600 font-semibold">{{ assignment_stats.finished|default:0 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                            <div class="bg-green-500 h-full rounded-full transition-all duration-500"
+                                 style="width: {% widthratio assignment_stats.finished|default:0 assignment_stats.total 100 %}%"></div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
+
+                <div class="pt-4 border-t border-gray-100">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Total Completion</span>
+                        <span class="font-semibold text-gray-900">
+                            {% if assignment_stats.total|default:0 > 0 %}
+                                {% widthratio assignment_stats.finished|default:0 assignment_stats.total 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Desktop Table Layout -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="text-left py-3 text-sm lg:text-base">Name Dataset</th>
-                            <th class="text-left py-3 text-sm lg:text-base">Labeler</th>
-                            <th class="text-left py-3 text-sm lg:text-base">Date</th>
-                            <th class="text-left py-3 text-sm lg:text-base">Data</th>
-                            <th class="text-left py-3 text-sm lg:text-base">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for dataset in datasets %}
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 text-sm lg:text-base">{{ dataset.name }}</td>
-                            <td class="text-sm lg:text-base">{{ dataset.labeler }}</td>
-                            <td class="text-sm lg:text-base">{{ dataset.date }}</td>
-                            <td class="text-sm lg:text-base">{{ dataset.count }}</td>
-                            <td>
-                                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
-                                    <button @click="open = !open" class="text-gray-600 hover:text-gray-900">•••</button>
-                                    <div x-show="open" 
-                                         @click.away="open = false"
-                                         x-transition:enter="transition ease-out duration-100"
-                                         x-transition:enter-start="opacity-0 scale-90"
-                                         x-transition:enter-end="opacity-100 scale-100"
-                                         x-transition:leave="transition ease-in duration-75" 
-                                         x-transition:leave-start="opacity-100 scale-100"
-                                         x-transition:leave-end="opacity-0 scale-90"
-                                         class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50"
-                                         style="display: none;">
-                                        <button @click="open = false" 
-                                                onclick="openEditDatasetModal({{ dataset.id }}, '{{ dataset.name }}', {{ dataset.labeler.id }})" 
-                                                class="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                                            Edit
-                                        </button>
-                                        <button @click="open = false"
-                                                onclick="deleteDataset({{ dataset.id }})" 
-                                                class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        </div>
+
+        <!-- TEAM STATUS -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg md:text-xl font-semibold">Team Status</h2>
+                    <p class="text-xs text-gray-500 mt-1">{{ status_list|length }} anggota aktif</p>
+                </div>
+                <a href="{% url 'master:assign_roles' %}"
+                   class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                    Manage →
+                </a>
+            </div>
+
+            <div class="mb-3">
+                <input type="text" id="teamSearch"
+                       placeholder="Cari anggota..."
+                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="space-y-2 max-h-80 overflow-y-auto pr-1" id="teamList">
+                {% for user_status in status_list %}
+                <div class="team-member flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition"
+                     data-name="{{ user_status.name|lower }}">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                            {{ user_status.name|slice:":1"|upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ user_status.name }}</div>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-xs {{ user_status.status_class }} whitespace-nowrap flex-shrink-0 ml-2">
+                        {{ user_status.status }}
+                    </span>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-sm text-gray-500">
+                    Belum ada anggota team
+                </div>
+                {% endfor %}
+                <div id="teamNoResults" class="hidden text-center py-4 text-sm text-gray-500">
+                    Gak ketemu
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- ====================================================
+         DATASET SECTION (collapsible)
+         ==================================================== -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <button type="button" onclick="toggleDatasetSection()"
+                class="w-full flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-purple-50 text-purple-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                    </svg>
+                </div>
+                <div class="text-left">
+                    <h2 class="text-base md:text-lg font-semibold">Dataset Files</h2>
+                    <p class="text-xs text-gray-500">{{ datasets|length }} file tersimpan</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline-block text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
+                    ⚠ Belum terhubung ke Job
+                </span>
+                <svg id="datasetChevron" class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </div>
+        </button>
+
+        <div id="datasetContent" class="hidden border-t border-gray-100">
+            <div class="p-4 md:p-5">
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs md:text-sm p-3 rounded-lg mb-4 flex items-start gap-2">
+                    <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>
+                        <strong>Note:</strong> Dataset di section ini belum terhubung ke Job Profile. File cuma tersimpan di server. Untuk anotasi, upload image langsung via <a href="{% url 'master:job_settings' %}" class="underline font-medium">Job Settings → Add Image</a>.
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm text-gray-600">Storage Files</span>
+                    <button onclick="openAddDatasetModal()"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add File
+                    </button>
+                </div>
+
+                {% if datasets %}
+                <div class="space-y-2">
+                    {% for dataset in datasets %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <div class="p-2 rounded bg-white text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-sm font-medium text-gray-900 truncate">{{ dataset.name }}</div>
+                                <div class="text-xs text-gray-500 flex flex-wrap gap-x-3 mt-0.5">
+                                    <span>{{ dataset.labeler }}</span>
+                                    <span>{{ dataset.date_created|date:"d M Y" }}</span>
+                                    <span>{{ dataset.count }} items</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-1 flex-shrink-0">
+                            <button onclick="openEditDatasetModal({{ dataset.id }}, '{{ dataset.name }}', {{ dataset.labeler.id }}, '{% url 'master:edit_dataset' dataset.id %}')"
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                    title="Edit">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteDataset('{% url 'master:delete_dataset' dataset.id %}')"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded transition"
+                                    title="Delete">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-sm text-gray-500">
+                    Belum ada file di storage
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Add Dataset Modal -->
-<div id="addDatasetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg">
-        <h2 class="text-xl md:text-2xl font-bold mb-4">Add New Dataset</h2>
-        <form id="addDatasetForm" class="space-y-4">
+<div id="addDatasetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Add Dataset File</h2>
+        <form id="addDatasetForm" method="POST" action="{% url 'master:add_dataset' %}" enctype="multipart/form-data" class="space-y-4">
             {% csrf_token %}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Dataset Name</label>
-                <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm md:text-base">
+                <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Labeler</label>
-                <select name="labeler" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm md:text-base">
-                    <option value="">Select Labeler</option>
+                <select name="labeler" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="">Pilih Labeler</option>
                     {% for user in users %}
-                        <option value="{{ user.id }}">{{ user.username }}</option>
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
                     {% endfor %}
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700">Upload Dataset</label>
-                <input type="file" name="dataset_file" required class="mt-1 block w-full text-sm md:text-base" accept=".zip,.rar,.7zip">
-                <p class="text-xs md:text-sm text-gray-500">Allowed formats: .zip, .rar, .7zip</p>
+                <label class="block text-sm font-medium text-gray-700">Upload File</label>
+                <input type="file" name="dataset_file" required class="mt-1 block w-full text-sm" accept=".zip,.rar,.7zip">
+                <p class="text-xs text-gray-500 mt-1">Format: .zip, .rar, .7zip</p>
             </div>
-            <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
-                <button type="button" onclick="closeAddDatasetModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm md:text-base">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm md:text-base">
-                    Add Dataset
-                </button>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeAddDatasetModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">Add</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Edit Dataset Modal -->
-<div id="editDatasetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg">
-        <h2 class="text-xl md:text-2xl font-bold mb-4">Edit Dataset</h2>
-        <form id="editDatasetForm" class="space-y-4">
+<div id="editDatasetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Edit Dataset</h2>
+        <form id="editDatasetForm" method="POST" enctype="multipart/form-data" class="space-y-4">
             {% csrf_token %}
             <input type="hidden" id="editDatasetId" name="dataset_id">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Dataset Name</label>
-                <input type="text" id="editDatasetName" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm md:text-base">
+                <input type="text" id="editDatasetName" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Labeler</label>
-                <select id="editDatasetLabeler" name="labeler" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm md:text-base">
+                <select id="editDatasetLabeler" name="labeler" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     {% for user in users %}
                         <option value="{{ user.id }}">{{ user.username }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700">Upload New Dataset (Optional)</label>
-                <input type="file" name="dataset_file" class="mt-1 block w-full text-sm md:text-base" accept=".zip,.rar,.7zip">
+                <label class="block text-sm font-medium text-gray-700">Upload New File (Optional)</label>
+                <input type="file" name="dataset_file" class="mt-1 block w-full text-sm" accept=".zip,.rar,.7zip">
             </div>
-            <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
-                <button type="button" onclick="closeEditDatasetModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm md:text-base">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm md:text-base">
-                    Save Changes
-                </button>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeEditDatasetModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">Save</button>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+    #addDatasetModal.flex, #editDatasetModal.flex { display: flex !important; }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get real data values
-        const chartData = [
-            {{ assignment_stats.assign }}, 
-            {{ assignment_stats.progress }}, 
-            {{ assignment_stats.reviewing }}, 
-            {{ assignment_stats.finished }}
-        ];
-        
-        // Calculate max value for better scaling
-        const maxValue = Math.max(...chartData);
-        const suggestedMax = maxValue === 0 ? 10 : Math.ceil(maxValue * 1.2);
-        
-        const chartConfig = {
-            type: 'bar',
-            data: {
-                labels: ['Assign', 'Progress', 'Reviewing', 'Finished'],
-                datasets: [{
-                    data: chartData,
-                    backgroundColor: ['#4B5563', '#3B82F6', '#4F46E5', '#7C3AED'],
-                    borderRadius: 4,
-                    barThickness: window.innerWidth < 1024 ? 30 : 40
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y + ' images';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        display: false,
-                        beginAtZero: true,
-                        suggestedMax: suggestedMax
-                    },
-                    x: {
-                        display: false
-                    }
-                },
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
+document.addEventListener('DOMContentLoaded', function() {
+    // TEAM SEARCH
+    const search = document.getElementById('teamSearch');
+    const members = document.querySelectorAll('.team-member');
+    const noResults = document.getElementById('teamNoResults');
+
+    if (search) {
+        search.addEventListener('input', function(e) {
+            const q = e.target.value.toLowerCase().trim();
+            let visible = 0;
+            members.forEach(m => {
+                const match = !q || (m.dataset.name || '').includes(q);
+                m.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            if (noResults) noResults.classList.toggle('hidden', visible > 0);
+        });
+    }
+
+    // ADD FORM
+    const addForm = document.getElementById('addDatasetForm');
+    if (addForm) {
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(addForm);
+            const csrftoken = addForm.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                const res = await fetch(addForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': csrftoken },
+                });
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error(`Server balik non-JSON (status ${res.status})`);
                 }
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Berhasil!');
+                    location.reload();
+                } else {
+                    alert('Gagal: ' + (data.message || 'unknown error'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
             }
-        };
-        
-        // Create mobile chart
-        const mobileCtx = document.getElementById('assignmentChart');
-        if (mobileCtx) {
-            new Chart(mobileCtx.getContext('2d'), chartConfig);
+        });
+    }
+
+    // EDIT FORM
+    const editForm = document.getElementById('editDatasetForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(editForm);
+            const csrftoken = editForm.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                const res = await fetch(editForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': csrftoken },
+                });
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error(`Server balik non-JSON (status ${res.status})`);
+                }
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Berhasil diupdate!');
+                    location.reload();
+                } else {
+                    alert('Gagal: ' + (data.message || 'unknown error'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        });
+    }
+});
+
+// DATASET SECTION TOGGLE
+function toggleDatasetSection() {
+    const content = document.getElementById('datasetContent');
+    const chevron = document.getElementById('datasetChevron');
+    const isHidden = content.classList.contains('hidden');
+    content.classList.toggle('hidden');
+    chevron.classList.toggle('rotate-180', isHidden);
+}
+
+// MODAL HELPERS
+function openAddDatasetModal() {
+    const m = document.getElementById('addDatasetModal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAddDatasetModal() {
+    const m = document.getElementById('addDatasetModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+    document.getElementById('addDatasetForm').reset();
+    document.body.style.overflow = 'auto';
+}
+
+function openEditDatasetModal(id, name, labelerId, actionUrl) {
+    document.getElementById('editDatasetId').value = id;
+    document.getElementById('editDatasetName').value = name;
+    document.getElementById('editDatasetLabeler').value = labelerId;
+    document.getElementById('editDatasetForm').action = actionUrl;
+    const m = document.getElementById('editDatasetModal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditDatasetModal() {
+    const m = document.getElementById('editDatasetModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+    document.getElementById('editDatasetForm').reset();
+    document.body.style.overflow = 'auto';
+}
+
+// DELETE DATASET
+async function deleteDataset(url) {
+    if (!confirm('Yakin mau delete file ini?')) return;
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            throw new Error(`Server balik non-JSON (status ${res.status})`);
         }
-        
-        // Create desktop chart
-        const desktopCtx = document.getElementById('assignmentChartDesktop');
-        if (desktopCtx) {
-            new Chart(desktopCtx.getContext('2d'), {...chartConfig});
+        const data = await res.json();
+        if (data.status === 'success') {
+            alert('Berhasil dihapus!');
+            location.reload();
+        } else {
+            alert('Gagal: ' + (data.message || 'unknown error'));
         }
-    });
-
-    function openAddDatasetModal() {
-        document.getElementById('addDatasetModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+    } catch (err) {
+        alert('Network error: ' + err.message);
     }
-
-    function closeAddDatasetModal() {
-        document.getElementById('addDatasetModal').classList.add('hidden');
-        document.getElementById('addDatasetForm').reset();
-        document.body.style.overflow = 'auto';
-    }
-
-    function openEditDatasetModal(id, name, labelerId) {
-        document.getElementById('editDatasetId').value = id;
-        document.getElementById('editDatasetName').value = name;
-        document.getElementById('editDatasetLabeler').value = labelerId;
-        document.getElementById('editDatasetModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeEditDatasetModal() {
-        document.getElementById('editDatasetModal').classList.add('hidden');
-        document.getElementById('editDatasetForm').reset();
-        document.body.style.overflow = 'auto';
-    }
-
-    function deleteDataset(id) {
-        if (confirm('Are you sure you want to delete this dataset?')) {
-            // Handle dataset deletion logic here
-            console.log('Deleting dataset with id:', id);
-        }
-    }
-
-    // Handle window resize to adjust charts
-    window.addEventListener('resize', function() {
-        // Charts will automatically resize due to responsive: true
-    });
+}
 </script>
 {% endblock %}

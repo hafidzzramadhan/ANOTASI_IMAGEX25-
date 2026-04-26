@@ -1,1253 +1,401 @@
 {% extends 'base_master.html' %}
-{% load static %}
-
 {% block content %}
-<div class="space-y-6">
-    <!-- Header Section -->
-    <div class="bg-gray-100 p-4 md:p-6 rounded-lg">
-        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Validation</h1>
-        {% if show_details %}
-            <p class="text-base md:text-lg mt-2">{{ job.title }}</p>
-            <p class="text-xs md:text-sm text-gray-600">({{ job.total_images }} images)</p>
-        {% endif %}
-    </div>
+{% csrf_token %}
 
-    <!-- Profile List Section -->
-    <div>
-        <h2 class="text-lg md:text-xl font-semibold mb-2">Profile List</h2>
-        <p class="text-gray-500 text-sm md:text-base">{{ current_date }}</p>
-    </div>
 
-    {% if not show_details %}
-        <!-- Job Profile List -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+{% if not show_details %}
+
+    <!-- =======================================================
+         MODE 1: JOB LIST (landing)
+         ======================================================= -->
+    <div class="space-y-6">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Process Validation</h1>
+            <p class="text-sm text-gray-500 mt-1">Review & finalize job yang udah selesai di-annotate</p>
+        </div>
+
+        <!-- Stats summary -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div class="text-xs text-gray-500 uppercase">Total Jobs</div>
+                <div class="text-2xl font-bold mt-1">{{ jobs|length }}</div>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
+                <div class="text-xs text-orange-700 uppercase">In Progress</div>
+                <div class="text-2xl font-bold mt-1 text-orange-700" id="statInProgress">0</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                <div class="text-xs text-blue-700 uppercase">Ready to Validate</div>
+                <div class="text-2xl font-bold mt-1 text-blue-700" id="statReady">0</div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                <div class="text-xs text-green-700 uppercase">Completed</div>
+                <div class="text-2xl font-bold mt-1 text-green-700" id="statCompleted">0</div>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3">
+            <input type="text" id="jobSearchInput"
+                   placeholder="Cari job by title..."
+                   class="flex-1 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-chip active px-3 py-1 rounded-full text-sm border" data-status="all">Semua</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="in_progress">In Progress</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="not_assign">Not Assigned</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="completed">Completed</button>
+            </div>
+        </div>
+
+        <!-- Job List -->
+        <div id="jobListContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {% for job in jobs %}
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" 
-                 onclick="window.location.href='/process_validations/{{ job.id }}/'"
-                 data-job-id="{{ job.id }}">
-                <div class="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
-                    <!-- Image Preview -->
+            <div class="job-card bg-white p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                 data-job-title="{{ job.title|lower }}"
+                 data-job-status="{{ job.status }}">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0 mb-4">
                     <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                         {% if job.get_first_image_url %}
-                            <img src="{{ job.get_first_image_url }}" 
-                                 alt="{{ job.title }}" 
-                                 class="w-full h-full object-cover">
+                            <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" class="w-full h-full object-cover">
                         {% endif %}
                     </div>
-
-                    <!-- Job Details -->
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-base md:text-lg font-semibold mb-3 truncate">{{ job.title }}</h4>
-                        <div class="space-y-2 text-sm md:text-base text-gray-500">
+                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
+                        <div class="space-y-1 mt-2 text-sm text-gray-500">
                             <p class="flex justify-between">
-                                <span>Total Images:</span>
-                                <span class="font-medium">{{ job.total_images }}</span>
-                            </p>
-                            <p class="flex justify-between">
-                                <span>Date:</span>
-                                <span class="font-medium">{{ job.start_date|date:"d M" }} - {{ job.end_date|date:"d M Y" }}</span>
-                            </p>
-                                <span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-xs md:text-sm font-medium
-                                    {% if job.status == 'not_started' %}bg-gray-100 text-gray-700
-                                    {% elif job.status == 'in_progress' %}bg-blue-100 text-blue-700
-                                    {% elif job.status == 'completed' %}bg-green-100 text-green-700
-                                    {% endif %}">
-                                    {{ job.get_status_display }}
-                                </span>
+                                <span>Images:</span>
+                                <span class="font-medium text-gray-700">{{ job.total_images }}</span>
                             </p>
                             <p class="flex justify-between">
                                 <span>Annotator:</span>
-                                <span class="font-medium truncate">
-                                    {% if job.worker_annotator %}
-                                        {{ job.worker_annotator.first_name }} {{ job.worker_annotator.last_name }}
-                                        {% if not job.worker_annotator.first_name %}
-                                            {{ job.worker_annotator.email }}
-                                        {% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </span>
+                                <span class="text-right truncate max-w-40">{{ job.worker_annotator.email|default:'-' }}</span>
                             </p>
                             <p class="flex justify-between">
                                 <span>Reviewer:</span>
-                                <span class="font-medium truncate">
-                                    {% if job.worker_reviewer %}
-                                        {{ job.worker_reviewer.first_name }} {{ job.worker_reviewer.last_name }}
-                                        {% if not job.worker_reviewer.first_name %}
-                                            {{ job.worker_reviewer.email }}
-                                        {% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                <span class="text-right truncate max-w-40">{{ job.worker_reviewer.email|default:'-' }}</span>
+                            </p>
+                            <p class="flex justify-between items-center">
+                                <span>Status:</span>
+                                <span class="px-2 py-1 rounded-full text-xs
+                                    {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                                    {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                                    {% elif job.status == 'completed' %}bg-green-100 text-green-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ job.get_status_display|default:job.status }}
                                 </span>
                             </p>
                         </div>
                     </div>
                 </div>
+
+                <div class="border-t pt-3">
+                    <a href="{% url 'master:process_validation_detail' job.id %}"
+                       class="block w-full bg-[#4527A0] hover:bg-purple-900 text-white text-center px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Review Job →
+                    </a>
+                </div>
             </div>
             {% empty %}
-            <div class="col-span-full text-center py-8 bg-gray-50 rounded-lg">
-                <p class="text-gray-500">No profiles available</p>
+            <div class="col-span-full bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+                <p class="font-medium">Belum ada job yang perlu di-validate</p>
             </div>
             {% endfor %}
         </div>
-    {% else %}
-        <!-- Image Details Table -->
-        <div class="overflow-hidden">
-            <!-- Mobile Card Layout -->
-            <div class="block lg:hidden space-y-4">
-                {% for image in images %}
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <div class="flex items-start space-x-3 mb-3">
-                        <img src="{{ image.url }}" alt="{{ image.name }}" class="w-16 h-16 object-cover rounded">
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-medium truncate">{{ image.name }}</h4>
-                            <p class="text-xs text-gray-500">{{ image.format }}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="text-gray-500">Status:</span>
-                            <span class="block font-medium">{{ image.status }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-500">Annotator:</span>
-                            <span class="block font-medium">{{ image.annotator|default:"-" }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-500">Reviewer:</span>
-                            <span class="block font-medium">{{ image.reviewer|default:"-" }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-500">Actions:</span>
-                            <button class="block text-blue-600 hover:text-blue-800 text-xs" 
-                                    onclick="openModal('{{ image.url }}', '{{ image.id }}', '{{ image.status }}', '{{ image.label_time|default:'' }}', '{{ image.review_time|default:"3m50s" }}')">View</button>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <!-- Desktop Table Layout -->
-            <div class="hidden lg:block">
-                <table class="min-w-full bg-white">
-                <thead>
-                    <tr class="bg-gray-50 border-b">
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Images ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workflow Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Label time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Review time</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for image in images %}
-                    <tr class="cursor-pointer hover:bg-gray-50" 
-                        data-image-id="{{ image.id }}"
-                        data-image-url="{{ image.image.url }}"
-                        data-status="{{ image.get_status_display }}"
-                        data-label-time="{{ image.label_time|default:'' }}"
-                        data-review-time="{{ image.review_time|default:'3m50s' }}"
-                        onclick="openModal('{{ image.image.url }}', '{{ image.id }}', '{{ image.get_status_display }}', '{{ image.label_time|default:'' }}', '{{ image.review_time|default:'3m50s' }}')">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ image.id }}.jpg</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-sm rounded-full 
-                                {% if image.status == 'in_review' %}bg-orange-100 text-orange-700
-                                {% elif image.status == 'finished' %}bg-green-100 text-green-700
-                                {% elif image.status == 'Issue' %}bg-red-100 text-red-700
-                                {% elif image.status == 'in_rework' %}bg-yellow-100 text-yellow-700
-                                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ image.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ image.label_time|default:"" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ image.review_time|default:"3m50s" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
-</div>
-<!-- Issue Detail Modal -->
-<div id="issueDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg w-full max-w-7xl h-auto min-h-[80vh] max-h-[95vh] sm:max-h-screen flex flex-col lg:flex-row overflow-hidden">
-        <!-- Left Panel - Classes -->
-        <div class="w-full lg:w-64 bg-gray-50 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto relative">
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2 text-sm md:text-base">Annotations</h3>
-                <div class="border-b-2 border-red-500 w-16 mb-4"></div>
 
-                <!-- Search Classes -->
-                <div class="mb-4">
-                    <h4 class="text-xs md:text-sm font-medium mb-2">CLASSES</h4>
-                    <div class="relative">
-                        <input type="text" 
-                               placeholder="Search class" 
-                               class="w-full px-3 py-2 border rounded-md text-xs md:text-sm">
-                        <svg class="absolute right-3 top-2.5 h-3 w-3 md:h-4 md:w-4 text-gray-400" 
-                             fill="none" 
-                             stroke="currentColor" 
-                             viewBox="0 0 24 24">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Class List -->
-                <div id="classList" class="space-y-2">
-                    <!-- Classes will be populated dynamically -->
-                </div>
-
-                <!-- Segmentation Type -->
-                <div class="mt-6">
-                    <h4 class="text-sm font-medium mb-2">SEGMENTATION TYPE</h4>
-                    <div id="segmentationTypeList" class="space-y-2">
-                        <!-- Segmentation types will be populated dynamically -->
-                    </div>
-                </div>
-
-                <!-- Finish Job Button -->
-                <div class="absolute bottom-4 left-4 right-4">
-                    <button onclick="finishJob()" 
-                            class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2 shadow-lg">
-                        <span>Finish Job</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col">
-            <!-- Header -->
-            <div class="border-b border-gray-200">
-                <div class="p-4 flex justify-between items-center">
-                    <h2 id="modalJobTitle" class="text-2xl font-bold">Loading...</h2>
-                    <div class="flex items-center space-x-2">
-                        <!-- Fullscreen Toggle Button -->
-                        <button id="fullscreenToggle" class="text-gray-500 hover:text-gray-700 p-1" onclick="toggleFullscreen()">
-                            <svg id="expandIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-                            </svg>
-                            <svg id="compressIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
-                                <path d="M9 9V4.5M9 9H4.5M9 9L3.5 3.5M15 9h4.5M15 9V4.5M15 9l5.5-5.5M9 15v4.5M9 15H4.5M9 15l-5.5 5.5M15 15h4.5M15 15v4.5m0-4.5l5.5 5.5"/>
-                            </svg>
-                        </button>
-                        <!-- Close Button -->
-                        <button onclick="closeModal()" 
-                                class="text-gray-500 hover:text-gray-700 p-1">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status Cards -->
-            <div class="border-b border-gray-200 p-4 grid grid-cols-3 md:grid-cols-6 gap-4">
-                <div class="bg-gray-50 p-4 rounded-lg text-center">
-                    <div id="modalUnannotated" class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
-                    <div class="text-sm text-gray-600">Unannotated</div>
-                </div>
-                <div class="bg-purple-50 p-4 rounded-lg text-center">
-                    <div id="modalAnnotated" class="text-2xl font-bold">{{ status_counts.annotated }}</div>
-                    <div class="text-sm text-gray-600">Annotated</div>
-                </div>
-                <div class="bg-blue-50 p-4 rounded-lg text-center">
-                    <div id="modalInReview" class="text-2xl font-bold">{{ status_counts.in_review }}</div>
-                    <div class="text-sm text-gray-600">In Review</div>
-                </div>
-                <div class="bg-yellow-50 p-4 rounded-lg text-center">
-                    <div id="modalInRework" class="text-2xl font-bold">{{ status_counts.in_rework }}</div>
-                    <div class="text-sm text-gray-600">In Rework</div>
-                </div>
-                <div class="bg-red-50 p-4 rounded-lg text-center">
-                    <div id="modalIssues" class="text-2xl font-bold">{{ status_counts.Issue }}</div>
-                    <div class="text-sm text-gray-600">Issues</div>
-                </div>
-                <div class="bg-green-50 p-4 rounded-lg text-center">
-                    <div id="modalFinished" class="text-2xl font-bold">{{ status_counts.finished }}</div>
-                    <div class="text-sm text-gray-600">Finished</div>
-                </div>
-            </div>
-
-            <!-- Main Image Area -->
-            <div class="flex-1 relative overflow-auto p-4">
-                <!-- Image Slider Container -->
-                <div id="imageSliderContainer" class="w-full h-full flex items-center justify-center relative">
-                    <!-- Previous Button -->
-                    <button id="prevImage" class="absolute left-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-
-                    <!-- Image Container -->
-                    <div id="imageContainer" class="w-full h-full flex items-center justify-center">
-                        <!-- Image will be loaded here dynamically -->
-                    </div>
-
-                    <!-- Next Button -->
-                    <button id="nextImage" class="absolute right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-
-                    <!-- Image Counter -->
-                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full">
-                        <span id="currentImageIndex">1</span>/<span id="totalImages">1</span>
-                    </div>
-                </div>
-
-                <!-- Issue Information Box -->
-                {% comment %} <div class="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg w-72">
-                    <h4 class="font-semibold mb-2">Issue Details</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span>Annotator:</span>
-                            <span id="issueAnnotator">-</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Reviewer:</span>
-                            <span id="issueReviewer">-</span>
-                        </div>
-                        <div class="mt-2">
-                            <p id="issueDescription" class="text-red-600"></p>
-                        </div>
-                    </div>
-                </div> {% endcomment %}
-
-
-            </div>
-        </div>
-
-        <!-- Right Toolbar -->
-        <div class="w-12 bg-gray-800 flex flex-col items-center py-4 space-y-4">
-            <button class="text-white p-2 hover:bg-gray-700 rounded">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                </svg>
-            </button>
-            
-            <button class="text-white p-2 hover:bg-gray-700 rounded">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </button>
-            <button class="text-white p-2 hover:bg-gray-700 rounded">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-            </button>
+        <div id="noResultsMessage" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+            Tidak ada job yang cocok dengan filter
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-// Function removed - navigation now handled directly in onclick
+    <style>
+        .filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+        .filter-chip:hover { background: #f3f4f6; }
+        .filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+    </style>
 
-let currentImageIndex = 0;
-let images = [];
-let currentJobId = null;
-let isFullscreen = false;
-
-// Show error message
-function showError(message) {
-    const imageContainer = document.getElementById('imageContainer');
-    imageContainer.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-full text-gray-500">
-            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <p class="text-lg font-medium">${message}</p>
-        </div>
-    `;
-}
-
-// Render annotations on image
-function renderAnnotations(annotations, wrapper, img) {
-    console.log('Rendering annotations:', annotations);
-    
-    // Remove existing annotation overlays
-    const existingOverlays = wrapper.querySelectorAll('.annotation-overlay');
-    existingOverlays.forEach(overlay => overlay.remove());
-    
-    if (!annotations || annotations.length === 0) {
-        console.log('No annotations to render');
-        return;
-    }
-    
-    // Wait for image to be fully loaded and get dimensions
-    setTimeout(() => {
-        const imgRect = img.getBoundingClientRect();
-        const imgNaturalWidth = img.naturalWidth;
-        const imgNaturalHeight = img.naturalHeight;
-        const imgDisplayWidth = img.offsetWidth;
-        const imgDisplayHeight = img.offsetHeight;
-        
-        console.log('Image dimensions:', {
-            natural: { width: imgNaturalWidth, height: imgNaturalHeight },
-            display: { width: imgDisplayWidth, height: imgDisplayHeight }
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hitung stats
+        const cards = document.querySelectorAll('.job-card');
+        let inProgress = 0, completed = 0, notAssigned = 0;
+        cards.forEach(c => {
+            const s = c.dataset.jobStatus;
+            if (s === 'in_progress') inProgress++;
+            else if (s === 'completed') completed++;
+            else if (s === 'not_assign') notAssigned++;
         });
-        
-        annotations.forEach((annotation, index) => {
-            if (annotation.x_min !== null && annotation.y_min !== null && 
-                annotation.x_max !== null && annotation.y_max !== null) {
-                
-                // Calculate scale factors
-                const scaleX = imgDisplayWidth / imgNaturalWidth;
-                const scaleY = imgDisplayHeight / imgNaturalHeight;
-                
-                // Convert coordinates to display coordinates
-                const x = annotation.x_min * scaleX;
-                const y = annotation.y_min * scaleY;
-                const width = (annotation.x_max - annotation.x_min) * scaleX;
-                const height = (annotation.y_max - annotation.y_min) * scaleY;
-                
-                // Determine color with consistent logic across templates
-                let color = '#22c55e'; // Default green for manual annotations
-                
-                if (annotation.is_auto_generated || annotation.created_by_ai) {
-                    color = '#f97316'; // Orange for AI-created annotations
-                } else if (annotation.segmentation && annotation.segmentation.color) {
-                    color = annotation.segmentation.color;
-                } else if (annotation.annotation && annotation.annotation.color) {
-                    color = annotation.annotation.color;
-                } else if (annotation.segmentation_color) {
-                    color = annotation.segmentation_color;
-                } else if (annotation.annotation_color) {
-                    color = annotation.annotation_color;
-                } else if (annotation.color) {
-                    color = annotation.color;
-                }
-                
-                // Create bounding box overlay with consistent styling
-                const bbox = document.createElement('div');
-                bbox.className = 'annotation-overlay absolute border-2';
-                bbox.style.left = `${x}px`;
-                bbox.style.top = `${y}px`;
-                bbox.style.width = `${width}px`;
-                bbox.style.height = `${height}px`;
-                bbox.style.borderColor = color;
-                bbox.style.backgroundColor = color + '20'; // Add transparency
-                bbox.style.pointerEvents = 'none';
-                
-                // Add label with improved text handling
-                const labelText = annotation.label || annotation.class_name || annotation.segmentation?.name || annotation.annotation?.class_name || `Annotation ${index + 1}`;
-                if (labelText) {
-                    const label = document.createElement('div');
-                    label.className = 'absolute -top-6 left-0 text-white text-xs px-2 py-1 rounded font-bold';
-                    label.style.backgroundColor = color;
-                    label.textContent = labelText;
-                    bbox.appendChild(label);
-                }
-                
-                wrapper.appendChild(bbox);
-                
-                console.log(`Rendered bounding box ${index}:`, {
-                    original: { x: annotation.x_min, y: annotation.y_min, w: annotation.x_max - annotation.x_min, h: annotation.y_max - annotation.y_min },
-                    scaled: { x, y, width, height },
-                    color: color,
-                    label: labelText
-                });
-            }
-        });
-    }, 100);
-}
+        document.getElementById('statInProgress').textContent = inProgress;
+        document.getElementById('statCompleted').textContent = completed;
+        // Ready to validate = in_progress dengan semua image finished (kira-kira)
+        document.getElementById('statReady').textContent = inProgress;
 
-// Update class list
-function updateClassList(classes) {
-    const classList = document.getElementById('classList');
-    if (!classList) return;
-    
-    classList.innerHTML = '';
-    
-    if (!classes || Object.keys(classes).length === 0) {
-        classList.innerHTML = '<p class="text-gray-500 text-sm">No classes found</p>';
-        return;
-    }
-    
-    Object.entries(classes).forEach(([className, count]) => {
-        const classItem = document.createElement('div');
-        classItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 rounded';
-        classItem.innerHTML = `
-            <span>${className}</span>
-            <span class="bg-gray-200 px-2 rounded">${count}</span>
-        `;
-        classList.appendChild(classItem);
-    });
-}
+        // Filter
+        const searchInput = document.getElementById('jobSearchInput');
+        const chips = document.querySelectorAll('.filter-chip');
+        let activeStatus = 'all', searchQuery = '';
 
-// Update segmentation type list
-function updateSegmentationTypeList(segmentationTypes) {
-    const segTypeList = document.getElementById('segmentationTypeList');
-    if (!segTypeList) return;
-    
-    segTypeList.innerHTML = '';
-    
-    if (!segmentationTypes || Object.keys(segmentationTypes).length === 0) {
-        segTypeList.innerHTML = '<p class="text-gray-500 text-sm">No segmentation types found</p>';
-        return;
-    }
-    
-    Object.entries(segmentationTypes).forEach(([typeName, count]) => {
-        const typeItem = document.createElement('div');
-        typeItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 rounded';
-        typeItem.innerHTML = `
-            <span>${typeName}</span>
-            <span class="bg-gray-200 px-2 rounded">${count}</span>
-        `;
-        segTypeList.appendChild(typeItem);
-    });
-}
-
-// Show image with annotations
-function showImage(index) {
-    if (!images || images.length === 0) {
-        showError('No images available');
-        return;
-    }
-
-    if (index < 0 || index >= images.length) {
-        return;
-    }
-
-    currentImageIndex = index;
-    const imageData = images[index];
-    const imageContainer = document.getElementById('imageContainer');
-    
-    // Show loading state
-    imageContainer.innerHTML = `
-        <div class="flex items-center justify-center h-full">
-            <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-        </div>
-    `;
-
-    // Create image element
-    const img = new Image();
-    img.onload = function() {
-        // Set image styling
-        img.className = 'max-w-full max-h-full object-contain';
-        
-        // Create wrapper div for annotations
-        const wrapper = document.createElement('div');
-        wrapper.className = 'relative inline-block';
-        wrapper.appendChild(img);
-        
-        imageContainer.innerHTML = '';
-        imageContainer.appendChild(wrapper);
-        
-        // Render annotations with proper parameters
-        if (imageData.annotations && imageData.annotations.length > 0) {
-            console.log('Rendering annotations for image:', imageData.annotations.length);
-            renderAnnotations(imageData.annotations, wrapper, img);
-        } else {
-            console.log('No annotations found for this image');
-        }
-        
-        // Update image details if elements exist
-        const issueAnnotator = document.getElementById('issueAnnotator');
-        const issueReviewer = document.getElementById('issueReviewer');
-        const issueDescription = document.getElementById('issueDescription');
-        
-        if (issueAnnotator) {
-            issueAnnotator.textContent = imageData.annotator || '-';
-        }
-        if (issueReviewer) {
-            issueReviewer.textContent = imageData.reviewer || '-';
-        }
-        if (issueDescription) {
-            issueDescription.textContent = imageData.issue_description || 'No issues found';
-        }
-        
-        updateImageControls();
-    };
-    
-    img.onerror = function() {
-        showError('Failed to load image');
-    };
-    
-    img.src = imageData.image_url || imageData.url;
-}
-
-// Update image navigation controls
-function updateImageControls() {
-    const currentIndexSpan = document.getElementById('currentImageIndex');
-    const totalImagesSpan = document.getElementById('totalImages');
-    const prevButton = document.getElementById('prevImage');
-    const nextButton = document.getElementById('nextImage');
-    
-    if (currentIndexSpan) currentIndexSpan.textContent = currentImageIndex + 1;
-    if (totalImagesSpan) totalImagesSpan.textContent = images.length;
-    
-    // Show/hide navigation buttons based on image count
-    if (images.length <= 1) {
-        if (prevButton) prevButton.style.display = 'none';
-        if (nextButton) nextButton.style.display = 'none';
-    } else {
-        if (prevButton) prevButton.style.display = 'block';
-        if (nextButton) nextButton.style.display = 'block';
-    }
-}
-
-// Setup image slider controls
-function setupImageSliderControls() {
-    const prevButton = document.getElementById('prevImage');
-    const nextButton = document.getElementById('nextImage');
-    
-    // Add event listeners only if not already added
-    if (prevButton && !prevButton.hasAttribute('data-listener-added')) {
-        prevButton.addEventListener('click', function() {
-            if (images.length > 1) {
-                const newIndex = currentImageIndex === 0 ? images.length - 1 : currentImageIndex - 1;
-                showImage(newIndex);
-            }
-        });
-        prevButton.setAttribute('data-listener-added', 'true');
-    }
-    
-    if (nextButton && !nextButton.hasAttribute('data-listener-added')) {
-        nextButton.addEventListener('click', function() {
-            if (images.length > 1) {
-                const newIndex = currentImageIndex === images.length - 1 ? 0 : currentImageIndex + 1;
-                showImage(newIndex);
-            }
-        });
-        nextButton.setAttribute('data-listener-added', 'true');
-    }
-}
-
-// Keyboard navigation for modal
-function setupKeyboardNavigation() {
-    document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('issueDetailModal');
-        if (!modal.classList.contains('hidden')) {
-            switch(e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    if (images.length > 1) {
-                        const newIndex = currentImageIndex === 0 ? images.length - 1 : currentImageIndex - 1;
-                        showImage(newIndex);
-                    }
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    if (images.length > 1) {
-                        const newIndex = currentImageIndex === images.length - 1 ? 0 : currentImageIndex + 1;
-                        showImage(newIndex);
-                    }
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    closeModal();
-                    break;
-            }
-        }
-    });
-}
-
-// Toggle fullscreen mode
-function toggleFullscreen() {
-    const modal = document.getElementById('issueDetailModal');
-    const modalContent = modal.querySelector('.bg-white');
-    const expandIcon = document.getElementById('expandIcon');
-    const compressIcon = document.getElementById('compressIcon');
-    
-    if (!isFullscreen) {
-        // Enter fullscreen
-        modal.style.padding = '0';
-        modalContent.style.width = '100vw';
-        modalContent.style.height = '100vh';
-        modalContent.style.maxWidth = 'none';
-        modalContent.style.maxHeight = 'none';
-        modalContent.style.borderRadius = '0';
-        
-        expandIcon.style.display = 'none';
-        compressIcon.style.display = 'block';
-        isFullscreen = true;
-    } else {
-        // Exit fullscreen
-        modal.style.padding = '1rem';
-        modalContent.style.width = '';
-        modalContent.style.height = '';
-        modalContent.style.maxWidth = '';
-        modalContent.style.maxHeight = '';
-        modalContent.style.borderRadius = '';
-        
-        expandIcon.style.display = 'block';
-        compressIcon.style.display = 'none';
-        isFullscreen = false;
-    }
-}
-
-function openModal(imageUrl, imageId, status, labelTime, reviewTime) {
-    console.log('Opening modal with:', { imageUrl, imageId, status, labelTime, reviewTime });
-
-    const modal = document.getElementById('issueDetailModal');
-    const modalTitle = document.getElementById('modalJobTitle');
-
-    // Show the modal first
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modalTitle.textContent = 'Loading...';
-    
-    // Prevent body scroll when modal is open
-    document.body.style.overflow = 'hidden';
-
-    // Get job ID from URL path (should be in format /process_validations/123/)
-    const pathParts = window.location.pathname.split('/').filter(part => part);
-    let jobId = null;
-    
-    // Look for process_validations in path and get the next part as jobId
-    const processValidationsIndex = pathParts.indexOf('process_validations');
-    if (processValidationsIndex !== -1 && pathParts[processValidationsIndex + 1]) {
-        jobId = pathParts[processValidationsIndex + 1];
-        // Make sure it's a number, not another path segment
-        if (!/^\d+$/.test(jobId)) {
-            jobId = null;
-        }
-    }
-    
-    if (!jobId) {
-        console.error('Could not determine jobId from URL:', window.location.pathname);
-        alert('Error: Could not determine job ID from URL. Please navigate from job profile first.');
-        return;
-    }
-
-    console.log('Using jobId:', jobId);
-    currentJobId = jobId;
-
-    // Fetch job details with annotations
-    fetch(`/issue-detail/${jobId}/`)
-        .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('=== DETAILED API RESPONSE DEBUG ===');
-            console.log('Full API response:', JSON.stringify(data, null, 2));
-            console.log('Number of images:', data.images?.length || 0);
-            
-            // Log each image and its annotations in detail
-            if (data.images) {
-                data.images.forEach((img, index) => {
-                    console.log(`\n--- IMAGE ${index + 1} DETAILED DEBUG ---`);
-                    console.log('Image ID:', img.id);
-                    console.log('Image URL:', img.url);
-                    console.log('Image filename:', img.filename);
-                    console.log('Image status:', img.status);
-                    console.log('Annotations count:', img.annotations?.length || 0);
-                    console.log('Raw annotations data:', img.annotations);
-                    
-                    if (img.annotations && img.annotations.length > 0) {
-                        img.annotations.forEach((ann, annIndex) => {
-                            console.log(`  Annotation ${annIndex + 1} details:`, {
-                                id: ann.id,
-                                label: ann.label || ann.class_name,
-                                bbox: ann.bbox,
-                                coordinates: {
-                                    x_min: ann.x_min,
-                                    y_min: ann.y_min,
-                                    x_max: ann.x_max,
-                                    y_max: ann.y_max
-                                },
-                                color: ann.segmentation_color || ann.annotation_color || '#22c55e',
-                                segmentation: ann.segmentation
-                            });
-                        });
-                    } else {
-                        console.log('  ❌ NO ANNOTATIONS found for this image');
-                    }
-                    console.log('--- END IMAGE DEBUG ---\n');
-                });
-            } else {
-                console.log('❌ NO IMAGES found in API response');
-            }
-            console.log('=== END DETAILED API RESPONSE DEBUG ===');
-            
-            // Update modal title with job title, not 'Image Unknown.jpg'
-            modalTitle.textContent = data.job_title || data.title || 'Job Details';
-            
-            // Update class list with real data
-            updateClassList(data.classes || data.class_counts || {});
-            
-            // Update segmentation type list with real data
-            updateSegmentationTypeList(data.segmentation_types || data.segmentation_type_counts || {});
-            
-            // Store images data
-            if (data.images && data.images.length > 0) {
-                images = data.images;
-                // Find current image index
-                let targetIndex = images.findIndex(img => img.id == imageId);
-                if (targetIndex === -1) {
-                    targetIndex = 0;
-                }
-                currentImageIndex = targetIndex;
-                console.log('Found target image at index:', targetIndex);
-                console.log('Current image data:', images[targetIndex]);
-                updateModalContent();
-            } else {
-                console.log('No images found in API response, using fallback');
-                // Fallback to existing data structure
-                images = Array.from(document.querySelectorAll('tr[data-image-id]')).map(row => ({
-                    url: row.dataset.imageUrl,
-                    id: row.dataset.imageId,
-                    status: row.dataset.status,
-                    labelTime: row.dataset.labelTime,
-                    reviewTime: row.dataset.reviewTime,
-                    annotations: [] // Add empty annotations array for fallback
-                }));
-                currentImageIndex = images.findIndex(img => img.id === imageId);
-                updateModalContent();
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching job details:', error);
-            // Fallback to existing functionality
-            images = Array.from(document.querySelectorAll('tr[data-image-id]')).map(row => ({
-                url: row.dataset.imageUrl,
-                id: row.dataset.imageId,
-                status: row.dataset.status,
-                labelTime: row.dataset.labelTime,
-                reviewTime: row.dataset.reviewTime
-            }));
-            currentImageIndex = images.findIndex(img => img.id === imageId);
-            updateModalContent();
-            modalTitle.textContent = 'Process Validations';
-        });
-}
-
-function updateModalContent() {
-    // Validate images array and currentImageIndex
-    if (!images || !Array.isArray(images) || images.length === 0) {
-        showError('No images available');
-        return;
-    }
-    
-    if (currentImageIndex < 0 || currentImageIndex >= images.length) {
-        showError('Invalid image index');
-        return;
-    }
-    
-    const currentImage = images[currentImageIndex];
-    
-    // Validate currentImage and its properties
-    if (!currentImage) {
-        showError('Current image not found');
-        return;
-    }
-    
-    if (!currentImage.url) {
-        showError('Image URL not available');
-        return;
-    }
-
-    // Update image with annotation support
-    const imageContainer = document.getElementById('imageContainer');
-    
-    // Show loading state
-    imageContainer.innerHTML = `
-        <div class="flex items-center justify-center w-full h-full">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-        </div>
-    `;
-
-    // Create image element
-    const img = new Image();
-    img.className = 'max-w-full max-h-[70vh] object-contain';
-    img.alt = 'Validation Image';
-
-    // Set up onload handler
-    img.onload = function() {
-        // Clear the container and create wrapper for image and annotations
-        imageContainer.innerHTML = '';
-        
-        // Create wrapper div for image and annotations
-        const wrapper = document.createElement('div');
-        wrapper.className = 'relative inline-block';
-        wrapper.id = 'imageWrapper';
-        
-        // Add image to wrapper
-        wrapper.appendChild(img);
-        
-        // Add wrapper to container
-        imageContainer.appendChild(wrapper);
-        
-        // Render annotations if available
-        console.log('\n=== UPDATE MODAL CONTENT - ANNOTATION DEBUG ===');
-        console.log('Current image index:', currentImageIndex);
-        console.log('Current image filename:', currentImage.filename);
-        console.log('Current image URL:', currentImage.url);
-        console.log('Current image status:', currentImage.status);
-        console.log('Current image object:', currentImage);
-        console.log('Annotations available:', currentImage.annotations);
-        console.log('Annotations count:', currentImage.annotations?.length || 0);
-        
-        if (currentImage.annotations && currentImage.annotations.length > 0) {
-            console.log('✅ ANNOTATIONS FOUND - Details:');
-            currentImage.annotations.forEach((ann, index) => {
-                console.log(`  Annotation ${index + 1}:`, {
-                    id: ann.id,
-                    label: ann.label || ann.class_name,
-                    bbox: ann.bbox,
-                    coordinates: {
-                        x_min: ann.x_min,
-                        y_min: ann.y_min,
-                        x_max: ann.x_max,
-                        y_max: ann.y_max
-                    },
-                    color: ann.segmentation_color || ann.annotation_color || '#22c55e',
-                    segmentation: ann.segmentation
-                });
+        function applyFilter() {
+            let visible = 0;
+            cards.forEach(card => {
+                const title = card.dataset.jobTitle || '';
+                const status = card.dataset.jobStatus || '';
+                const matchStatus = activeStatus === 'all' || status === activeStatus;
+                const matchSearch = !searchQuery || title.includes(searchQuery);
+                if (matchStatus && matchSearch) { card.style.display = ''; visible++; }
+                else card.style.display = 'none';
             });
-            console.log('Calling renderAnnotations with:', currentImage.annotations.length, 'annotations');
-            renderAnnotations(currentImage.annotations, wrapper, img);
-        } else {
-            console.log('❌ NO ANNOTATIONS found for current image');
-            console.log('Checking if annotations is undefined, null, or empty array:');
-            console.log('  - annotations === undefined:', currentImage.annotations === undefined);
-            console.log('  - annotations === null:', currentImage.annotations === null);
-            console.log('  - annotations is array:', Array.isArray(currentImage.annotations));
-            console.log('  - annotations length:', currentImage.annotations?.length);
+            document.getElementById('noResultsMessage').classList.toggle('hidden', visible > 0 || cards.length === 0);
         }
-        console.log('=== END UPDATE MODAL CONTENT - ANNOTATION DEBUG ===\n');
-    };
 
-    // Set up onerror handler
-    img.onerror = function() {
-        console.error('Failed to load image:', currentImage.url);
-        showError('Failed to load image');
-    };
+        searchInput.addEventListener('input', e => { searchQuery = e.target.value.toLowerCase(); applyFilter(); });
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                activeStatus = chip.dataset.status;
+                applyFilter();
+            });
+        });
+    });
+    </script>
 
-    // Process the image URL to replace testserver with localhost if needed
-    let processedUrl = currentImage.url;
-    if (processedUrl.includes('http://testserver')) {
-        processedUrl = processedUrl.replace('http://testserver', 'http://localhost:8001');
+{% else %}
+
+    <!-- =======================================================
+         MODE 2: JOB DETAIL (review images + finish action)
+         ======================================================= -->
+    <div class="space-y-6">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-gray-500">
+            <a href="{% url 'master:process_validations' %}" class="hover:text-blue-600">Process Validation</a>
+            <span>/</span>
+            <span class="text-gray-800 font-medium">{{ job.title }}</span>
+        </div>
+
+        <!-- Job Header -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold">{{ job.title }}</h1>
+                    <p class="text-gray-500 mt-1">{{ job.description|default:"Tidak ada deskripsi" }}</p>
+                    <div class="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
+                        <div><span class="font-medium">Annotator:</span> {{ job.worker_annotator.email|default:"-" }}</div>
+                        <div><span class="font-medium">Reviewer:</span> {{ job.worker_reviewer.email|default:"-" }}</div>
+                        <div><span class="font-medium">Total Images:</span> {{ images|length }}</div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <span class="inline-block px-3 py-1 rounded-full text-sm
+                        {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                        {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                        {% elif job.status == 'completed' %}bg-green-100 text-green-700{% endif %}">
+                        {{ job.get_status_display|default:job.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Stats -->
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+            <div class="bg-gray-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
+                <div class="text-xs text-gray-500 uppercase">Unannotated</div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-blue-700">{{ status_counts.annotated }}</div>
+                <div class="text-xs text-blue-700 uppercase">Annotated</div>
+            </div>
+            <div class="bg-yellow-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-yellow-700">{{ status_counts.in_review }}</div>
+                <div class="text-xs text-yellow-700 uppercase">In Review</div>
+            </div>
+            <div class="bg-orange-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-orange-700">{{ status_counts.in_rework }}</div>
+                <div class="text-xs text-orange-700 uppercase">In Rework</div>
+            </div>
+            <div class="bg-red-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-red-700">{{ status_counts.Issue }}</div>
+                <div class="text-xs text-red-700 uppercase">Issues</div>
+            </div>
+            <div class="bg-green-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-green-700">{{ status_counts.finished }}</div>
+                <div class="text-xs text-green-700 uppercase">Finished</div>
+            </div>
+        </div>
+
+        <!-- Action Bar: Finish All Job -->
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <div class="font-medium text-blue-900">Finalisasi Job</div>
+                <div class="text-sm text-blue-700 mt-1">Klik "Finish All Job" kalau semua image udah OK — bakal mark job sebagai completed.</div>
+            </div>
+            <button onclick="finishAllJob({{ job.id }})"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition"
+                    {% if job.status == 'completed' %}disabled{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                {% if job.status == 'completed' %}Already Completed{% else %}Finish All Job{% endif %}
+            </button>
+        </div>
+
+        <!-- Image Filter Chips -->
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div class="flex flex-wrap gap-2">
+                <button class="img-filter-chip active px-3 py-1 rounded-full text-sm border" data-status="all">Semua ({{ images|length }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="unannotated">Unannotated ({{ status_counts.unannotated }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="annotated">Annotated ({{ status_counts.annotated }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="in_review">In Review ({{ status_counts.in_review }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="Issue">Issues ({{ status_counts.Issue }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="finished">Finished ({{ status_counts.finished }})</button>
+            </div>
+        </div>
+
+        <!-- Image Grid -->
+        <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for image in images %}
+            <div class="image-item bg-white rounded-lg shadow-sm overflow-hidden"
+                 data-image-status="{{ image.status }}"
+                 data-image-id="{{ image.id }}">
+                <div class="relative aspect-square bg-gray-100">
+                    {% if image.image %}
+                        <img src="{{ image.image.url }}" alt="Image {{ image.id }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">No image</div>
+                    {% endif %}
+                    <!-- Status badge top-right -->
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs
+                        {% if image.status == 'unannotated' %}bg-gray-100 text-gray-700
+                        {% elif image.status == 'annotated' %}bg-blue-100 text-blue-700
+                        {% elif image.status == 'in_review' %}bg-yellow-100 text-yellow-700
+                        {% elif image.status == 'in_rework' %}bg-orange-100 text-orange-700
+                        {% elif image.status == 'Issue' %}bg-red-100 text-red-700
+                        {% elif image.status == 'finished' %}bg-green-100 text-green-700{% endif %}">
+                        {{ image.status }}
+                    </span>
+                </div>
+                <div class="p-3">
+                    <div class="text-xs text-gray-500 truncate">ID #{{ image.id }}</div>
+                    {% if image.status != 'finished' %}
+                        <button onclick="finishImage({{ image.id }}, this)"
+                                class="mt-2 w-full bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            ✓ Mark as Finished
+                        </button>
+                    {% else %}
+                        <div class="mt-2 text-center text-green-600 text-xs font-medium">✓ Completed</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+                Belum ada image di job ini
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="noImageResults" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+            Tidak ada image dengan status tersebut
+        </div>
+    </div>
+
+    <style>
+        .img-filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+        .img-filter-chip:hover { background: #f3f4f6; }
+        .img-filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+    </style>
+
+    <script>
+    function getCSRF() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
-    
-    // Set the source
-    img.src = processedUrl;
 
-    // Update counter
-    document.getElementById('currentImageIndex').textContent = currentImageIndex + 1;
-    document.getElementById('totalImages').textContent = images.length;
+    // Image filter
+    document.addEventListener('DOMContentLoaded', function () {
+        const chips = document.querySelectorAll('.img-filter-chip');
+        const items = document.querySelectorAll('.image-item');
+        const noResults = document.getElementById('noImageResults');
 
-    // Update title with image name or job title
-    const imageTitle = currentImage.name || currentImage.filename || `Image ${currentImage.id}`;
-    document.getElementById('modalJobTitle').textContent = imageTitle;
-}
-
-function nextImage() {
-    if (currentImageIndex < images.length - 1) {
-        currentImageIndex++;
-        updateModalContent();
-    }
-}
-
-function prevImage() {
-    if (currentImageIndex > 0) {
-        currentImageIndex--;
-        updateModalContent();
-    }
-}
-
-// Show issue details (for API integration)
-function showIssueDetail(jobId) {
-    currentJobId = jobId;
-    
-    // Show modal
-    const modal = document.getElementById('issueDetailModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    // Update modal title
-    document.getElementById('modalJobTitle').textContent = `Job #${jobId}`;
-    
-    // Fetch issue details
-    fetch(`/issue-detail/${jobId}/`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Update status counts
-            if (data.status_counts) {
-                Object.keys(data.status_counts).forEach(status => {
-                    const element = document.getElementById(`modal${status.charAt(0).toUpperCase() + status.slice(1)}`);
-                    if (element) {
-                        element.textContent = data.status_counts[status];
-                    }
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filter = chip.dataset.status;
+                let visible = 0;
+                items.forEach(it => {
+                    const match = filter === 'all' || it.dataset.imageStatus === filter;
+                    it.style.display = match ? '' : 'none';
+                    if (match) visible++;
                 });
-            }
-            
-            // Update class list with real data
-            updateClassList(data.classes || data.class_counts || {});
-            
-            // Update segmentation type list with real data
-            updateSegmentationTypeList(data.segmentation_types || data.segmentation_type_counts || {});
-            
-            // Load images
-            images = data.images || [];
-            currentImageIndex = 0;
-            
-            if (images.length > 0) {
-                updateModalContent();
+                noResults.classList.toggle('hidden', visible > 0);
+            });
+        });
+    });
+
+    // Finish single image
+    function finishImage(imageId, btn) {
+        if (!confirm('Mark image ini sebagai finished?')) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        fetch("{% url 'master:finish_image' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+            body: JSON.stringify({ image_id: imageId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update UI tanpa reload
+                const card = btn.closest('.image-item');
+                card.dataset.imageStatus = 'finished';
+                const badge = card.querySelector('.absolute.top-2.right-2');
+                if (badge) {
+                    badge.textContent = 'finished';
+                    badge.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700';
+                }
+                btn.parentElement.innerHTML = '<div class="text-xs text-gray-500 truncate">ID #' + imageId + '</div><div class="mt-2 text-center text-green-600 text-xs font-medium">✓ Completed</div>';
             } else {
-                showError('No images found for this job');
+                alert('Error: ' + (data.message || 'unknown'));
+                btn.disabled = false;
+                btn.textContent = '✓ Mark as Finished';
             }
         })
-        .catch(error => {
-            console.error('Error fetching issue details:', error);
-            showError('Failed to load issue details');
-        });
-}
-
-// Close modal and reset fullscreen
-function closeModal() {
-    const modal = document.getElementById('issueDetailModal');
-    const modalContent = modal.querySelector('.bg-white');
-    const expandIcon = document.getElementById('expandIcon');
-    const compressIcon = document.getElementById('compressIcon');
-    
-    // Reset fullscreen state
-    modal.style.padding = '';
-    modalContent.style.width = '';
-    modalContent.style.height = '';
-    modalContent.style.maxWidth = '';
-    modalContent.style.maxHeight = '';
-    modalContent.style.borderRadius = '';
-    
-    expandIcon.style.display = 'block';
-    compressIcon.style.display = 'none';
-    isFullscreen = false;
-    
-    // Hide modal
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    
-    // Restore body scroll
-    document.body.style.overflow = 'auto';
-    
-    // Reset data
-    currentImageIndex = 0;
-    currentJobId = null;
-}
-
-function finishImage() {
-    // Get the current image ID from the images array using currentImageIndex
-    const currentImage = images[currentImageIndex];
-    if (!currentImage || !currentImage.id) return;
-
-    fetch("{% url 'master:finish_image' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            image_id: currentImage.id
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.status === 'success') {
-            console.log('Image marked as finished successfully:', currentImage.id);
-            
-            // Update the status in the UI
-            const row = document.querySelector(`tr[data-image-id="${currentImage.id}"]`);
-            if (row) {
-                // Update the status display in the table
-                const statusCell = row.querySelector('td:nth-child(2)');
-                if (statusCell) {
-                    statusCell.innerHTML = `
-                        <span class="px-2 py-1 text-sm rounded-full bg-green-100 text-green-700">
-                            finished
-                        </span>
-                    `;
-                }
-
-                // Update the data attribute
-                row.dataset.status = 'finished';
-
-                // Update the current image in the images array
-                currentImage.status = 'finished';
-            }
-
-            // Update the status counts
-            const finishedCountElement = document.getElementById('modalFinished');
-            if (finishedCountElement) {
-                const currentCount = parseInt(finishedCountElement.textContent || '0');
-                finishedCountElement.textContent = currentCount + 1;
-            }
-
-            // Show success message
-            alert('Image marked as finished successfully!');
-            
-            // Close the modal
-            closeModal();
-        } else {
-            console.error('Failed to finish image:', data.message || 'Unknown error');
-            alert('Failed to mark image as finished: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error finishing image:', error);
-        alert('Error finishing image: ' + error.message);
-    });
-}
-
-function finishJob() {
-    if (!currentJobId) {
-        alert('No job selected. Please select a job first.');
-        return;
-    }
-
-    if (!confirm('Are you sure you want to mark this job as completed? This action cannot be undone.')) {
-        return;
-    }
-
-    fetch("{% url 'master:finish_job' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            job_id: currentJobId
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.status === 'success') {
-            console.log('Job marked as completed successfully:', currentJobId);
-            
-            // Update the job status in the Job Profile List
-            const jobCard = document.querySelector(`div[data-job-id="${currentJobId}"]`);
-            if (jobCard) {
-                const statusSpan = jobCard.querySelector('.px-2.py-1.rounded-full');
-                if (statusSpan) {
-                    statusSpan.className = 'px-2 py-1 rounded-full text-xs md:text-sm font-medium bg-green-100 text-green-700';
-                    statusSpan.textContent = 'Completed';
-                }
-            }
-
-            // Show success message
-            alert('Job marked as completed successfully!');
-            
-            // Close the modal and redirect to job list
-            closeModal();
-            
-            // Optionally redirect to the main validation page
-            setTimeout(() => {
-                window.location.href = '/process_validations/';
-            }, 1000);
-        } else {
-            console.error('Failed to finish job:', data.message || 'Unknown error');
-            alert('Failed to mark job as completed: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error finishing job:', error);
-        alert('Error finishing job: ' + error.message);
-    });
-}
-
-// Function to update class list
-function updateClassList(classes) {
-    const classList = document.getElementById('classList');
-    if (!classList) return;
-    
-    classList.innerHTML = '';
-    
-    if (!classes || Object.keys(classes).length === 0) {
-        classList.innerHTML = '<p class="text-gray-500 text-sm">No classes found</p>';
-        return;
-    }
-    
-    Object.entries(classes).forEach(([className, count]) => {
-        const classItem = document.createElement('div');
-        classItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 rounded';
-        classItem.innerHTML = `
-            <span>${className}</span>
-            <span class="bg-gray-200 px-2 rounded">${count}</span>
-        `;
-        classList.appendChild(classItem);
-    });
-}
-
-// Function to update segmentation type list
-function updateSegmentationTypeList(segmentationTypes) {
-    const segTypeList = document.getElementById('segmentationTypeList');
-    if (!segTypeList) return;
-    
-    segTypeList.innerHTML = '';
-    
-    if (!segmentationTypes || Object.keys(segmentationTypes).length === 0) {
-        segTypeList.innerHTML = '<p class="text-gray-500 text-sm">No segmentation types found</p>';
-        return;
-    }
-    
-    Object.entries(segmentationTypes).forEach(([typeName, count]) => {
-        const typeItem = document.createElement('div');
-        typeItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 rounded';
-        typeItem.innerHTML = `
-            <span>${typeName}</span>
-            <span class="bg-gray-200 px-2 rounded">${count}</span>
-        `;
-        segTypeList.appendChild(typeItem);
-    });
-}
-
-// Function to show validation detail (replaces openModal)
-function showValidationDetail(imageUrl, imageId, status, labelTime, reviewTime) {
-    console.log('Opening validation detail with:', { imageUrl, imageId, status, labelTime, reviewTime });
-    openModal(imageUrl, imageId, status, labelTime, reviewTime);
-}
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Modal element:', document.getElementById('issueDetailModal'));
-    
-    setupImageSliderControls();
-    setupKeyboardNavigation();
-    
-    // Close modal when clicking outside
-    const modal = document.getElementById('issueDetailModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
+        .catch(err => {
+            console.error(err);
+            alert('Network error: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = '✓ Mark as Finished';
         });
     }
 
-    // Test click handler
-    const rows = document.querySelectorAll('tr[data-image-id]');
-    rows.forEach(row => {
-        console.log('Found row with image ID:', row.dataset.imageId);
-    });
-});
-</script>
+    // Finish entire job
+    function finishAllJob(jobId) {
+        if (!confirm('Yakin mau finalisasi job ini?\n\nSemua image akan di-mark sebagai finished dan job akan di-close. Aksi ini bisa dilakukan tapi sebaiknya cuma kalau bener-bener udah beres.')) {
+            return;
+        }
+
+        fetch("{% url 'master:finish_job' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+            body: JSON.stringify({ job_id: jobId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message || 'Job berhasil di-finalisasi!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'unknown'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Network error: ' + err.message);
+        });
+    }
+    </script>
+
+{% endif %}
+
 {% endblock %}

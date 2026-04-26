@@ -1,200 +1,304 @@
 {% extends 'base_master.html' %}
 {% block content %}
+
 <div class="space-y-6">
-    <!-- Header -->
+
+    <!-- ====================================================
+         HEADER
+         ==================================================== -->
     <div>
         <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Performance</h1>
+        <p class="text-sm text-gray-500 mt-1">Pantau kontribusi & produktivitas tiap anggota team</p>
     </div>
 
-    <!-- Performance Card & Chart -->
-    <div class="bg-gray-100 rounded-xl p-4 md:p-8 lg:p-20">
-        <!-- Mobile/Tablet Layout (Stacked) -->
-        <div class="lg:hidden space-y-6">
-            <div class="text-center">
-                <span class="text-lg md:text-xl text-gray-600 block">Entire Assignment</span>
-                <span class="text-4xl md:text-5xl font-bold block">{{ total_images|floatformat:0 }}</span>
-            </div>
-            
-            <!-- Chart for mobile -->
-            <div class="flex items-end justify-center gap-4 md:gap-6 h-32 md:h-40">
-                <div class="flex flex-col items-center">
-                    <div class="w-8 md:w-12 bg-blue-400 rounded-sm" 
-                         style="height: {% if chart_data.assign.height > 0 %}{{ chart_data.assign.height }}%{% else %}8px{% endif %};"
-                         title="Assign: {{ chart_data.assign.count }}"></div>
-                    <span class="text-xs md:text-sm mt-2 text-center">Assign</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-8 md:w-12 bg-blue-900 rounded-sm" 
-                         style="height: {% if chart_data.progress.height > 0 %}{{ chart_data.progress.height }}%{% else %}8px{% endif %};"
-                         title="Progress: {{ chart_data.progress.count }}"></div>
-                    <span class="text-xs md:text-sm mt-2 text-center">Progress</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-8 md:w-12 bg-blue-500 rounded-sm" 
-                         style="height: {% if chart_data.reworking.height > 0 %}{{ chart_data.reworking.height }}%{% else %}8px{% endif %};"
-                         title="Reworking: {{ chart_data.reworking.count }}"></div>
-                    <span class="text-xs md:text-sm mt-2 text-center">Rework</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-8 md:w-12 bg-purple-600 rounded-sm" 
-                         style="height: {% if chart_data.finished.height > 0 %}{{ chart_data.finished.height }}%{% else %}8px{% endif %};"
-                         title="Finished: {{ chart_data.finished.count }}"></div>
-                    <span class="text-xs md:text-sm mt-2 text-center">Finished</span>
+    <!-- ====================================================
+         KPI CARDS — team-level metrics
+         ==================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+
+        <!-- Team Size -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
                 </div>
             </div>
-            
-            <!-- Legend for mobile -->
-            <div class="grid grid-cols-2 gap-2 text-sm md:text-base">
-                <span class="text-blue-400">• Assign ({{ chart_data.assign.count }})</span>
-                <span class="text-blue-900">• Progress ({{ chart_data.progress.count }})</span>
-                <span class="text-blue-500">• Reworking ({{ chart_data.reworking.count }})</span>
-                <span class="text-purple-600">• Finished ({{ chart_data.finished.count }})</span>
-            </div>
-            
-            <div class="text-center">
-                <span class="text-red-500 text-2xl md:text-3xl font-bold">{{ completion_percentage }}%</span>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Team Size</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ members|length }}</div>
+                <div class="text-xs text-gray-500 mt-1">annotator + reviewer</div>
             </div>
         </div>
-        
-        <!-- Desktop Layout (Horizontal) -->
-        <div class="hidden lg:flex lg:gap-24 lg:items-center lg:justify-between lg:min-h-[280px]">
-            <div class="flex flex-col gap-4 flex-shrink-0">
-                <span class="text-2xl text-gray-600">Entire Assignment</span>
-                <span class="text-6xl font-bold">{{ total_images|floatformat:0 }}</span>
+
+        <!-- Total Images -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-blue-50 text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
             </div>
-            <div class="flex items-end gap-10 h-52 flex-shrink-0">
-                <div class="w-24 bg-blue-400 rounded-sm" 
-                     style="height: {% if chart_data.assign.height > 0 %}{{ chart_data.assign.height }}%{% else %}8px{% endif %};"
-                     title="Assign: {{ chart_data.assign.count }}"></div>
-                <div class="w-24 bg-blue-900 rounded-sm" 
-                     style="height: {% if chart_data.progress.height > 0 %}{{ chart_data.progress.height }}%{% else %}8px{% endif %};"
-                     title="Progress: {{ chart_data.progress.count }}"></div>
-                <div class="w-24 bg-blue-500 rounded-sm" 
-                     style="height: {% if chart_data.reworking.height > 0 %}{{ chart_data.reworking.height }}%{% else %}8px{% endif %};"
-                     title="Reworking: {{ chart_data.reworking.count }}"></div>
-                <div class="w-24 bg-purple-600 rounded-sm" 
-                     style="height: {% if chart_data.finished.height > 0 %}{{ chart_data.finished.height }}%{% else %}8px{% endif %};"
-                     title="Finished: {{ chart_data.finished.count }}"></div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Images</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ total_images|default:0 }}</div>
+                <div class="text-xs text-gray-500 mt-1">semua job</div>
             </div>
-            <div class="flex flex-col gap-4 text-xl flex-shrink-0">
-                <span class="text-blue-400">• Assign ({{ chart_data.assign.count }})</span>
-                <span class="text-blue-900">• Progress ({{ chart_data.progress.count }})</span>
-                <span class="text-blue-500">• Reworking ({{ chart_data.reworking.count }})</span>
-                <span class="text-purple-600">• Finished ({{ chart_data.finished.count }})</span>
-                <span class="text-red-500 text-4xl font-bold mt-4">{{ completion_percentage }} %</span>
+        </div>
+
+        <!-- Finished -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-green-50 text-green-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Finished</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ chart_data.finished.count|default:0 }}</div>
+                <div class="text-xs text-gray-500 mt-1">image selesai</div>
+            </div>
+        </div>
+
+        <!-- Completion -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-start justify-between">
+                <div class="p-2 rounded-lg bg-purple-50 text-purple-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Completion</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ completion_percentage|default:0 }}%</div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-purple-500 h-full transition-all duration-500"
+                         style="width: {{ completion_percentage|default:0 }}%"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Search & Filter -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="relative">
-            <input id="searchInput" type="text" placeholder="Search by email/No.hp"
-                class="py-3 md:py-4 px-4 md:px-6 border-2 border-blue-300 rounded-md w-full text-sm md:text-lg" onkeyup="filterMembers()">
+    <!-- ====================================================
+         PIPELINE BREAKDOWN (optional summary, ringkas)
+         ==================================================== -->
+    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+        <h2 class="text-base md:text-lg font-semibold mb-4">Status Breakdown (all images)</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                <div class="text-2xl font-bold text-blue-700">{{ chart_data.assign.count|default:0 }}</div>
+                <div class="text-xs text-blue-700 mt-1">Assigned</div>
+            </div>
+            <div class="text-center p-3 bg-indigo-50 rounded-lg">
+                <div class="text-2xl font-bold text-indigo-700">{{ chart_data.progress.count|default:0 }}</div>
+                <div class="text-xs text-indigo-700 mt-1">In Review</div>
+            </div>
+            <div class="text-center p-3 bg-orange-50 rounded-lg">
+                <div class="text-2xl font-bold text-orange-700">{{ chart_data.reworking.count|default:0 }}</div>
+                <div class="text-xs text-orange-700 mt-1">In Rework</div>
+            </div>
+            <div class="text-center p-3 bg-green-50 rounded-lg">
+                <div class="text-2xl font-bold text-green-700">{{ chart_data.finished.count|default:0 }}</div>
+                <div class="text-xs text-green-700 mt-1">Finished</div>
+            </div>
         </div>
-        <select id="roleFilter"
-            class="py-3 md:py-4 px-4 md:px-6 border-2 border-blue-300 rounded-md text-sm md:text-lg" onchange="filterMembers()">
-            <option value="">Default Role</option>
-            <option value="annotator">Annotator</option>
-            <option value="reviewer">Reviewer</option>
-        </select>
     </div>
 
-    <!-- Members Table -->
-    <div class="bg-gray-100 rounded-xl p-4 md:p-6 lg:p-8">
-        <div class="font-semibold text-lg md:text-xl lg:text-2xl mb-4 md:mb-6">
-            Members
+    <!-- ====================================================
+         MEMBER LEADERBOARD
+         ==================================================== -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 md:p-6 border-b border-gray-100">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-lg md:text-xl font-semibold">Team Members</h2>
+                    <p class="text-xs text-gray-500 mt-1">Klik anggota untuk liat detail performance</p>
+                </div>
+                <div class="text-xs text-gray-500" id="memberCountHint">
+                    <span id="visibleCount">{{ members|length }}</span> dari {{ members|length }}
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="text" id="searchInput" placeholder="Cari email atau nomor HP..."
+                       class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-chip active px-3 py-1.5 rounded-full text-sm border transition"
+                            data-filter="all">Semua</button>
+                    <button class="filter-chip px-3 py-1.5 rounded-full text-sm border transition"
+                            data-filter="annotator">Annotator</button>
+                    <button class="filter-chip px-3 py-1.5 rounded-full text-sm border transition"
+                            data-filter="reviewer">Reviewer</button>
+                </div>
+                <select id="sortSelect"
+                        class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="default">Urutan: Default</option>
+                    <option value="projects_desc">Project Terbanyak</option>
+                    <option value="projects_asc">Project Tersedikit</option>
+                    <option value="email_asc">Email A-Z</option>
+                </select>
+            </div>
         </div>
-        
-        <!-- Mobile Card Layout -->
-        <div class="block lg:hidden space-y-4">
+
+        <!-- Member list -->
+        <div id="memberList" class="divide-y divide-gray-100">
             {% for member in members %}
-            <div class="bg-white rounded-lg p-4 member-item cursor-pointer hover:bg-gray-50" 
-                 data-email="{{ member.email }}" data-role="{{ member.role }}"
-                 onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
-                <div class="mb-3">
-                    <div class="font-medium text-sm md:text-base">{{ member.email }}</div>
-                    <div class="text-gray-500 text-xs md:text-sm">{{ member.phone_number }}</div>
+            <a href="{% url 'master:performance_individual' member.id %}"
+               class="member-item flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition cursor-pointer"
+               data-email="{{ member.email|lower }}"
+               data-phone="{{ member.phone_number|default:'' }}"
+               data-role="{{ member.role|lower }}"
+               data-projects="{{ member.project_count }}">
+
+                <div class="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                    <!-- Avatar -->
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm md:text-base flex-shrink-0">
+                        {{ member.email|slice:":1"|upper }}
+                    </div>
+
+                    <!-- Name + role -->
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-medium text-sm md:text-base text-gray-900 truncate">{{ member.email }}</span>
+                            {% if member.role|lower == 'annotator' %}
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">Annotator</span>
+                            {% elif member.role|lower == 'reviewer' %}
+                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">Reviewer</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">{{ member.role|capfirst }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5 truncate">
+                            {{ member.phone_number|default:"No phone" }}
+                        </div>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
-                        <div class="text-sm">{{ member.role|capfirst }}</div>
+
+                <!-- Stats -->
+                <div class="flex items-center gap-4 md:gap-6 flex-shrink-0">
+                    <!-- Project count -->
+                    <div class="text-center">
+                        <div class="text-lg md:text-xl font-bold text-gray-900">{{ member.project_count }}</div>
+                        <div class="text-xs text-gray-500">project</div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
-                        <div class="text-sm">{{ member.project_count }}</div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
-                        <div class="text-sm">{{ member.group|default:"-" }}</div>
-                    </div>
+
+                    <!-- Arrow -->
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
                 </div>
+            </a>
+            {% empty %}
+            <div class="p-8 text-center text-sm text-gray-500">
+                Belum ada annotator atau reviewer. Assign role dulu di halaman <a href="{% url 'master:assign_roles' %}" class="text-blue-600 underline">Assign Roles</a>.
             </div>
             {% endfor %}
         </div>
-        
-        <!-- Desktop Table Layout -->
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="w-full text-left bg-white rounded-lg">
-                <thead class="bg-gray-50">
-                    <tr class="text-gray-700 border-b">
-                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Email / No.hp</th>
-                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Default Role</th>
-                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Project</th>
-                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Group</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for member in members %}
-                    <tr class="hover:bg-gray-50 cursor-pointer member-item" 
-                        data-email="{{ member.email }}" data-role="{{ member.role }}"
-                        onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
-                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg">
-                            <div class="font-medium text-gray-900">{{ member.email }}</div>
-                            <div class="text-xs lg:text-base text-gray-500 mt-1">{{ member.phone_number }}</div>
-                        </td>
-                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
-                            {{ member.role|capfirst }}
-                        </td>
-                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
-                            {{ member.project_count }}
-                        </td>
-                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
-                            {{ member.group|default:"-" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <div id="noResultsMessage" class="hidden p-8 text-center text-sm text-gray-500">
+            Tidak ada anggota yang cocok dengan filter
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .filter-chip { background: white; border-color: #d1d5db; color: #374151; }
+    .filter-chip:hover { background: #f3f4f6; }
+    .filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+</style>
+
 <script>
-    function filterMembers() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const role = document.getElementById('roleFilter').value.toLowerCase();
-        
-        // Filter desktop table rows
-        const tableRows = document.querySelectorAll('tbody .member-item');
-        // Filter mobile cards
-        const mobileCards = document.querySelectorAll('.block.lg\\:hidden .member-item');
-        
-        [...tableRows, ...mobileCards].forEach(item => {
-            const email = item.dataset.email.toLowerCase();
-            const userRole = item.dataset.role.toLowerCase();
-            
-            let show = true;
-            
-            // Search filter
-            if (search && !email.includes(search)) {
-                show = false;
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const chips = document.querySelectorAll('.filter-chip');
+    const memberList = document.getElementById('memberList');
+    const items = Array.from(document.querySelectorAll('.member-item'));
+    const noResults = document.getElementById('noResultsMessage');
+    const visibleCount = document.getElementById('visibleCount');
+
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    // =========================================================
+    // APPLY FILTER + SEARCH
+    // =========================================================
+    function applyFilter() {
+        let visible = 0;
+        items.forEach(item => {
+            const email = item.dataset.email || '';
+            const phone = item.dataset.phone || '';
+            const role = item.dataset.role || '';
+
+            const matchFilter = activeFilter === 'all' || role === activeFilter;
+            const matchSearch = !searchQuery ||
+                                email.includes(searchQuery) ||
+                                phone.includes(searchQuery);
+
+            if (matchFilter && matchSearch) {
+                item.style.display = '';
+                visible++;
+            } else {
+                item.style.display = 'none';
             }
-            
-            // Role filter
-            if (role && userRole !== role) {
-                show = false;
-            }
-            
-            item.style.display = show ? '' : 'none';
         });
+
+        visibleCount.textContent = visible;
+        noResults.classList.toggle('hidden', visible > 0 || items.length === 0);
     }
+
+    // =========================================================
+    // APPLY SORT — reorder DOM nodes
+    // =========================================================
+    function applySort() {
+        const sortValue = sortSelect.value;
+
+        // Get only visible items for sorting
+        const sorted = [...items].sort((a, b) => {
+            if (sortValue === 'projects_desc') {
+                return parseInt(b.dataset.projects) - parseInt(a.dataset.projects);
+            }
+            if (sortValue === 'projects_asc') {
+                return parseInt(a.dataset.projects) - parseInt(b.dataset.projects);
+            }
+            if (sortValue === 'email_asc') {
+                return (a.dataset.email || '').localeCompare(b.dataset.email || '');
+            }
+            return 0; // default = keep original order
+        });
+
+        // Re-append in new order
+        sorted.forEach(item => memberList.appendChild(item));
+    }
+
+    // =========================================================
+    // EVENTS
+    // =========================================================
+    searchInput.addEventListener('input', e => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        applyFilter();
+    });
+
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            activeFilter = chip.dataset.filter;
+            applyFilter();
+        });
+    });
+
+    sortSelect.addEventListener('change', () => {
+        applySort();
+    });
+});
 </script>
+
 {% endblock %}

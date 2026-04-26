@@ -3,150 +3,294 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h1 class="text-xl md:text-2xl lg:text-4xl font-bold">Job settings</h1>
 
-    <!-- Tab Navigation -->
-    <div class="mb-6">
-        <div class="border-b border-gray-200">
-            <nav class="-mb-px flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-8">
-                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold"
-                        data-tab="jobProfile">
-                    Job Profile
-                </button>
-                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold"
-                        data-tab="jobAssign">
-                    Job Assign
-                </button>
-            </nav>
+    <!-- ====================================================
+         HEADER — judul + tombol Add Profile
+         ==================================================== -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-4xl font-bold">Job Settings</h1>
+            <p class="text-sm text-gray-500 mt-1">Kelola semua job annotation dari satu tempat</p>
         </div>
+        <button id="addProfileBtn"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm md:text-base flex items-center gap-2 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Job Profile
+        </button>
     </div>
 
-    <!-- Job Profile Content -->
-    <div id="jobProfileContent" class="tab-content active">
-        <div class="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
-            <h3 class="text-lg md:text-xl font-semibold">List Profile</h3>
-            <button id="addProfileBtn" class="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-600 text-sm md:text-base">
-                Add Profile
+    <!-- ====================================================
+         FILTER BAR — search + status filter + counter
+         ==================================================== -->
+    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3 md:items-center">
+        <div class="flex-1">
+            <input type="text" id="jobSearchInput"
+                   placeholder="Cari job berdasarkan title..."
+                   class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button class="filter-chip active px-3 py-1 rounded-full text-sm border" data-status="all">
+                Semua ({{ jobs|length }})
+            </button>
+            <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="not_assign">
+                Belum Di-assign
+            </button>
+            <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="in_progress">
+                Sedang Berjalan
+            </button>
+            <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="finish">
+                Selesai
             </button>
         </div>
-
-        <!-- Job Profile List -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {% for job in jobs %}
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer job-card hover:shadow-lg transition-shadow" 
-                onclick="showJobDetail({{ job.id }}, '{{ job.title }}', '{{ job.description }}', '{{ job.hotkey }}', '{{ job.worker_annotator|default:'-' }}', '{{ job.worker_reviewer|default:'-' }}', '{{ job.segmentation_list|join:',' }}')" 
-                data-job-id="{{ job.id }}">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0">
-                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        {% if job.get_first_image_url %}
-                            <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" 
-                                 class="w-full h-full object-cover">
-                        {% endif %}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
-                        <div class="space-y-1 md:space-y-2 text-sm md:text-base text-gray-500">
-                            <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
-                            <p class="flex justify-between"><span>Date:</span> <span class="text-right">{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
-                            <p class="flex justify-between"><span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
-                                    {% if job.status == 'not_assign' %}bg-red-100 text-red-700
-                                    {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
-                                    {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
-                                    {{ job.get_status_display }}
-                                </span>
-                            </p>
-                            <p class="flex justify-between"><span>Priority:</span> 
-                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
-                                    {% if job.priority == 'urgent' %}bg-red-100 text-red-700
-                                    {% elif job.priority == 'high' %}bg-orange-100 text-orange-700
-                                    {% elif job.priority == 'medium' %}bg-yellow-100 text-yellow-700
-                                    {% elif job.priority == 'low' %}bg-green-100 text-green-700{% endif %}">
-                                    {{ job.priority|title }}
-                                </span>
-                            </p>
-                            <div class="worker-info space-y-1 md:space-y-2 text-gray-500">
-                                <p class="flex justify-between">
-                                    <span>Annotator:</span>
-                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_annotator.email|default:'-' }}</span>
-                                </p>
-                                <p class="flex justify-between">
-                                    <span>Reviewer:</span>
-                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_reviewer.email|default:'-' }}</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
     </div>
 
-    <!-- Job Assign Content -->
-    <div id="jobAssignContent" class="tab-content hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {% for job in jobs %}
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer job-card hover:shadow-lg transition-shadow"
-                onclick="showJobAssignDetail({{ job.id }}); event.stopPropagation();"
-                data-job-id="{{ job.id }}">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0">
-                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        {% if job.get_first_image_url %}
-                            <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" 
-                                 class="w-full h-full object-cover">
-                        {% endif %}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
-                        <div class="space-y-1 md:space-y-2 text-sm md:text-base text-gray-500">
-                            <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
-                            <p class="flex justify-between"><span>Date:</span> <span class="text-right">{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
-                            <p class="flex justify-between"><span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
-                                    {% if job.status == 'not_assign' %}bg-red-100 text-red-700
-                                    {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
-                                    {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
-                                    {{ job.get_status_display }}
-                                </span>
-                            </p>
-                            <p class="flex justify-between"><span>Priority:</span> 
-                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
-                                    {% if job.priority == 'urgent' %}bg-red-100 text-red-700
-                                    {% elif job.priority == 'high' %}bg-orange-100 text-orange-700
-                                    {% elif job.priority == 'medium' %}bg-yellow-100 text-yellow-700
-                                    {% elif job.priority == 'low' %}bg-green-100 text-green-700{% endif %}">
-                                    {{ job.priority|title }}
-                                </span>
-                            </p>
-                            <div class="worker-info space-y-1 md:space-y-2 text-gray-500">
-                                <p class="flex justify-between">
-                                    <span>Annotator:</span>
-                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_annotator.email|default:'-' }}</span>
-                                </p>
-                                <p class="flex justify-between">
-                                    <span>Reviewer:</span>
-                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_reviewer.email|default:'-' }}</span>
-                                </p>
-                            </div>
-                        </div>
+    <!-- ====================================================
+         JOB LIST — single list, action buttons per card
+         ==================================================== -->
+    <div id="jobListContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {% for job in jobs %}
+        <div class="job-card bg-white p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+             data-job-id="{{ job.id }}"
+             data-job-title="{{ job.title|lower }}"
+             data-job-status="{{ job.status }}">
+
+            <!-- Atas: image + info utama -->
+            <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0 mb-4">
+                <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                    {% if job.get_first_image_url %}
+                        <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}"
+                             class="w-full h-full object-cover">
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
+                    <div class="space-y-1 mt-2 text-sm text-gray-500">
+                        <p class="flex justify-between">
+                            <span>Image:</span>
+                            <span class="font-medium text-gray-700">{{ job.image_count }}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span>Date:</span>
+                            <span class="text-right text-xs">{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span>
+                        </p>
+                        <p class="flex justify-between items-center">
+                            <span>Status:</span>
+                            <span class="px-2 py-1 rounded-full text-xs
+                                {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                                {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                                {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
+                                {{ job.get_status_display }}
+                            </span>
+                        </p>
+                        <p class="flex justify-between items-center">
+                            <span>Priority:</span>
+                            <span class="px-2 py-1 rounded-full text-xs
+                                {% if job.priority == 'urgent' %}bg-red-100 text-red-700
+                                {% elif job.priority == 'high' %}bg-orange-100 text-orange-700
+                                {% elif job.priority == 'medium' %}bg-yellow-100 text-yellow-700
+                                {% elif job.priority == 'low' %}bg-green-100 text-green-700{% endif %}">
+                                {{ job.priority|title }}
+                            </span>
+                        </p>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+
+            <!-- Worker Info -->
+            <div class="worker-info space-y-1 text-sm text-gray-500 border-t pt-3 mb-4">
+                <p class="flex justify-between">
+                    <span>Annotator:</span>
+                    <span class="text-right truncate max-w-48">{{ job.worker_annotator.email|default:'-' }}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span>Reviewer:</span>
+                    <span class="text-right truncate max-w-48">{{ job.worker_reviewer.email|default:'-' }}</span>
+                </p>
+            </div>
+
+            <!-- ACTION BUTTONS — ini yang bikin UX nya jelas -->
+            <div class="space-y-2 border-t pt-3">
+                <!-- Row 1: primary actions -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="showJobDetail({{ job.id }})"
+                            class="flex-1 min-w-[80px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Detail
+                    </button>
+                    <button onclick="showWorkerSelection({{ job.id }})"
+                            class="flex-1 min-w-[80px] bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Assign
+                    </button>
+                    <button onclick="handleAddImage({{ job.id }})"
+                            class="flex-1 min-w-[80px] bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Add Image
+                    </button>
+                </div>
+                <!-- Row 2: secondary actions -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="showEditJobProfile({{ job.id }})"
+                            class="flex-1 min-w-[80px] bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit
+                    </button>
+                    <button onclick="deleteJobProfile({{ job.id }}, '{{ job.title|escapejs }}')"
+                            class="flex-1 min-w-[80px] bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a2 2 0 012-2h4a2 2 0 012 2v3"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            </svg>
+            <p class="font-medium">Belum ada job profile</p>
+            <p class="text-sm mt-1">Klik "Add Job Profile" untuk bikin yang pertama</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty state kalau filter gak nemu -->
+    <div id="noResultsMessage" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+        <p class="font-medium">Tidak ada job yang cocok dengan filter</p>
+    </div>
+</div>
+
+<!-- ========================================================
+     MODAL: Job Detail (view-only)
+     ======================================================== -->
+<div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
+        <div class="p-6 md:p-8">
+            <!-- Close button -->
+            <button type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                    onclick="closeModal('jobDetailModal')">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <!-- Labeling Progress -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Labeling Progress</h3>
+                    <button onclick="handleAddImage(document.getElementById('detailId').textContent)"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Add Image
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-3xl font-bold text-center" id="detailUnannotated">0</div>
+                        <div class="text-gray-500 text-center text-sm">Unannotated</div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-3xl font-bold text-center" id="detailInReview">0</div>
+                        <div class="text-gray-500 text-center text-sm">In Review</div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-3xl font-bold text-center" id="detailInRework">0</div>
+                        <div class="text-gray-500 text-center text-sm">In Rework</div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-3xl font-bold text-center" id="detailFinished">0</div>
+                        <div class="text-gray-500 text-center text-sm">Finished</div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-3xl font-bold text-center" id="detailIssues">0</div>
+                        <div class="text-gray-500 text-center text-sm">Issues</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Info -->
+            <div class="flex flex-col md:flex-row md:space-x-8">
+                <div class="w-full md:w-1/3 mb-6 md:mb-0">
+                    <div id="detailImageContainer" class="bg-gray-200 w-full aspect-square rounded-lg overflow-hidden">
+                        <img id="detailImage" src="" alt="Job Image" class="w-full h-full object-cover hidden">
+                    </div>
+                </div>
+                <div class="w-full md:w-2/3">
+                    <h2 id="detailTitle" class="text-2xl font-bold mb-6"></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <div><span class="text-gray-500">ID Job:</span> <span id="detailId" class="ml-2 font-medium"></span></div>
+                            <div><span class="text-gray-500">Worker Annotator:</span> <span id="detailAnnotator" class="ml-2">-</span></div>
+                            <div><span class="text-gray-500">Worker Reviewer:</span> <span id="detailReviewer" class="ml-2">-</span></div>
+                            <div>
+                                <span class="text-gray-500">Deskripsi:</span>
+                                <p id="detailDescription" class="mt-1 text-sm"></p>
+                            </div>
+                            <div><span class="text-gray-500">Hotkey:</span> <span id="detailHotkey" class="ml-2">-</span></div>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-gray-500">Segmentasi:</span>
+                                <ul id="detailSegmentation" class="mt-1 ml-4 list-disc text-sm"></ul>
+                            </div>
+                            <div><span class="text-gray-500">Shape:</span> <span id="detailShape" class="ml-2"></span></div>
+                            <div>
+                                <span class="text-gray-500">Colour:</span>
+                                <div class="flex items-center mt-1">
+                                    <div id="detailColorBox" class="w-6 h-6 rounded mr-2 border"></div>
+                                    <span id="detailColor"></span>
+                                </div>
+                            </div>
+                            <div><span class="text-gray-500">Time & Date:</span> <span id="detailDate" class="ml-2 text-sm"></span></div>
+                            <div><span class="text-gray-500">Image:</span> <span id="detailImageCount" class="ml-2">0</span></div>
+                            <div>
+                                <span class="text-gray-500">Status:</span>
+                                <span id="detailStatus" class="ml-2 px-2 py-1 rounded-full text-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick action di modal detail: shortcut ke Assign -->
+                    <div class="mt-6 flex justify-end gap-2 border-t pt-4">
+                        <button onclick="closeModal('jobDetailModal')"
+                                class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                            Close
+                        </button>
+                        <button onclick="showWorkerSelection(document.getElementById('detailId').textContent); closeModal('jobDetailModal');"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Assign Workers
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modals -->
-<!-- Worker Selection Modal -->
-<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+<!-- ========================================================
+     MODAL: Worker Selection (pilih annotator → reviewer)
+     ======================================================== -->
+<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto relative">
         <div class="p-4 md:p-6">
             <div class="flex justify-between items-center mb-4 md:mb-6">
                 <h2 class="text-lg md:text-2xl font-bold">Choose Worker</h2>
-                <button type="button" 
-                        class="text-gray-500 hover:text-gray-700 p-2"
+                <button type="button" class="text-gray-500 hover:text-gray-700 p-2"
                         onclick="closeWorkerSelection()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -154,12 +298,9 @@
                 </button>
             </div>
 
-            <!-- Search and Filter -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 md:mb-6">
                 <div class="md:col-span-2">
-                    <input type="text"
-                           id="workerSearch"
-                           placeholder="Search by email/No.hp"
+                    <input type="text" id="workerSearch" placeholder="Search by email/No.hp"
                            class="w-full p-2 border rounded-lg text-sm md:text-base">
                 </div>
                 <select id="roleFilter" class="p-2 border rounded-lg text-sm md:text-base" disabled>
@@ -168,14 +309,10 @@
                 </select>
             </div>
 
-            <!-- Workers List Section -->
             <div class="space-y-2" id="workersList">
-                <div class="p-4 text-gray-500 text-center">
-                    Loading workers...
-                </div>
+                <div class="p-4 text-gray-500 text-center">Loading workers...</div>
             </div>
 
-            <!-- Footer -->
             <div class="flex flex-col sm:flex-row justify-end mt-4 md:mt-6 space-y-2 sm:space-y-0 sm:space-x-2">
                 <button type="button"
                         class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm md:text-base"
@@ -183,7 +320,7 @@
                     Cancel
                 </button>
                 <button id="nextBtn"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base disabled:opacity-50"
                         disabled>
                     Next
                 </button>
@@ -192,348 +329,427 @@
     </div>
 </div>
 
-<!-- Job Detail Modal -->
-<div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto m-auto relative">
-        <div class="p-8">
-            <!-- Modify the Labeling Progress section -->
-            <div class="mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-semibold">Labeling Progress</h3>
-                    <button onclick="handleAddImage(document.getElementById('detailId').textContent)"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        Add Image
-                    </button>
-                </div>
-                <!-- Keep existing progress boxes -->
-                <div class="grid grid-cols-5 gap-4">
-                    <!-- Unannotated -->
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="detailUnannotated">0</div>
-                        <div class="text-gray-500 text-center">Unannotated</div>
-                    </div>
-
-                    <!-- In Review -->
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="detailInReview">0</div>
-                        <div class="text-gray-500 text-center">In Review</div>
-                    </div>
-
-                    <!-- In Rework -->
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="detailInRework">0</div>
-                        <div class="text-gray-500 text-center">In Rework</div>
-                    </div>
-
-                    <!-- Finished -->
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="detailFinished">0</div>
-                        <div class="text-gray-500 text-center">Finished</div>
-                    </div>
-
-                    <!-- Issues -->
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="detailIssues">0</div>
-                        <div class="text-gray-500 text-center">Issues</div>
-                    </div>
-                </div>
+<!-- ========================================================
+     MODAL: Add Profile (create new job)
+     ======================================================== -->
+<div id="addProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <!-- Header with gradient -->
+        <div class="sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl md:text-2xl font-bold text-white">Create Job Profile</h2>
+                <p class="text-xs text-indigo-100 mt-0.5">Bikin project anotasi baru + konfigurasi nya</p>
             </div>
-
-            <!-- Rest of the modal content -->
-            <div class="flex justify-between items-start">
-                <div class="flex space-x-8 w-full">
-                    <!-- Image placeholder -->
-                    <div class="w-1/3">
-                        <div id="detailImageContainer" class="bg-gray-200 w-full aspect-square rounded-lg overflow-hidden">
-                            <img id="detailImage" src="" alt="Job Image" 
-                                 class="w-full h-full object-cover hidden">
-                        </div>
-                    </div>
-
-                    <!-- Job details -->
-                    <div class="w-2/3">
-                        <h2 id="detailTitle" class="text-2xl font-bold mb-8"></h2>
-
-                        <div class="grid grid-cols-2 gap-8">
-                            <!-- Left Column -->
-                            <div class="space-y-4">
-                                <div>
-                                    <span class="text-gray-500">ID Job:</span>
-                                    <span id="detailId" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Worker Annotator:</span>
-                                    <span id="detailAnnotator" class="ml-2">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Worker Reviwer:</span>
-                                    <span id="detailReviewer" class="ml-2">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Deskripsi:</span>
-                                    <p id="detailDescription" class="mt-1"></p>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Hotkey:</span>
-                                    <span id="detailHotkey" class="ml-2">-</span>
-                                </div>
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="space-y-4">
-                                <div>
-                                    <span class="text-gray-500">Segmentasi:</span>
-                                    <ul id="detailSegmentation" class="mt-1 ml-4 list-disc"></ul>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Shape:</span>
-                                    <span id="detailShape" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Colour:</span>
-                                    <div class="flex items-center mt-1">
-                                        <div id="detailColorBox" class="w-6 h-6 rounded mr-2"></div>
-                                        <span id="detailColor"></span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Time & Date:</span>
-                                    <span id="detailDate" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Image:</span>
-                                    <span id="detailImageCount" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Status:</span>
-                                    <span id="detailStatus" class="ml-2 px-2 py-1 rounded-full text-sm"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+            <button id="closeModalBtn" class="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
-    </div>
-</div>
 
-<!-- Job Assign Detail Modal -->
-<div id="jobAssignDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto m-auto relative">
-        <div class="p-8">
-            <!-- Add a close button in the header -->
-            <div class="flex justify-between items-center mb-6">
-                <button type="button" 
-                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-                        onclick="closeJobAssignModal()">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Labeling Progress -->
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4">Labeling Progress</h3>
-                <div class="grid grid-cols-5 gap-4">
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="assignDetailUnannotated">0</div>
-                        <div class="text-gray-500 text-center">Unannotated</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="assignDetailInReview">0</div>
-                        <div class="text-gray-500 text-center">In Review</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="assignDetailInRework">0</div>
-                        <div class="text-gray-500 text-center">In Rework</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="assignDetailFinished">0</div>
-                        <div class="text-gray-500 text-center">Finished</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <div class="text-4xl font-bold text-center" id="assignDetailIssues">0</div>
-                        <div class="text-gray-500 text-center">Issues</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Job Details with Assignment Button -->
-            <div class="flex justify-between items-start">
-                <div class="flex space-x-8 w-full">
-                    <!-- Left side with image -->
-                    <div class="w-1/3">
-                        <div id="assignDetailImageContainer" class="bg-gray-200 w-full aspect-square rounded-lg overflow-hidden">
-                            <img id="assignDetailImage" src="" alt="Job Image" 
-                                 class="w-full h-full object-cover hidden">
-                        </div>
-                    </div>
-
-                    <!-- Right side with details -->
-                    <div class="w-2/3">
-                        <h2 id="assignDetailTitle" class="text-2xl font-bold mb-8"></h2>
-                        <div class="grid grid-cols-2 gap-8">
-                            <!-- Left Column -->
-                            <div class="space-y-4">
-                                <div>
-                                    <span class="text-gray-500">ID Job:</span>
-                                    <span id="assignDetailId" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Worker Annotator:</span>
-                                    <span id="assignDetailAnnotator" class="ml-2">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Worker Reviwer:</span>
-                                    <span id="assignDetailReviewer" class="ml-2">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Deskripsi:</span>
-                                    <p id="assignDetailDescription" class="mt-1"></p>
-                                </div>
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="space-y-4">
-                                <div>
-                                    <span class="text-gray-500">Segmentasi:</span>
-                                    <ul id="assignDetailSegmentation" class="mt-1 ml-4 list-disc"></ul>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Shape:</span>
-                                    <span id="assignDetailShape" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Image:</span>
-                                    <span id="assignDetailImageCount" class="ml-2"></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Status:</span>
-                                    <span id="assignDetailStatus" class="ml-2 px-2 py-1 rounded-full text-sm"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom section with Assignment button -->
-            <div class="flex justify-end mt-8">
-                <!-- Update the Assignment button -->
-                <div class="flex justify-end mt-8">
-                <button type="button" 
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                        onclick="showWorkerSelection({{ job.id }})">
-                    Assignment
-                </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Profile Modal -->
-<div id="addProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Create Profile</h2>
-                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
+        <div class="p-6 md:p-8">
             <form id="jobProfileForm" class="space-y-6">
                 {% csrf_token %}
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
-                        <input type="text" name="title" required class="w-full p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea name="description" rows="4" class="w-full p-2 border rounded-md"></textarea>
-                    </div>
-                </div>
 
-                <!-- Other form fields -->
-                <!-- Segmentation Options -->
+                <!-- ==== SECTION: BASIC INFO ==== -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Segmentation <span class="text-red-500">*</span></label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="segmentation" value="semantic" class="mr-2">
-                            <span>Semantic</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="segmentation" value="instance" class="mr-2">
-                            <span>Instance</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="segmentation" value="panoptic" class="mr-2">
-                            <span>Panoptic</span>
-                        </label>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Basic Info</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Title <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" required placeholder="Contoh: CCTV Jalan Tol Jakarta 2026"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                            <textarea name="description" rows="3" placeholder="Deskripsi singkat project..."
+                                      class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"></textarea>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Shape Options -->
+                <!-- ==== SECTION: ANNOTATION TYPE ==== -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Shape <span class="text-red-500">*</span></label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="shape" value="bounding_box" class="mr-2">
-                            <span>Bounding Box</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="shape" value="polygon" class="mr-2">
-                            <span>Polygon</span>
-                        </label>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Annotation Type</h3>
                     </div>
-                </div>
 
-                <!-- Color Picker -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Color <span class="text-red-500">*</span></label>
-                    <input type="color" name="color" required class="w-20 h-10">
-                </div>
+                    <!-- Segmentation: card-style radio -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Segmentation <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <label class="radio-card cursor-pointer">
+                                <input type="radio" name="segmentation" value="semantic" class="peer sr-only" required>
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 peer-checked-dot flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-indigo-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Semantic</div>
+                                            <div class="text-xs text-gray-500">Per-pixel class</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-card cursor-pointer">
+                                <input type="radio" name="segmentation" value="instance" class="peer sr-only">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 peer-checked-dot flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-indigo-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Instance</div>
+                                            <div class="text-xs text-gray-500">Per-object detect</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-card cursor-pointer">
+                                <input type="radio" name="segmentation" value="panoptic" class="peer sr-only">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 peer-checked-dot flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-indigo-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Panoptic</div>
+                                            <div class="text-xs text-gray-500">Semantic + Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
 
-                <!-- Priority Selection -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority <span class="text-red-500">*</span></label>
-                    <select name="priority" required class="w-full p-2 border rounded-md">
-                        <option value="">Select Priority</option>
-                        <option value="low">Low</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
-                    </select>
-                </div>
-
-                <!-- Date Range -->
-                <div class="grid grid-cols-2 gap-4">
+                    <!-- Shape: card-style radio -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
-                        <input type="date" name="start_date" required class="w-full p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-red-500">*</span></label>
-                        <input type="date" name="end_date" required class="w-full p-2 border rounded-md">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Shape <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="radio-card cursor-pointer">
+                                <input type="radio" name="shape" value="bounding_box" class="peer sr-only" required>
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
+                                        </svg>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Bounding Box</div>
+                                            <div class="text-xs text-gray-500">Rectangular area</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-card cursor-pointer">
+                                <input type="radio" name="shape" value="polygon" class="peer sr-only">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-3">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Polygon</div>
+                                            <div class="text-xs text-gray-500">Multi-vertex shape</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex justify-end space-x-3">
-                    <button type="button" id="cancelProfileBtn" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50">
+                <!-- ==== SECTION: SETTINGS ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Settings</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Color <span class="text-red-500">*</span></label>
+                            <div class="flex items-center gap-3 p-2.5 border border-gray-300 rounded-lg bg-white">
+                                <input type="color" name="color" required value="#4527A0"
+                                       class="w-10 h-10 rounded cursor-pointer border-0"
+                                       onchange="document.getElementById('addColorPreview').textContent = this.value">
+                                <span id="addColorPreview" class="text-sm font-mono text-gray-600">#4527A0</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Warna default buat annotation</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority <span class="text-red-500">*</span></label>
+                            <select name="priority" required
+                                    class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white">
+                                <option value="low">🟢 Low</option>
+                                <option value="medium" selected>🟡 Medium</option>
+                                <option value="high">🟠 High</option>
+                                <option value="urgent">🔴 Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== SECTION: TIMELINE ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Timeline</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="start_date" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">End Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="end_date" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== FOOTER ==== -->
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100 pt-5">
+                    <button type="button" id="cancelProfileBtn"
+                            class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                        Save
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Create Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================
+     MODAL: Edit Job Profile (reuse form struktur Add Profile)
+     ======================================================== -->
+<div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <!-- Header with gradient (amber/orange buat edit) -->
+        <div class="sticky top-0 z-10 bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white">Edit Job Profile</h2>
+                    <p class="text-xs text-amber-50 mt-0.5">Update konfigurasi project anotasi</p>
+                </div>
+            </div>
+            <button type="button" class="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition"
+                    onclick="closeModal('editProfileModal')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-6 md:p-8">
+            <form id="editProfileForm" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="job_id" id="editJobId">
+
+                <!-- ==== SECTION: BASIC INFO ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Basic Info</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Title <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" id="editTitle" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                            <textarea name="description" id="editDescription" rows="3"
+                                      class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== SECTION: ANNOTATION TYPE ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Annotation Type</h3>
+                    </div>
+
+                    <!-- Segmentation: card-style radio -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Segmentation <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="segmentation" value="semantic" class="peer sr-only edit-seg" required>
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-amber-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Semantic</div>
+                                            <div class="text-xs text-gray-500">Per-pixel class</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="segmentation" value="instance" class="peer sr-only edit-seg">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-amber-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Instance</div>
+                                            <div class="text-xs text-gray-500">Per-object detect</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="segmentation" value="panoptic" class="peer sr-only edit-seg">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                            <span class="w-2 h-2 rounded-full bg-amber-500 opacity-0"></span>
+                                        </span>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Panoptic</div>
+                                            <div class="text-xs text-gray-500">Semantic + Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Shape: card-style radio -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Shape <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="shape" value="bounding_box" class="peer sr-only edit-shape" required>
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
+                                        </svg>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Bounding Box</div>
+                                            <div class="text-xs text-gray-500">Rectangular area</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="shape" value="polygon" class="peer sr-only edit-shape">
+                                <div class="p-3 border-2 border-gray-200 rounded-lg peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300 transition">
+                                    <div class="flex items-center gap-3">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">Polygon</div>
+                                            <div class="text-xs text-gray-500">Multi-vertex shape</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== SECTION: SETTINGS ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Settings</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Color <span class="text-red-500">*</span></label>
+                            <div class="flex items-center gap-3 p-2.5 border border-gray-300 rounded-lg bg-white">
+                                <input type="color" name="color" id="editColor" required
+                                       class="w-10 h-10 rounded cursor-pointer border-0"
+                                       onchange="document.getElementById('editColorPreview').textContent = this.value">
+                                <span id="editColorPreview" class="text-sm font-mono text-gray-600">#4527A0</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Warna default buat annotation</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority <span class="text-red-500">*</span></label>
+                            <select name="priority" id="editPriority" required
+                                    class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white">
+                                <option value="low">🟢 Low</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="high">🟠 High</option>
+                                <option value="urgent">🔴 Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== SECTION: TIMELINE ==== -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Timeline</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="start_date" id="editStartDate" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">End Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="end_date" id="editEndDate" required
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==== FOOTER ==== -->
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100 pt-5">
+                    <button type="button"
+                            class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition"
+                            onclick="closeModal('editProfileModal')">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Save Changes
                     </button>
                 </div>
             </form>
@@ -542,355 +758,579 @@
 </div>
 
 <style>
-    .file-input-button {
-        position: relative;
-        overflow: hidden;
+    .filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+    .filter-chip:hover { background: #f3f4f6; }
+    .filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+
+    /* Fix modal display saat di-show */
+    #jobDetailModal.flex, #workerSelectionModal.flex, #addProfileModal.flex, #editProfileModal.flex { display: flex !important; }
+
+    /* ======================================================= */
+    /* RADIO-CARD: Visual feedback saat dipilih                 */
+    /* ======================================================= */
+    /* CREATE modal (indigo) — inner dot bulat */
+    #addProfileModal input[type="radio"]:checked + div span > span {
+        opacity: 1 !important;
+    }
+    #addProfileModal input[type="radio"]:checked + div span.w-4.h-4 {
+        border-color: #6366f1 !important;
+        background-color: #6366f1 !important;
+    }
+    #addProfileModal input[type="radio"]:checked + div span.w-4.h-4 > span {
+        background-color: white !important;
+    }
+    /* EDIT modal (amber) — inner dot bulat */
+    #editProfileModal input[type="radio"]:checked + div span.w-4.h-4 {
+        border-color: #f59e0b !important;
+        background-color: #f59e0b !important;
+    }
+    #editProfileModal input[type="radio"]:checked + div span.w-4.h-4 > span {
+        background-color: white !important;
+        opacity: 1 !important;
     }
 
-    .file-input-button input[type=file] {
-        position: absolute;
-        top: 0;
-        right: 0;
-        min-width: 100%;
-        min-height: 100%;
-        opacity: 0;
-        cursor: pointer;
+    /* Card container itself get highlighted border + soft tint saat checked */
+    #addProfileModal input[type="radio"]:checked + div {
+        border-color: #6366f1 !important;
+        background-color: #eef2ff !important;
+    }
+    #editProfileModal input[type="radio"]:checked + div {
+        border-color: #f59e0b !important;
+        background-color: #fffbeb !important;
+    }
+    #addProfileModal input[type="radio"]:focus-visible + div,
+    #editProfileModal input[type="radio"]:focus-visible + div {
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const addProfileBtn = document.getElementById('addProfileBtn');
-    const addProfileModal = document.getElementById('addProfileModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const jobProfileForm = document.getElementById('jobProfileForm');
-
-    // Show modal
-    addProfileBtn.addEventListener('click', function() {
-        addProfileModal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-    });
-
-    // Hide modal
-    function hideModal() {
-        addProfileModal.classList.add('hidden');
+// =========================================================
+// GLOBAL HELPERS
+// =========================================================
+function closeModal(modalId) {
+    const m = document.getElementById(modalId);
+    if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
         document.body.style.overflow = 'auto';
-        jobProfileForm.reset();
+    }
+}
+
+function openModal(modalId) {
+    const m = document.getElementById(modalId);
+    if (m) {
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function getCSRF() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// =========================================================
+// SEARCH & FILTER (client-side)
+// =========================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('jobSearchInput');
+    const chips = document.querySelectorAll('.filter-chip');
+    let activeStatus = 'all';
+    let searchQuery = '';
+
+    function applyFilter() {
+        const cards = document.querySelectorAll('.job-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const title = card.dataset.jobTitle || '';
+            const status = card.dataset.jobStatus || '';
+            const matchStatus = activeStatus === 'all' || status === activeStatus;
+            const matchSearch = !searchQuery || title.includes(searchQuery);
+            if (matchStatus && matchSearch) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        document.getElementById('noResultsMessage').classList.toggle('hidden', visibleCount > 0 || cards.length === 0);
     }
 
-    closeModalBtn.addEventListener('click', hideModal);
-
-    // Close modal when clicking outside
-    addProfileModal.addEventListener('click', function(e) {
-        if (e.target === addProfileModal) {
-            hideModal();
-        }
+    searchInput.addEventListener('input', e => {
+        searchQuery = e.target.value.toLowerCase();
+        applyFilter();
     });
 
-    // Form submission
-    jobProfileForm.addEventListener('submit', function(e) {
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            activeStatus = chip.dataset.status;
+            applyFilter();
+        });
+    });
+});
+
+// =========================================================
+// ADD PROFILE MODAL
+// =========================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const addBtn = document.getElementById('addProfileBtn');
+    const modal = document.getElementById('addProfileModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const form = document.getElementById('jobProfileForm');
+
+    addBtn.addEventListener('click', () => openModal('addProfileModal'));
+    closeBtn.addEventListener('click', () => { closeModal('addProfileModal'); form.reset(); });
+    cancelBtn.addEventListener('click', () => { closeModal('addProfileModal'); form.reset(); });
+    modal.addEventListener('click', e => { if (e.target === modal) { closeModal('addProfileModal'); form.reset(); } });
+
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-
         fetch("{% url 'master:create_job_profile' %}", {
             method: 'POST',
             body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
+            headers: { 'X-CSRFToken': getCSRF() }
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.status === 'success') {
-                hideModal();
+                closeModal('addProfileModal');
                 window.location.reload();
             } else {
                 alert(data.message || 'Error creating job profile');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error creating job profile');
-        });
-    });
-
-    // Add click event to job profile cards
-    document.querySelectorAll('[data-job-id]').forEach(card => {
-        card.addEventListener('click', function() {
-            const jobId = this.dataset.jobId;
-            const detailModal = document.getElementById('jobDetailModal');
-
-            // Update the fetch URL to use the correct URL pattern
-            fetch(`/job-profile/${jobId}/`, {
-                method: 'GET',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Accept': 'application/json',
-                },
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data) {
-                    throw new Error('No data received');
-                }
-
-                // Update modal content with null checks
-                document.getElementById('detailTitle').textContent = data.title || '-';
-                document.getElementById('detailId').textContent = data.id || '-';
-                document.getElementById('detailAnnotator').textContent = data.worker_annotator || '-';
-                document.getElementById('detailReviewer').textContent = data.worker_reviewer || '-';
-                document.getElementById('detailDescription').textContent = data.description || '-';
-                document.getElementById('detailHotkey').textContent = data.hotkey || '-';
-
-                // Update segmentation list
-                const segmentationList = document.getElementById('detailSegmentation');
-                segmentationList.innerHTML = '';
-                if (data.segmentation_type) {
-                    const li = document.createElement('li');
-                    li.textContent = data.segmentation_type;
-                    segmentationList.appendChild(li);
-                }
-
-                document.getElementById('detailShape').textContent = data.shape_type || '-';
-                document.getElementById('detailColor').textContent = data.color || '-';
-                document.getElementById('detailColorBox').style.backgroundColor = data.color || '#FFFFFF';
-                document.getElementById('detailDate').textContent =
-                    `${data.start_date || '-'} - ${data.end_date || '-'} WIB`;
-                document.getElementById('detailImageCount').textContent = data.image_count || '0';
-
-                // Set status with appropriate styling
-                const statusSpan = document.getElementById('detailStatus');
-                statusSpan.textContent = data.status || 'Unknown';
-                statusSpan.className = 'px-2 py-1 rounded-full text-sm inline-block ' +
-                    (data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
-                     data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-                     'bg-green-100 text-green-700');
-
-                // Update labeling progress
-                document.getElementById('detailUnannotated').textContent = data.unannotated_count || '0';
-                document.getElementById('detailInReview').textContent = data.in_review_count || '0';
-                document.getElementById('detailInRework').textContent = data.in_rework_count || '0';
-                document.getElementById('detailFinished').textContent = data.finished_count || '0';
-                document.getElementById('detailIssues').textContent = data.issues_count || '0';
-
-                // Update job image
-                const detailImage = document.getElementById('detailImage');
-                const detailImageContainer = document.getElementById('detailImageContainer');
-                if (data.first_image_url) {
-                    detailImage.src = data.first_image_url;
-                    detailImage.classList.remove('hidden');
-                    detailImageContainer.classList.remove('bg-gray-200');
-                } else {
-                    detailImage.classList.add('hidden');
-                    detailImageContainer.classList.add('bg-gray-200');
-                }
-
-                // Show modal
-                detailModal.classList.remove('hidden');
-                detailModal.classList.add('flex');
-                document.body.style.overflow = 'hidden';
-            })
-            .catch(error => {
-                console.error('Error fetching job details:', error);
-                // Show a more user-friendly error message
-                const errorMessage = 'Unable to load job details. Please try again later.';
-                alert(errorMessage);
-            });
-        });
-    });
-
-    // Close detail modal when clicking outside
-    document.getElementById('jobDetailModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('hidden');
-            this.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
+        .catch(err => { console.error(err); alert('Error creating job profile'); });
     });
 });
 
-// Tab switching functionality
-const tabBtns = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
+// =========================================================
+// EDIT JOB PROFILE
+// =========================================================
+function showEditJobProfile(jobId) {
+    fetch(`/edit-job-profile/${jobId}/`, {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCSRF(), 'Accept': 'application/json' }
+    })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(resp => {
+        if (resp.status !== 'success') throw new Error(resp.message || 'Gagal load data');
+        const d = resp.data;
 
-// Set initial state - Mark Job Profile as active by default
-document.querySelector('[data-tab="jobProfile"]').classList.add('active', 'border-[#4527A0]', 'text-[#4527A0]');
+        // Prefill form
+        document.getElementById('editJobId').value = d.id;
+        document.getElementById('editTitle').value = d.title || '';
+        document.getElementById('editDescription').value = d.description || '';
+        document.getElementById('editColor').value = d.color || '#000000';
+        document.getElementById('editPriority').value = d.priority || 'medium';
+        document.getElementById('editStartDate').value = d.start_date || '';
+        document.getElementById('editEndDate').value = d.end_date || '';
 
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Get all modals
-        const jobDetailModal = document.getElementById('jobDetailModal');
-        const jobAssignModal = document.getElementById('jobAssignDetailModal');
-        const addImageModal = document.querySelector('.modal-add-image'); // If exists
+        // Prefill radio segmentation
+        document.querySelectorAll('.edit-seg').forEach(r => {
+            r.checked = r.value === d.segmentation_type;
+        });
+        // Prefill radio shape
+        document.querySelectorAll('.edit-shape').forEach(r => {
+            r.checked = r.value === d.shape_type;
+        });
 
-        // Hide all modals when switching tabs
-        [jobDetailModal, jobAssignModal, addImageModal].forEach(modal => {
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
+        openModal('editProfileModal');
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Gagal load data job: ' + err.message);
+    });
+}
+
+// Submit edit form
+document.addEventListener('DOMContentLoaded', function () {
+    const editForm = document.getElementById('editProfileForm');
+    const editModal = document.getElementById('editProfileModal');
+
+    editForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const jobId = document.getElementById('editJobId').value;
+        const formData = new FormData(this);
+
+        fetch(`/edit-job-profile/${jobId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCSRF() },
+            body: formData
+        })
+        .then(r => {
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                throw new Error(`Server balik non-JSON (status ${r.status}). Cek URL / session.`);
             }
+            return r.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                closeModal('editProfileModal');
+                alert('Job profile berhasil di-update!');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error update job profile');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error update: ' + err.message);
         });
+    });
 
-        // Remove active class from all buttons and contents
-        tabBtns.forEach(b => b.classList.remove('active', 'border-[#4527A0]', 'text-[#4527A0]'));
-        tabContents.forEach(c => c.classList.add('hidden'));
-
-        // Add active class to clicked button and show corresponding content
-        btn.classList.add('active', 'border-[#4527A0]', 'text-[#4527A0]');
-        document.getElementById(`${btn.dataset.tab}Content`).classList.remove('hidden');
-
-        // Handle Add Image button visibility
-        const addImageBtn = document.querySelector('[onclick*="handleAddImage"]');
-        if (addImageBtn) {
-            addImageBtn.style.display = btn.dataset.tab === 'jobProfile' ? 'flex' : 'none';
-        }
+    editModal.addEventListener('click', e => {
+        if (e.target === editModal) closeModal('editProfileModal');
     });
 });
 
-// Modal functions
-function showCreateProfile() {
-    document.getElementById('createProfileModal').classList.remove('hidden');
-}
-
-function hideCreateProfile() {
-    document.getElementById('createProfileModal').classList.add('hidden');
-}
-
-// Form submission
-document.getElementById('createProfileForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    // Add your form submission logic here
-    hideCreateProfile();
-});
-
-function handleAddImage(jobId) {
-    const currentImages = parseInt(document.getElementById('detailImageCount').textContent) || 0;
-    const maxImages = 150;
-
-    if (currentImages >= maxImages) {
-        alert('Maximum number of images (150) has been reached');
+// =========================================================
+// DELETE JOB PROFILE
+// =========================================================
+function deleteJobProfile(jobId, jobTitle) {
+    if (!confirm(`Yakin mau hapus job "${jobTitle}"?\n\nSemua image, annotation, dan data terkait akan IKUT TERHAPUS. Aksi ini gak bisa di-undo!`)) {
         return;
     }
 
-    // Create the modal for image selection
+    fetch(`/delete-job-profile/${jobId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRF() }
+    })
+    .then(r => {
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            throw new Error(`Server balik non-JSON (status ${r.status}). Cek URL / session.`);
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message || 'Job berhasil dihapus');
+            // Animate remove card
+            const card = document.querySelector(`[data-job-id="${jobId}"]`);
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transition = 'opacity 0.3s';
+                setTimeout(() => card.remove(), 300);
+            } else {
+                window.location.reload();
+            }
+        } else {
+            alert('Gagal: ' + (data.message || 'unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Network error: ' + err.message);
+    });
+}
+
+// =========================================================
+// SHOW JOB DETAIL — view-only modal
+// =========================================================
+function showJobDetail(jobId) {
+    fetch(`/job-profile/${jobId}/`, {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCSRF(), 'Accept': 'application/json' },
+    })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(data => {
+        document.getElementById('detailTitle').textContent = data.title || '-';
+        document.getElementById('detailId').textContent = data.id || '-';
+        document.getElementById('detailAnnotator').textContent = data.worker_annotator || '-';
+        document.getElementById('detailReviewer').textContent = data.worker_reviewer || '-';
+        document.getElementById('detailDescription').textContent = data.description || '-';
+        document.getElementById('detailHotkey').textContent = data.hotkey || '-';
+
+        const segList = document.getElementById('detailSegmentation');
+        segList.innerHTML = '';
+        if (data.segmentation_type) {
+            const li = document.createElement('li');
+            li.textContent = data.segmentation_type;
+            segList.appendChild(li);
+        }
+
+        document.getElementById('detailShape').textContent = data.shape_type || '-';
+        document.getElementById('detailColor').textContent = data.color || '-';
+        document.getElementById('detailColorBox').style.backgroundColor = data.color || '#FFFFFF';
+        document.getElementById('detailDate').textContent =
+            `${data.start_date || '-'} - ${data.end_date || '-'} WIB`;
+        document.getElementById('detailImageCount').textContent = data.image_count || '0';
+
+        const statusSpan = document.getElementById('detailStatus');
+        statusSpan.textContent = data.status || 'Unknown';
+        statusSpan.className = 'ml-2 px-2 py-1 rounded-full text-sm inline-block ' +
+            (data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
+             data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+             'bg-green-100 text-green-700');
+
+        document.getElementById('detailUnannotated').textContent = data.unannotated_count || '0';
+        document.getElementById('detailInReview').textContent = data.in_review_count || '0';
+        document.getElementById('detailInRework').textContent = data.in_rework_count || '0';
+        document.getElementById('detailFinished').textContent = data.finished_count || '0';
+        document.getElementById('detailIssues').textContent = data.issues_count || '0';
+
+        const img = document.getElementById('detailImage');
+        const container = document.getElementById('detailImageContainer');
+        if (data.first_image_url) {
+            img.src = data.first_image_url;
+            img.classList.remove('hidden');
+            container.classList.remove('bg-gray-200');
+        } else {
+            img.classList.add('hidden');
+            container.classList.add('bg-gray-200');
+        }
+
+        openModal('jobDetailModal');
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Unable to load job details. Please try again.');
+    });
+}
+
+// Close detail modal on bg click
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('jobDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal('jobDetailModal');
+    });
+});
+
+// =========================================================
+// WORKER SELECTION (Assign flow)
+// =========================================================
+window.selections = {};
+window.currentStep = 'annotator';
+window.currentJobId = null;
+
+function showWorkerSelection(jobId) {
+    if (!jobId) { console.error('No job ID'); return; }
+    jobId = parseInt(jobId);
+
+    window.selections = {};
+    window.currentStep = 'annotator';
+    window.currentJobId = jobId;
+
+    const modal = document.getElementById('workerSelectionModal');
+    const title = modal.querySelector('h2');
+    const roleFilter = document.getElementById('roleFilter');
+    const nextBtn = document.getElementById('nextBtn');
+    const workersList = document.getElementById('workersList');
+
+    title.textContent = 'Choose Annotator';
+    roleFilter.value = 'annotator';
+    roleFilter.disabled = true;
+
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Next';
+    nextBtn.onclick = () => {
+        if (window.currentStep === 'annotator') {
+            window.currentStep = 'reviewer';
+            title.textContent = 'Choose Reviewer';
+            roleFilter.value = 'reviewer';
+            nextBtn.textContent = 'Finish';
+            nextBtn.disabled = true;
+            fetchWorkers('reviewer');
+        } else {
+            submitAssignments(window.currentJobId, window.selections.annotator, window.selections.reviewer);
+        }
+    };
+
+    workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
+    openModal('workerSelectionModal');
+    fetchWorkers('annotator');
+}
+
+function fetchWorkers(role) {
+    const workersList = document.getElementById('workersList');
+    if (!workersList) return;
+    workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
+
+    fetch(`/get-workers/${role}/`, {
+        headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRF() }
+    })
+    .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+    .then(data => {
+        if (!data.workers || data.workers.length === 0) {
+            workersList.innerHTML = '<div class="p-4 text-gray-500">No workers available for this role</div>';
+            return;
+        }
+        workersList.innerHTML = data.workers.map(w => `
+            <div class="worker-item bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer p-4 border"
+                 onclick="handleWorkerSelection(${w.id})">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                        <div>
+                            <div class="font-medium">${w.email}</div>
+                            <div class="text-sm text-gray-500">${w.phone || 'No phone'}</div>
+                        </div>
+                    </div>
+                    <input type="radio" name="selected_worker" value="${w.id}" class="form-radio h-5 w-5 text-blue-600">
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(err => {
+        console.error(err);
+        workersList.innerHTML = '<div class="p-4 text-red-500">Error loading workers.</div>';
+    });
+}
+
+function handleWorkerSelection(workerId) {
+    const radios = document.querySelectorAll('input[name="selected_worker"]');
+    radios.forEach(r => r.checked = r.value === workerId.toString());
+    window.selections[window.currentStep] = workerId;
+    document.getElementById('nextBtn').disabled = false;
+}
+
+function submitAssignments(jobId, annotatorId, reviewerId) {
+    if (!jobId || !annotatorId || !reviewerId) {
+        alert('Pilih annotator dan reviewer dulu ya');
+        return;
+    }
+    fetch('/assign-workers/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+        body: JSON.stringify({
+            job_id: parseInt(jobId),
+            annotator_id: parseInt(annotatorId),
+            reviewer_id: parseInt(reviewerId)
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update card
+            const card = document.querySelector(`[data-job-id="${jobId}"]`);
+            if (card) {
+                const workerInfo = card.querySelector('.worker-info');
+                if (workerInfo) {
+                    workerInfo.innerHTML = `
+                        <p class="flex justify-between"><span>Annotator:</span><span>${data.annotator_name}</span></p>
+                        <p class="flex justify-between"><span>Reviewer:</span><span>${data.reviewer_name}</span></p>
+                    `;
+                }
+                if (data.new_status) {
+                    card.dataset.jobStatus = data.new_status;
+                    const statusEl = card.querySelector('.rounded-full');
+                    if (statusEl) {
+                        statusEl.textContent = data.new_status;
+                        statusEl.className = `px-2 py-1 rounded-full text-xs ${
+                            data.new_status === 'not_assign' ? 'bg-red-100 text-red-700' :
+                            data.new_status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+                            'bg-green-100 text-green-700'
+                        }`;
+                    }
+                }
+            }
+            closeModal('workerSelectionModal');
+            alert('Workers berhasil di-assign!');
+        } else {
+            throw new Error(data.message || 'Error assigning workers');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert(err.message || 'Error assigning workers. Coba lagi ya.');
+    });
+}
+
+function closeWorkerSelection() {
+    closeModal('workerSelectionModal');
+}
+
+// Close worker modal on bg click
+document.addEventListener('DOMContentLoaded', () => {
+    const wsm = document.getElementById('workerSelectionModal');
+    wsm.addEventListener('click', e => { if (e.target === wsm) closeWorkerSelection(); });
+});
+
+// =========================================================
+// ADD IMAGE (dynamic modal)
+// =========================================================
+function handleAddImage(jobId) {
+    jobId = parseInt(jobId);
+    const currentImages = parseInt(document.getElementById('detailImageCount')?.textContent) || 0;
+    const maxImages = 150;
+
+    if (currentImages >= maxImages) {
+        alert('Maximum 150 images.');
+        return;
+    }
+
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4';
     modal.innerHTML = `
-        <div class="bg-white rounded-lg w-[80%] h-[80vh] max-h-[70vh] overflow-y-auto relative">
-            <div class="p-8">
+        <div class="bg-white rounded-lg w-full max-w-4xl h-[80vh] max-h-[80vh] overflow-y-auto relative">
+            <div class="p-6 md:p-8">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Choose Image</h2>
                     <div class="flex items-center">
-                        <span class="text-lg mr-4">${currentImages}/150 Images</span>
+                        <span class="text-lg mr-4 image-count-display">${currentImages}/150 Images</span>
                         <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
                 </div>
-
-                <!-- Drag & Drop Zone -->
                 <div class="mb-6">
                     <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors">
-                        <input type="file"
-                               id="imageInput"
-                               multiple
-                               accept="image/*"
-                               class="hidden"
-                               onchange="handleFiles(this.files, ${maxImages - currentImages}, ${jobId})" />
+                        <input type="file" id="imageInput" multiple accept="image/*" class="hidden"
+                               onchange="handleFiles(this.files, ${maxImages - currentImages}, ${jobId})"/>
                         <div class="space-y-4">
                             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-12h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-12h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <div class="text-gray-600">
                                 <p class="font-medium">Drag and drop your images here</p>
                                 <p class="text-sm">or</p>
-                                <button type="button"
-                                        onclick="document.getElementById('imageInput').click()"
-                                        class="mt-2 text-blue-500 hover:text-blue-600 font-medium">
-                                    Browse files
-                                </button>
+                                <button type="button" onclick="document.getElementById('imageInput').click()"
+                                        class="mt-2 text-blue-500 hover:text-blue-600 font-medium">Browse files</button>
                             </div>
                             <p class="text-sm text-gray-500">Maximum upload: 150 images (JPG, PNG, JPEG)</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Image Preview Area -->
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-4">Selected Images</h3>
-                    <div id="selectedImagesPreview" class="grid grid-cols-6 gap-4 min-h-[200px] bg-gray-50 p-4 rounded-lg">
-                        <!-- Selected images will appear here -->
-                    </div>
+                    <div id="selectedImagesPreview" class="grid grid-cols-3 md:grid-cols-6 gap-4 min-h-[200px] bg-gray-50 p-4 rounded-lg"></div>
                 </div>
-
-                <!-- Footer Actions -->
                 <div class="flex justify-end items-center gap-4 pt-4 border-t">
                     <span class="text-sm text-gray-500" id="selectedCount">0 images selected</span>
-                    <button onclick="this.closest('.fixed').remove()"
-                            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                        Cancel
-                    </button>
-                    <button id="saveImagesBtn"
-                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                            disabled>
-                        Save Changes
-                    </button>
+                    <button onclick="this.closest('.fixed').remove()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button id="saveImagesBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50" disabled>Save Changes</button>
                 </div>
             </div>
         </div>
     `;
-
     document.body.appendChild(modal);
     setupDragAndDrop(maxImages - currentImages, jobId);
 }
 
 function setupDragAndDrop(remainingSlots, jobId) {
     const dropZone = document.getElementById('dropZone');
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
     });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
+    ['dragenter', 'dragover'].forEach(ev => {
+        dropZone.addEventListener(ev, () => dropZone.classList.add('border-blue-500', 'bg-blue-50'));
     });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
+    ['dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, () => dropZone.classList.remove('border-blue-500', 'bg-blue-50'));
     });
-
-    function highlight(e) {
-        dropZone.classList.add('border-blue-500', 'bg-blue-50');
-    }
-
-    function unhighlight(e) {
-        dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-    }
-
-    dropZone.addEventListener('drop', handleDrop, false);
-
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        handleFiles(files, remainingSlots, jobId);
-    }
+    dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files, remainingSlots, jobId));
 }
 
 function handleFiles(files, remainingSlots, jobId) {
-    files = Array.from(files).filter(file => file.type.startsWith('image/'));
-    const selectedFiles = []; // Keep track of selected files
+    files = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const selectedFiles = [];
 
     if (files.length > remainingSlots) {
         alert(`You can only select ${remainingSlots} more images`);
@@ -900,28 +1340,24 @@ function handleFiles(files, remainingSlots, jobId) {
     const previewContainer = document.getElementById('selectedImagesPreview');
     const saveButton = document.getElementById('saveImagesBtn');
     const selectedCountLabel = document.getElementById('selectedCount');
-    const imageCountDisplay = document.querySelector('.text-lg.mr-4'); // Count display at top
+    const imageCountDisplay = document.querySelector('.image-count-display');
 
-    // Show previews
     files.forEach(file => {
         const reader = new FileReader();
         reader.onload = function(e) {
             const div = document.createElement('div');
             div.className = 'relative aspect-square group';
-            div.dataset.fileName = file.name; // Store filename for reference
+            div.dataset.fileName = file.name;
             div.innerHTML = `
-                <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg" />
+                <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg"/>
                 <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                    <button onclick="removeImage(this, '${file.name}')"
-                            class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none">
+                    <button onclick="removeImage(this, '${file.name}')" class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate rounded-b-lg">
-                    ${file.name}
-                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate rounded-b-lg">${file.name}</div>
             `;
             previewContainer.appendChild(div);
             selectedFiles.push(file);
@@ -931,687 +1367,71 @@ function handleFiles(files, remainingSlots, jobId) {
     });
 
     function updateImageCount() {
-        const currentCount = previewContainer.children.length;
-        const totalCount = parseInt(document.getElementById('detailImageCount').textContent) || 0;
-        selectedCountLabel.textContent = `${currentCount} images selected`;
-        imageCountDisplay.textContent = `${totalCount + currentCount}/150 Images`;
-        saveButton.disabled = currentCount === 0;
+        const count = previewContainer.children.length;
+        const total = parseInt(document.getElementById('detailImageCount')?.textContent) || 0;
+        selectedCountLabel.textContent = `${count} images selected`;
+        imageCountDisplay.textContent = `${total + count}/150 Images`;
+        saveButton.disabled = count === 0;
     }
 
-    // Add function to remove images
-    window.removeImage = function(button, fileName) {
-        const imageDiv = button.closest('.relative');
-        imageDiv.remove();
-        const index = selectedFiles.findIndex(file => file.name === fileName);
-        if (index > -1) {
-            selectedFiles.splice(index, 1);
-        }
+    window.removeImage = function(btn, fileName) {
+        btn.closest('.relative').remove();
+        const i = selectedFiles.findIndex(f => f.name === fileName);
+        if (i > -1) selectedFiles.splice(i, 1);
         updateImageCount();
     };
 
-    // Update save button click handler
-    saveButton.onclick = function() {
-        uploadImages(selectedFiles, jobId);
-    };
+    saveButton.onclick = () => uploadImages(selectedFiles, jobId);
 }
 
 function uploadImages(files, jobId) {
     const formData = new FormData();
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    files.forEach(file => {
-        formData.append('images[]', file);
-    });
+    files.forEach(f => formData.append('images[]', f));
     formData.append('job_id', jobId);
 
-    // Show loading state
     const saveButton = document.getElementById('saveImagesBtn');
-    const modal = saveButton.closest('.fixed'); // Find the modal container
-
+    const modal = saveButton.closest('.fixed');
     saveButton.disabled = true;
     saveButton.textContent = 'Uploading...';
 
     fetch('/upload-job-images/', {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken
-        },
+        headers: { 'X-CSRFToken': getCSRF() },
         body: formData,
         credentials: 'same-origin'
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
         if (data.status === 'success') {
-            // Update image counts
-            document.getElementById('detailImageCount').textContent = data.new_image_count;
+            // Update detail modal counts kalau lagi kebuka
+            const dic = document.getElementById('detailImageCount');
+            if (dic) dic.textContent = data.new_image_count;
+            const dun = document.getElementById('detailUnannotated');
+            if (dun) dun.textContent = data.new_image_count;
 
-            // Update Labeling Progress counts
-            document.getElementById('detailUnannotated').textContent = data.new_image_count; // All new images are unannotated
-            document.getElementById('detailInReview').textContent = data.in_review_count || '0';
-            document.getElementById('detailInRework').textContent = data.in_rework_count || '0';
-            document.getElementById('detailFinished').textContent = data.finished_count || '0';
-            document.getElementById('detailIssues').textContent = data.issues_count || '0';
-
-            // Update job card in the list
-            const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
-            if (jobCard) {
-                const imageCountEl = jobCard.querySelector('.text-gray-500 span:last-child');
-                if (imageCountEl) {
-                    imageCountEl.textContent = data.new_image_count;
-                }
-
-                // Update status if changed
+            // Update card di list
+            const card = document.querySelector(`[data-job-id="${jobId}"]`);
+            if (card) {
+                const imgCountEl = card.querySelector('.text-gray-500 span.font-medium');
+                if (imgCountEl) imgCountEl.textContent = data.new_image_count;
                 if (data.new_status) {
-                    const statusEl = jobCard.querySelector('.rounded-full');
-                    if (statusEl) {
-                        statusEl.textContent = data.new_status;
-                        // Update status styling
-                        statusEl.className = `px-2 py-1 rounded-full text-sm ${
-                            data.new_status === 'not_assign' ? 'bg-red-100 text-red-700' :
-                            data.new_status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-                            'bg-green-100 text-green-700'
-                        }`;
-                    }
+                    card.dataset.jobStatus = data.new_status;
                 }
             }
 
-            // Close modal and show success message
-            if (modal) {
-                modal.remove();
-            }
-            alert(data.message);
+            if (modal) modal.remove();
+            alert(data.message || 'Images uploaded!');
         } else {
-            throw new Error(data.message || 'Error uploading images');
+            throw new Error(data.message || 'Error uploading');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(`Error uploading images: ${error.message}`);
+    .catch(err => {
+        console.error(err);
+        alert(`Error uploading images: ${err.message}`);
         saveButton.disabled = false;
         saveButton.textContent = 'Save Changes';
     });
 }
-
-function showJobAssignDetail(jobId) {
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    
-    // Prevent event bubbling
-    event?.stopPropagation();
-    
-    // Add click event listener for background click
-    jobAssignModal.addEventListener('click', function(event) {
-        if (event.target === jobAssignModal) {
-            closeJobAssignModal();
-            // Prevent event from bubbling up
-            event.stopPropagation();
-        }
-    });
-
-    fetch(`/job-profile/${jobId}/`, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Accept': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Update assign modal content
-        document.getElementById('assignDetailTitle').textContent = data.title;
-        document.getElementById('assignDetailId').textContent = data.id;
-        document.getElementById('assignDetailAnnotator').textContent = data.worker_annotator || '-';
-        document.getElementById('assignDetailReviewer').textContent = data.worker_reviewer || '-';
-        document.getElementById('assignDetailDescription').textContent = data.description;
-
-        // Update segmentation list
-        const segmentationList = document.getElementById('assignDetailSegmentation');
-        segmentationList.innerHTML = '';
-        if (data.segmentation_type) {
-            const li = document.createElement('li');
-            li.textContent = data.segmentation_type;
-            segmentationList.appendChild(li);
-        }
-
-        document.getElementById('assignDetailShape').textContent = data.shape_type;
-        document.getElementById('assignDetailImageCount').textContent = data.image_count;
-
-        // Update status with styling
-        const statusSpan = document.getElementById('assignDetailStatus');
-        statusSpan.textContent = data.status;
-        statusSpan.className = `px-2 py-1 rounded-full text-sm ${
-            data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
-            data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-            'bg-green-100 text-green-700'
-        }`;
-
-        // Update labeling progress
-        document.getElementById('assignDetailUnannotated').textContent = data.unannotated_count || '0';
-        document.getElementById('assignDetailInReview').textContent = data.in_review_count || '0';
-        document.getElementById('assignDetailInRework').textContent = data.in_rework_count || '0';
-        document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
-        document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
-
-        // Update job image for assign detail modal
-        const assignDetailImage = document.getElementById('assignDetailImage');
-        const assignDetailImageContainer = document.getElementById('assignDetailImageContainer');
-        if (data.first_image_url) {
-            assignDetailImage.src = data.first_image_url;
-            assignDetailImage.classList.remove('hidden');
-            assignDetailImageContainer.classList.remove('bg-gray-200');
-        } else {
-            assignDetailImage.classList.add('hidden');
-            assignDetailImageContainer.classList.add('bg-gray-200');
-        }
-
-        // Update the Assignment button to use a direct click handler
-        const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');
-        if (assignBtn) {
-            assignBtn.onclick = () => {
-                const jobId = document.getElementById('assignDetailId').textContent;
-                showWorkerSelection(jobId);
-            };
-        }
-
-        // Show the modal
-        jobAssignModal.classList.remove('hidden');
-        jobAssignModal.classList.add('flex');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error loading job details');
-    });
-}
-
-let selections = {}; // Global selections object
-
-function submitAssignments(jobId, annotatorId, reviewerId) {
-    if (!jobId || !annotatorId || !reviewerId) {
-        alert('Please select both annotator and reviewer');
-        return;
-    }
-
-    const data = {
-        job_id: parseInt(jobId),
-        annotator_id: parseInt(annotatorId),
-        reviewer_id: parseInt(reviewerId)
-    };
-
-    fetch('/assign-workers/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Update job cards in both tabs
-            const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
-            jobCards.forEach(card => {
-                const workerInfo = card.querySelector('.worker-info');
-                if (workerInfo) {
-                    workerInfo.innerHTML = `
-                        <p class="flex justify-between">
-                            <span>Annotator:</span>
-                            <span>${data.annotator_name}</span>
-                        </p>
-                        <p class="flex justify-between">
-                            <span>Reviewer:</span>
-                            <span>${data.reviewer_name}</span>
-                        </p>
-                    `;
-                }
-
-                // Update status
-                const statusEl = card.querySelector('.rounded-full');
-                if (statusEl) {
-                    statusEl.textContent = data.new_status;
-                    statusEl.className = `px-2 py-1 rounded-full text-sm ${
-                        data.new_status === 'not_assign' ? 'bg-red-100 text-red-700' :
-                        data.new_status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-                        'bg-green-100 text-green-700'
-                    }`;
-                }
-            });
-
-            // Update worker info in detail modal
-            const detailAnnotator = document.getElementById('detailAnnotator');
-            const detailReviewer = document.getElementById('detailReviewer');
-            if (detailAnnotator) detailAnnotator.textContent = data.annotator_name;
-            if (detailReviewer) detailReviewer.textContent = data.reviewer_name;
-
-            // Update worker info in assign modal
-            const assignDetailAnnotator = document.getElementById('assignDetailAnnotator');
-            const assignDetailReviewer = document.getElementById('assignDetailReviewer');
-            if (assignDetailAnnotator) assignDetailAnnotator.textContent = data.annotator_name;
-            if (assignDetailReviewer) assignDetailReviewer.textContent = data.reviewer_name;
-
-            // Close worker selection modal
-            const workerSelectionModal = document.getElementById('workerSelectionModal');
-            const jobAssignModal = document.getElementById('jobAssignDetailModal');
-
-            workerSelectionModal.classList.add('hidden');
-            workerSelectionModal.classList.remove('flex');
-
-            // Show job assign modal with updated info
-            jobAssignModal.classList.remove('hidden');
-            jobAssignModal.classList.add('flex');
-
-            // Show success message
-            alert('Workers assigned successfully');
-        } else {
-            throw new Error(data.message || 'Error assigning workers');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'Error assigning workers. Please try again.');
-    });
-}
-
-// Update showWorkerSelection to properly initialize selections
-function showWorkerSelection(jobId) {
-    console.log('showWorkerSelection called with jobId:', jobId);
-    
-    if (!jobId) {
-        console.error('No job ID provided');
-        return;
-    }
-
-    // Reset selections and set initial step
-    window.selections = {};
-    window.currentStep = 'annotator';
-
-    // Get modals
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    if (jobAssignModal) {
-        jobAssignModal.classList.add('hidden');
-        jobAssignModal.classList.remove('flex');
-    }
-    const jobDetailModal = document.getElementById('jobDetailModal');
-
-    // Hide other modals
-    [jobAssignModal, jobDetailModal].forEach(modal => {
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-    });
-
-    // Update modal content
-    const title = workerSelectionModal.querySelector('h2');
-    const roleFilter = document.getElementById('roleFilter');
-    const nextBtn = document.getElementById('nextBtn');
-    const workersList = document.getElementById('workersList');
-
-    if (title) title.textContent = 'Choose Annotator';
-    if (roleFilter) {
-        roleFilter.value = 'annotator';
-        roleFilter.disabled = true;
-    }
-    if (nextBtn) {
-        nextBtn.disabled = true;
-        nextBtn.textContent = 'Next';
-        
-        // Set up next button click handler
-        nextBtn.onclick = () => {
-            if (window.currentStep === 'annotator') {
-                // Move to reviewer selection
-                window.currentStep = 'reviewer';
-                title.textContent = 'Choose Reviewer';
-                roleFilter.value = 'reviewer';
-                nextBtn.textContent = 'Finish';
-                nextBtn.disabled = true;
-                // Clear previous selections in the UI
-                const radios = workersList.querySelectorAll('input[type="radio"]');
-                radios.forEach(radio => radio.checked = false);
-                // Fetch reviewers
-                fetchWorkers('reviewer');
-            } else {
-                // Submit final selections
-                submitAssignments(jobId, window.selections.annotator, window.selections.reviewer);
-            }
-        };
-    }
-
-    // Show loading state
-    if (workersList) {
-        workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
-    }
-
-    // Show worker selection modal
-    workerSelectionModal.classList.remove('hidden');
-    workerSelectionModal.classList.add('flex');
-
-    // Fetch initial workers
-    fetchWorkers('annotator');
-}
-// Update handleWorkerSelection function
-function handleWorkerSelection(workerId) {
-    console.log('Worker selected:', workerId);
-    
-    const nextBtn = document.getElementById('nextBtn');
-    const currentStep = document.querySelector('#workerSelectionModal h2')
-        .textContent.toLowerCase()
-        .includes('annotator') ? 'annotator' : 'reviewer';
-
-    // Update radio button state
-    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
-    radioButtons.forEach(radio => {
-        radio.checked = radio.value === workerId.toString();
-    });
-
-    // Store selection
-    window.selections[currentStep] = workerId;
-    
-    // Enable next button
-    if (nextBtn) {
-        nextBtn.disabled = false;
-    }
-
-    console.log('Current selections:', window.selections);
-}
-
-// Add close button functionality
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Job Assign Modal close handler
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    if (jobAssignModal) {
-        // Add close button to modal header
-        const closeButton = document.createElement('button');
-        closeButton.className = 'absolute top-4 right-4 text-gray-500 hover:text-gray-700';
-        closeButton.innerHTML = `
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        `;
-        closeButton.onclick = () => closeAllModals();
-        
-        const header = jobAssignModal.querySelector('.p-8');
-        if (header) {
-            header.insertBefore(closeButton, header.firstChild);
-        }
-
-        // Background click handler
-        jobAssignModal.addEventListener('click', function(event) {
-            if (event.target === jobAssignModal) {
-                closeAllModals();
-            }
-        });
-    }
-
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    if (workerSelectionModal) {
-        // Update cancel button
-        const cancelBtn = workerSelectionModal.querySelector('button[onclick="closeWorkerSelection()"]');
-        if (cancelBtn) {
-            cancelBtn.onclick = (e) => {
-                e.preventDefault();
-                closeWorkerSelection();
-            };
-        }
-
-        // Background click handler
-        workerSelectionModal.addEventListener('click', function(event) {
-            if (event.target === workerSelectionModal) {
-                closeWorkerSelection();
-            }
-        });
-
-        // Close button in header
-        const closeBtn = workerSelectionModal.querySelector('button.text-gray-500');
-        if (closeBtn) {
-            closeBtn.onclick = (e) => {
-                e.preventDefault();
-                closeWorkerSelection();
-            };
-        }
-    }
-});
-
-// Update the fetchWorkers function
-function fetchWorkers(role) {
-    console.log('Fetching workers for role:', role);
-    
-    const workersList = document.getElementById('workersList');
-    if (!workersList) return;
-
-    // Show loading state
-    workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
-
-    fetch(`/get-workers/${role}/`, {
-        headers: {
-            'Accept': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
-    .then(data => {
-        if (!data.workers || data.workers.length === 0) {
-            workersList.innerHTML = '<div class="p-4 text-gray-500">No workers available for this role</div>';
-            return;
-        }
-
-        workersList.innerHTML = data.workers.map(worker => `
-            <div class="worker-item bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer p-4"
-                 onclick="handleWorkerSelection(${worker.id})">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
-                        <div>
-                            <div class="font-medium">${worker.email}</div>
-                            <div class="text-sm text-gray-500">${worker.phone || 'No phone'}</div>
-                        </div>
-                    </div>
-                    <input type="radio" name="selected_worker" value="${worker.id}" 
-                           class="form-radio h-5 w-5 text-blue-600">
-                </div>
-            </div>
-        `).join('');
-    })
-    .catch(error => {
-        console.error('Error fetching workers:', error);
-        workersList.innerHTML = '<div class="p-4 text-red-500">Error loading workers. Please try again.</div>';
-    });
-}
-
-function handleWorkerSelection(workerId) {
-    console.log('Worker selected:', workerId);
-    
-    const nextBtn = document.getElementById('nextBtn');
-    const currentStep = document.querySelector('#workerSelectionModal h2')
-        .textContent.toLowerCase()
-        .includes('annotator') ? 'annotator' : 'reviewer';
-
-    // Update radio button state
-    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
-    radioButtons.forEach(radio => {
-        radio.checked = radio.value === workerId.toString();
-    });
-
-    // Store selection
-    window.selections[currentStep] = workerId;
-    
-    // Enable next button
-    if (nextBtn) {
-        nextBtn.disabled = false;
-    }
-
-    console.log('Current selections:', window.selections);
-}
-
-// Add this to your document ready event listener
-document.addEventListener('DOMContentLoaded', function() {
-    const assignmentBtns = document.querySelectorAll('[onclick*="showWorkerSelection"]');
-    console.log('Found assignment buttons:', assignmentBtns.length);
-
-    // Remove the event listeners that might interfere with the onclick attribute
-    // Instead, we'll ensure the onclick attribute works correctly
-
-    // Check if the worker selection modal exists
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    if (!workerSelectionModal) {
-        console.error('Worker selection modal not found');
-    }
-});
-
-// Add a general close modal function
-function closeAllModals() {
-    const modals = ['workerSelectionModal', 'jobAssignDetailModal', 'jobDetailModal'];
-    modals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-    });
-}
-
-function closeWorkerSelection() {
-    console.log('Closing worker selection modal');
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    
-    if (workerSelectionModal) {
-        workerSelectionModal.classList.add('hidden');
-        workerSelectionModal.classList.remove('flex');
-    }
-    
-    // Show job assign modal again
-    if (jobAssignModal) {
-        jobAssignModal.classList.remove('hidden');
-        jobAssignModal.classList.add('flex');
-    }
-}
-
-function closeJobAssignModal() {
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    const jobDetailModal = document.getElementById('jobDetailModal');
-    
-    // Close job assign modal
-    if (jobAssignModal) {
-        jobAssignModal.classList.add('hidden');
-        jobAssignModal.classList.remove('flex');
-    }
-    
-    // Ensure job detail modal stays hidden
-    if (jobDetailModal) {
-        jobDetailModal.classList.add('hidden');
-        jobDetailModal.classList.remove('flex');
-    }
-
-    // Stop event propagation to prevent other modals from showing
-    event?.stopPropagation();
-}
-
-// Update the click handler in the job card
-function showJobAssignDetail(jobId) {
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    
-    // Prevent event bubbling
-    event?.stopPropagation();
-    
-    // Add click event listener for background click
-    jobAssignModal.addEventListener('click', function(event) {
-        if (event.target === jobAssignModal) {
-            closeJobAssignModal();
-            // Prevent event from bubbling up
-            event.stopPropagation();
-        }
-    });
-
-    fetch(`/job-profile/${jobId}/`, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Accept': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Update assign modal content
-        document.getElementById('assignDetailTitle').textContent = data.title;
-        document.getElementById('assignDetailId').textContent = data.id;
-        document.getElementById('assignDetailAnnotator').textContent = data.worker_annotator || '-';
-        document.getElementById('assignDetailReviewer').textContent = data.worker_reviewer || '-';
-        document.getElementById('assignDetailDescription').textContent = data.description;
-
-        // Update segmentation list
-        const segmentationList = document.getElementById('assignDetailSegmentation');
-        segmentationList.innerHTML = '';
-        if (data.segmentation_type) {
-            const li = document.createElement('li');
-            li.textContent = data.segmentation_type;
-            segmentationList.appendChild(li);
-        }
-
-        document.getElementById('assignDetailShape').textContent = data.shape_type;
-        document.getElementById('assignDetailImageCount').textContent = data.image_count;
-
-        // Update status with styling
-        const statusSpan = document.getElementById('assignDetailStatus');
-        statusSpan.textContent = data.status;
-        statusSpan.className = `px-2 py-1 rounded-full text-sm ${
-            data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
-            data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-            'bg-green-100 text-green-700'
-        }`;
-
-        // Update labeling progress
-        document.getElementById('assignDetailUnannotated').textContent = data.unannotated_count || '0';
-        document.getElementById('assignDetailInReview').textContent = data.in_review_count || '0';
-        document.getElementById('assignDetailInRework').textContent = data.in_rework_count || '0';
-        document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
-        document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
-
-        // Update job image for assign detail modal
-        const assignDetailImage = document.getElementById('assignDetailImage');
-        const assignDetailImageContainer = document.getElementById('assignDetailImageContainer');
-        if (data.first_image_url) {
-            assignDetailImage.src = data.first_image_url;
-            assignDetailImage.classList.remove('hidden');
-            assignDetailImageContainer.classList.remove('bg-gray-200');
-        } else {
-            assignDetailImage.classList.add('hidden');
-            assignDetailImageContainer.classList.add('bg-gray-200');
-        }
-
-        // Update the Assignment button to use a direct click handler
-        const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');
-        if (assignBtn) {
-            assignBtn.onclick = () => {
-                const jobId = document.getElementById('assignDetailId').textContent;
-                showWorkerSelection(jobId);
-            };
-        }
-
-        // Show the modal
-        jobAssignModal.classList.remove('hidden');
-        jobAssignModal.classList.add('flex');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error loading job details');
-    });
-}
 </script>
+
 {% endblock %}

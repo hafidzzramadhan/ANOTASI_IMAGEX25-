@@ -27,9 +27,11 @@ urlpatterns = [
     # menerima filejson
     path('result-json/<int:image_id>/', views.get_result_json, name='get_result_json'),
 
-    
-    # finish annotation
+    # annotator/urls.py
+    path('save-annotation/<int:image_id>/', views.save_annotation, name='save_annotation'),   # finish annotation
     path('finish-annotation/<int:image_id>/', views.finish_annotation_view, name='finish_annotation'),
+    
+    path('delete-annotation/<int:image_id>/', views.delete_annotation, name='delete_annotation'),
 ]
 
 

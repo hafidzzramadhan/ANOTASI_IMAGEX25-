@@ -1,0 +1,23 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Backup folders
+*_BACKUP_*/
+templates_BACKUP_*/
+reviewer_BACKUP_*/
+
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+/media/
+.DS_Store
+.vscode/
+.idea/
+**/migrations/__pycache__/
+
+

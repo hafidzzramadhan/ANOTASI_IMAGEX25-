@@ -6,7 +6,10 @@ crispy-bootstrap4==2025.6
 cryptography==45.0.4
 Django==5.2.3
 django-allauth==65.9.0
+django-cors-headers==4.7.0
 django-crispy-forms==2.4
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
 idna==3.10
 pillow==11.2.1
 psycopg2-binary==2.9.10

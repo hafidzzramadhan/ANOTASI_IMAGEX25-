@@ -1,216 +1,384 @@
 {% extends 'base_master.html' %}
 {% block content %}
+
 <div class="space-y-6">
-    <!-- Header dengan Tombal Kembali -->
-    <div class="flex items-center gap-4 mb-6">
-        <button onclick="history.back()" class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-gray-500 hover:text-gray-700 hover:shadow-lg transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+
+    <!-- ====================================================
+         BREADCRUMB + HEADER
+         ==================================================== -->
+    <div class="flex items-center gap-3">
+        <a href="{% url 'master:performance' %}"
+           class="flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
-        </button>
+        </a>
         <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Individual Performance</h1>
-            <p class="text-gray-600 mt-1">Detailed performance analytics and statistics</p>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Individual Performance</h1>
+            <p class="text-sm text-gray-500 mt-1">Statistik detail untuk anggota team</p>
         </div>
     </div>
 
-    <!-- Profile Section -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
-            <h2 class="text-xl font-semibold text-white">User Profile</h2>
-        </div>
-        <div class="p-6 md:p-8">
-            <div class="flex flex-col md:flex-row gap-8 items-start">
-                <!-- Profile Image -->
-                <div class="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
-                    <svg class="w-16 h-16 md:w-20 md:h-20 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                    </svg>
+    <!-- ====================================================
+         PROFILE CARD
+         ==================================================== -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-20 md:h-24"></div>
+        <div class="p-4 md:p-6 -mt-12">
+            <div class="flex flex-col md:flex-row md:items-end gap-4">
+                <!-- Avatar -->
+                <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-white p-1 shadow-md flex-shrink-0">
+                    <div class="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-3xl md:text-4xl font-bold">
+                        {{ user_profile.email|slice:":1"|upper }}
+                    </div>
                 </div>
-                
-                <!-- Profile Details -->
-                <div class="flex-1 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-4">
-                            <div class="flex flex-col sm:flex-row sm:items-center">
-                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Full Name</span>
-                                <span class="font-semibold text-gray-900">{{ user_profile.name }}</span>
-                            </div>
-                            <div class="flex flex-col sm:flex-row sm:items-center">
-                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Email</span>
-                                <span class="font-medium text-gray-700">{{ user_profile.email }}</span>
-                            </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0 md:pb-3">
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <h2 class="text-lg md:text-xl font-bold text-gray-900 truncate">{{ user_profile.name }}</h2>
+                        {% if user_profile.role|lower == 'annotator' %}
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Annotator</span>
+                        {% elif user_profile.role|lower == 'reviewer' %}
+                            <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Reviewer</span>
+                        {% else %}
+                            <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">{{ user_profile.role|capfirst }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600 truncate">{{ user_profile.email }}</div>
+                </div>
+
+                <!-- Status pill -->
+                <div class="md:pb-3 flex-shrink-0">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+                        <span class="w-2 h-2 rounded-full {{ user_profile.status_class }}"></span>
+                        <span class="text-sm font-medium text-gray-700">{{ user_profile.status }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         KPI STATS — 4 cards
+         ==================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+
+        <!-- Total Jobs -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="p-2 rounded-lg bg-indigo-50 text-indigo-600 inline-flex">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Jobs</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_jobs|default:0 }}</div>
+            </div>
+        </div>
+
+        <!-- Completed Jobs -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="p-2 rounded-lg bg-green-50 text-green-600 inline-flex">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Completed</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ user_stats.chart_data.finished.count|default:0 }}</div>
+                <div class="text-xs text-gray-500 mt-1">job selesai</div>
+            </div>
+        </div>
+
+        <!-- Total Images -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="p-2 rounded-lg bg-blue-50 text-blue-600 inline-flex">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Images</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_images|default:0 }}</div>
+                <div class="text-xs text-gray-500 mt-1">dari semua job</div>
+            </div>
+        </div>
+
+        <!-- Images Finished -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div class="p-2 rounded-lg bg-purple-50 text-purple-600 inline-flex">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="mt-3">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Images Done</div>
+                <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ user_stats.image_chart_data.finished.count|default:0 }}</div>
+                {% if user_stats.total_images|default:0 > 0 %}
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-purple-500 h-full transition-all duration-500"
+                         style="width: {% widthratio user_stats.image_chart_data.finished.count|default:0 user_stats.total_images 100 %}%"></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         JOB STATUS + IMAGE STATUS — side by side
+         ==================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+
+        <!-- Job Status -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base md:text-lg font-semibold">Job Status</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Distribusi status job yang dia handle</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Assigned -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                            <span class="font-medium text-gray-700">Assigned</span>
                         </div>
-                        <div class="space-y-4">
-                            <div class="flex flex-col sm:flex-row sm:items-center">
-                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Role</span>
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ user_profile.role|capfirst }}</span>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.chart_data.assign.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_jobs|default:0 > 0 %}
+                        <div class="bg-gray-400 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.chart_data.assign.count|default:0 user_stats.total_jobs 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- In Progress -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            <span class="font-medium text-gray-700">In Progress</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.chart_data.progress.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_jobs|default:0 > 0 %}
+                        <div class="bg-blue-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.chart_data.progress.count|default:0 user_stats.total_jobs 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- In Review -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                            <span class="font-medium text-gray-700">In Review</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.chart_data.reworking.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_jobs|default:0 > 0 %}
+                        <div class="bg-orange-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.chart_data.reworking.count|default:0 user_stats.total_jobs 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Completed -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span class="font-medium text-gray-700">Completed</span>
+                        </div>
+                        <span class="text-green-600 font-semibold">{{ user_stats.chart_data.finished.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_jobs|default:0 > 0 %}
+                        <div class="bg-green-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.chart_data.finished.count|default:0 user_stats.total_jobs 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Status -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base md:text-lg font-semibold">Image Status</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Distribusi image di semua job nya</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Unannotated -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                            <span class="font-medium text-gray-700">Unannotated</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.image_chart_data.unannotated.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_images|default:0 > 0 %}
+                        <div class="bg-gray-400 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.image_chart_data.unannotated.count|default:0 user_stats.total_images 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Annotated -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            <span class="font-medium text-gray-700">Annotated</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.image_chart_data.annotated.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_images|default:0 > 0 %}
+                        <div class="bg-blue-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.image_chart_data.annotated.count|default:0 user_stats.total_images 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- In Review -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                            <span class="font-medium text-gray-700">In Review</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.image_chart_data.progress.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_images|default:0 > 0 %}
+                        <div class="bg-indigo-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.image_chart_data.progress.count|default:0 user_stats.total_images 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- In Rework -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                            <span class="font-medium text-gray-700">In Rework</span>
+                        </div>
+                        <span class="text-gray-600 font-semibold">{{ user_stats.image_chart_data.rework.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_images|default:0 > 0 %}
+                        <div class="bg-orange-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.image_chart_data.rework.count|default:0 user_stats.total_images 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Finished -->
+                <div>
+                    <div class="flex justify-between items-center text-sm mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span class="font-medium text-gray-700">Finished</span>
+                        </div>
+                        <span class="text-green-600 font-semibold">{{ user_stats.image_chart_data.finished.count|default:0 }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        {% if user_stats.total_images|default:0 > 0 %}
+                        <div class="bg-green-500 h-full rounded-full transition-all duration-500"
+                             style="width: {% widthratio user_stats.image_chart_data.finished.count|default:0 user_stats.total_images 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         JOBS LIST — job yang dia handle (fitur baru)
+         ==================================================== -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 md:p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base md:text-lg font-semibold">Jobs Assigned</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ user_jobs_list|length }} job di-assign ke anggota ini</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="divide-y divide-gray-100">
+            {% for job in user_jobs_list %}
+            <div class="p-4 md:p-5 hover:bg-gray-50 transition">
+                <div class="flex items-start gap-3 md:gap-4">
+                    <!-- Thumbnail -->
+                    <div class="w-14 h-14 md:w-16 md:h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        {% if job.first_image_url %}
+                            <img src="{{ job.first_image_url }}" alt="{{ job.title }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
                             </div>
-                            <div class="flex flex-col sm:flex-row sm:items-center">
-                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Status</span>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium {{ user_profile.status_class }}">
-                                    {{ user_profile.status }}
-                                </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Job info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <h4 class="font-semibold text-sm md:text-base text-gray-900 truncate">{{ job.title }}</h4>
+                            {% if job.status == 'completed' %}
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">Completed</span>
+                            {% elif job.status == 'in_progress' %}
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">In Progress</span>
+                            {% elif job.status == 'in_review' %}
+                                <span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs">In Review</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">{{ job.status|capfirst }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2 line-clamp-1">{{ job.description|default:"No description" }}</p>
+
+                        <!-- Progress -->
+                        <div class="flex items-center gap-2 text-xs">
+                            <div class="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-green-500 h-full transition-all duration-500"
+                                     style="width: {{ job.progress_percentage|default:0 }}%"></div>
                             </div>
+                            <span class="font-medium text-gray-700">{{ job.progress_percentage|default:0 }}%</span>
+                            <span class="text-gray-400">·</span>
+                            <span class="text-gray-600">{{ job.image_count|default:0 }} img</span>
                         </div>
                     </div>
                 </div>
             </div>
+            {% empty %}
+            <div class="p-8 text-center text-sm text-gray-500">
+                Belum ada job yang di-assign ke anggota ini
+            </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <!-- Job Statistics Card -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-4">
-                <h3 class="text-lg font-semibold text-white">Job Statistics</h3>
-                <p class="text-green-100 text-sm">{{ user_stats.total_jobs }} total job{{ user_stats.total_jobs|pluralize }}</p>
-            </div>
-            <div class="p-6">
-                <!-- Chart Container -->
-                <div class="flex items-end justify-center gap-4 md:gap-6 h-64 mb-6 bg-gray-50 rounded-xl p-4">
-                    <!-- Assign Bar -->
-                    <div class="flex flex-col items-center group">
-                        <div class="w-12 md:w-16 bg-gradient-to-t from-purple-600 to-purple-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
-                             style="height: {% if user_stats.chart_data.assign.height > 0 %}{{ user_stats.chart_data.assign.height }}%{% else %}12px{% endif %};"
-                             title="Assign: {{ user_stats.chart_data.assign.count }}"></div>
-                        <span class="text-xs font-medium mt-2 text-gray-600">Assign</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.assign.count }}</span>
-                    </div>
-                    <!-- Progress Bar -->
-                    <div class="flex flex-col items-center group">
-                        <div class="w-12 md:w-16 bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
-                             style="height: {% if user_stats.chart_data.progress.height > 0 %}{{ user_stats.chart_data.progress.height }}%{% else %}12px{% endif %};"
-                             title="Progress: {{ user_stats.chart_data.progress.count }}"></div>
-                        <span class="text-xs font-medium mt-2 text-gray-600">Progress</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.progress.count }}</span>
-                    </div>
-                    <!-- Reworking Bar -->
-                    <div class="flex flex-col items-center group">
-                        <div class="w-12 md:w-16 bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
-                             style="height: {% if user_stats.chart_data.reworking.height > 0 %}{{ user_stats.chart_data.reworking.height }}%{% else %}12px{% endif %};"
-                             title="Reworking: {{ user_stats.chart_data.reworking.count }}"></div>
-                        <span class="text-xs font-medium mt-2 text-gray-600">Rework</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.reworking.count }}</span>
-                    </div>
-                    <!-- Finished Bar -->
-                    <div class="flex flex-col items-center group">
-                        <div class="w-12 md:w-16 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
-                             style="height: {% if user_stats.chart_data.finished.height > 0 %}{{ user_stats.chart_data.finished.height }}%{% else %}12px{% endif %};"
-                             title="Finished: {{ user_stats.chart_data.finished.count }}"></div>
-                        <span class="text-xs font-medium mt-2 text-gray-600">Finished</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.finished.count }}</span>
-                    </div>
-                </div>
-
-                <!-- Legend -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="flex items-center p-2 bg-purple-50 rounded-lg">
-                        <div class="w-3 h-3 bg-purple-500 rounded-full mr-2 flex-shrink-0"></div>
-                        <span class="text-sm font-medium">Assign</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-green-50 rounded-lg">
-                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
-                        <span class="text-sm font-medium">Progress</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-red-50 rounded-lg">
-                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2 flex-shrink-0"></div>
-                        <span class="text-sm font-medium">Reworking</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-blue-50 rounded-lg">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 flex-shrink-0"></div>
-                        <span class="text-sm font-medium">Finished</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Image Statistics Card -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-orange-600 to-pink-600 px-6 py-4">
-                <h3 class="text-lg font-semibold text-white">Image Statistics</h3>
-                <p class="text-orange-100 text-sm">{{ user_stats.total_images }} total image{{ user_stats.total_images|pluralize }}</p>
-            </div>
-            <div class="p-6">
-                <!-- Chart Container -->
-                <div class="flex items-end justify-center gap-3 md:gap-4 h-64 mb-6 bg-gray-50 rounded-xl p-4">
-                    <!-- Unannotated Bar -->
-                    <div class="flex flex-col items-center group">
-                        {% with height=user_stats.image_chart_data.unannotated.height count=user_stats.image_chart_data.unannotated.count %}
-                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-purple-300 border-dashed bg-purple-50{% else %}bg-gradient-to-t from-purple-600 to-purple-400{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
-                             title="Unannotated: {{ count }}"></div>
-                        {% endwith %}
-                        <span class="text-xs font-medium mt-2 text-gray-600">Unann</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.unannotated.count }}</span>
-                    </div>
-                    <!-- Annotated Bar -->
-                    <div class="flex flex-col items-center group">
-                        {% with height=user_stats.image_chart_data.annotated.height count=user_stats.image_chart_data.annotated.count %}
-                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-blue-300 border-dashed bg-blue-50{% else %}bg-gradient-to-t from-blue-600 to-blue-400{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
-                             title="Annotated: {{ count }}"></div>
-                        {% endwith %}
-                        <span class="text-xs font-medium mt-2 text-gray-600">Annot</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.annotated.count }}</span>
-                    </div>
-                    <!-- In Review Bar -->
-                    <div class="flex flex-col items-center group">
-                        {% with height=user_stats.image_chart_data.progress.height count=user_stats.image_chart_data.progress.count %}
-                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-green-300 border-dashed bg-green-50{% else %}bg-gradient-to-t from-green-600 to-green-400{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
-                             title="In Review: {{ count }}"></div>
-                        {% endwith %}
-                        <span class="text-xs font-medium mt-2 text-gray-600">Review</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.progress.count }}</span>
-                    </div>
-                    <!-- In Rework Bar -->
-                    <div class="flex flex-col items-center group">
-                        {% with height=user_stats.image_chart_data.rework.height count=user_stats.image_chart_data.rework.count %}
-                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-yellow-300 border-dashed bg-yellow-50{% else %}bg-gradient-to-t from-yellow-600 to-yellow-400{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
-                             title="In Rework: {{ count }}"></div>
-                        {% endwith %}
-                        <span class="text-xs font-medium mt-2 text-gray-600">Rework</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.rework.count }}</span>
-                    </div>
-                    <!-- Finished Bar -->
-                    <div class="flex flex-col items-center group">
-                        {% with height=user_stats.image_chart_data.finished.height count=user_stats.image_chart_data.finished.count %}
-                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-indigo-300 border-dashed bg-indigo-50{% else %}bg-gradient-to-t from-indigo-600 to-indigo-400{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
-                             title="Finished: {{ count }}"></div>
-                        {% endwith %}
-                        <span class="text-xs font-medium mt-2 text-gray-600">Finish</span>
-                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.finished.count }}</span>
-                    </div>
-                </div>
-
-                <!-- Legend -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2">
-                    <div class="flex items-center p-2 bg-purple-50 rounded-lg">
-                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #c084fc;"></div>
-                        <span class="text-sm font-medium">Unannotated</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-blue-50 rounded-lg">
-                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #3b82f6;"></div>
-                        <span class="text-sm font-medium">Annotated</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-green-50 rounded-lg">
-                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #059669;"></div>
-                        <span class="text-sm font-medium">In Review</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-yellow-50 rounded-lg">
-                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #eab308;"></div>
-                        <span class="text-sm font-medium">In Rework</span>
-                    </div>
-                    <div class="flex items-center p-2 bg-indigo-50 rounded-lg col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
-                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #7c3aed;"></div>
-                        <span class="text-sm font-medium">Finished</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
+<style>
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+
 {% endblock %}

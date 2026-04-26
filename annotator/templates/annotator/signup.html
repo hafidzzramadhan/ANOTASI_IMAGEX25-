@@ -1,138 +1,186 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign Up - TrisaktiAnnotate</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body, html {
-      height: 100%;
-    }
-
-    body {
-      display: flex;
-      background-color: #ffffff;
-    }
-
-    .left-side {
-      width: 45%;
-      background-color: #0e84cf;
-      clip-path: polygon(0 0, 100% 0, 80% 100%, 0% 100%);
-      display: flex;
-      justify-content: flex-start;
-      align-items: flex-start;
-      padding: 30px 40px;
-    }
-
-    .logo {
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .logo img {
-      height: 35px;
-    }
-
-    .right-side {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px 20px;
-    }
-
-    .form-container {
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .form-container h2 {
-      font-size: 22px;
-      margin-bottom: 6px;
-      color: #333;
-    }
-
-    .note {
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 20px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background-color: #f4f6fa;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 15px;
-      border: none;
-      border-radius: 6px;
-      background-color: #0e84cf;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.6s ease;
-    }
-    .signin-text {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 13px;
-      color: #666;
-    }
-
-    .signin-text a {
-      color: #0e84cf;
-      text-decoration: none;
-    }
-
-    .signin-text a:hover {
-      text-decoration: underline;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up — Anotasi Image Annotator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            background:
+                radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, #FBCFE8 0%, transparent 50%),
+                #FFFFFF;
+            min-height: 100vh;
+        }
+        .pa-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        .pa-input {
+            background: #FFFFFF;
+            border: 1.5px solid #E9D5FF;
+            transition: all 0.18s;
+        }
+        .pa-input:focus {
+            background: white;
+            border-color: #A78BFA;
+            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+            outline: none;
+        }
+        .pa-btn {
+            background: linear-gradient(135deg, #A78BFA, #7C3AED);
+            transition: all 0.18s;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+        }
+        .pa-btn:hover {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        /* Left panel illustration area */
+        .pa-illustration {
+            background:
+                linear-gradient(160deg,
+                    #C4B5FD  0%,
+                    #DDD6FE 35%,
+                    #FBCFE8 100%);
+        }
+        .pa-illustration::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.35) 1px, transparent 0);
+            background-size: 22px 22px;
+        }
+    </style>
 </head>
-<body>
-  <div class="left-side">
-    <div class="logo">
-      <img src="https://upload.wikimedia.org/wikipedia/id/2/28/Lambang_Universitas_Trisakti.png" alt="Logo" />
-      TrisaktiAnnotate
+<body class="flex items-center justify-center p-4 relative overflow-hidden">
+
+    <div class="pa-blob bg-purple-300 w-96 h-96 -top-32 -left-32"></div>
+    <div class="pa-blob bg-pink-200 w-96 h-96 -bottom-32 -right-32"></div>
+
+    <div class="relative w-full max-w-5xl bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden flex">
+
+        <!-- LEFT: illustration -->
+        <div class="pa-illustration relative hidden md:flex flex-col justify-between p-10 w-[42%]">
+            <div>
+                <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+            <img src="{% static 'images/logo.png' %}"
+     alt="Logo" class="w-18 h-16 rounded-xl object-contain bg-white/20 p-1">
+                    
+                    <span class="text-white font-bold text-lg">Anotasi Image</span>
+                </div>
+            </div>
+
+            <div class="relative">
+                <h2 class="text-3xl font-bold text-white leading-tight">
+                    Mulai jadi <br>
+                    <span class="text-[#FFFFFF]">annotator hari ini.</span>
+                </h2>
+                <p class="text-white/85 mt-3 text-sm leading-relaxed">
+                    Bantu bangun dataset image annotation berkualitas. Akun lu akan di-aktifkan oleh master setelah mendaftar.
+                </p>
+
+                <div class="mt-8 space-y-3">
+                    <div class="flex items-center gap-3 text-white/90 text-sm">
+                        <div class="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        AI-assisted labeling (VGG16)
+                    </div>
+                    <div class="flex items-center gap-3 text-white/90 text-sm">
+                        <div class="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        Workflow management terintegrasi
+                    </div>
+                    <div class="flex items-center gap-3 text-white/90 text-sm">
+                        <div class="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        Tracking progress real-time
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-white/70 text-xs">
+                © Ramadhan Inc
+            </div>
+        </div>
+
+        <!-- RIGHT: form -->
+        <div class="flex-1 p-8 md:p-12">
+            <div class="max-w-md mx-auto">
+                <h2 class="text-2xl font-bold text-slate-900">Create your account</h2>
+                <p class="text-sm text-[#6D28D9]/70 mt-1 mb-6">All fields are required</p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flex items-center gap-2 p-3 rounded-xl mb-4 text-sm
+                            {% if message.tags == 'error' %}bg-rose-50 border border-rose-100 text-rose-700
+                            {% elif message.tags == 'warning' %}bg-amber-50 border border-amber-100 text-amber-700
+                            {% else %}bg-emerald-50 border border-emerald-100 text-emerald-700{% endif %}">
+                            <i class="fas fa-{% if message.tags == 'error' %}circle-exclamation{% elif message.tags == 'warning' %}triangle-exclamation{% else %}circle-check{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="space-y-3">
+                    {% csrf_token %}
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1">Username</label>
+                        <input type="text" name="username" placeholder="username"
+                               class="pa-input w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1">Email</label>
+                        <input type="email" name="email" placeholder="you@example.com"
+                               class="pa-input w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1">First name</label>
+                            <input type="text" name="nama_depan" placeholder="First"
+                                   class="pa-input w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1">Last name</label>
+                            <input type="text" name="nama_belakang" placeholder="Last"
+                                   class="pa-input w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1">Password</label>
+                        <input type="password" name="password" placeholder="••••••••"
+                               class="pa-input w-full px-4 py-2.5 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]" required>
+                    </div>
+
+                    <button type="submit" class="pa-btn w-full py-3 mt-2 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2">
+                        Create Account
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-5 text-sm text-[#6D28D9]/70">
+                    Sudah punya akun?
+                    <a href="{% url 'annotator:signin' %}" class="text-[#7C3AED] font-semibold hover:underline">Sign in</a>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="right-side">
-    <div class="form-container">
-      <h2>Sign Up</h2>
-      <div class="note">ℹ️ All fields are required</div>
-      <form method="post">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="email" name="email" placeholder="Email" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <input type="text" name="nama_depan" placeholder="First name" required />
-        <input type="text" name="nama_belakang" placeholder="Last name" />
-        
-        <button type="submit">Sign Up</button>
-      </form>
-      <div class="signin-text">
-        Already have an account? <a href="{% url 'annotator:signin' %}">Sign in</a>
-      </div>
-    </div>
-  </div>
 </body>
 </html>

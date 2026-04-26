@@ -1,0 +1,35 @@
+{% comment %}
+    Image status pill partial.
+    Required context: status (string)
+    Possible status values: unannotated, in_progress, in_review, in_rework, annotated, finished
+{% endcomment %}
+
+{% if status == 'unannotated' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-peach inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> Unannotated
+    </span>
+{% elif status == 'in_progress' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-sky inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> In Progress
+    </span>
+{% elif status == 'in_review' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-lav inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> In Review
+    </span>
+{% elif status == 'in_rework' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-rose inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> In Rework
+    </span>
+{% elif status == 'annotated' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-mint inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> Annotated
+    </span>
+{% elif status == 'finished' %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-mint inline-flex items-center gap-1">
+        <i class="fas fa-check text-[8px]"></i> Finished
+    </span>
+{% else %}
+    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-gray inline-flex items-center gap-1">
+        <i class="fas fa-circle text-[6px]"></i> {{ status|default:"Unknown" }}
+    </span>
+{% endif %}
