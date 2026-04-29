@@ -7,12 +7,12 @@ Aktif via: DJANGO_SETTINGS_MODULE=Anotasi_Image.settings
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+import dj_database_url
 # ============================================================================
 # PATHS & ENV
 # ============================================================================
 BASE_DIR = Path(__file__).resolve().parent.parent  # = Anotasi_Image/
-load_dotenv(BASE_DIR.parent / '.env')              # baca .env di root project
+load_dotenv(BASE_DIR / '.env')              # baca .env di root project
 
 # ============================================================================
 # CORE
@@ -103,17 +103,30 @@ TEMPLATES = [
 # ============================================================================
 # DATABASE — PostgreSQL (production-ready)
 # ============================================================================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'anotasi_image'),
-        'USER': os.getenv('DB_USER', 'anotasi_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 60,  # connection pooling — reuse 60 detik
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Pake DATABASE_URL dari .env (Supabase / cloud)
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    # Fallback ke postgres lokal lu (kalo DATABASE_URL gak ada)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'anotasi_image'),
+            'USER': os.getenv('DB_USER', 'anotasi_user'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 60,
+        }
+    }
 
 # ============================================================================
 # AUTH
