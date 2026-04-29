@@ -34,6 +34,12 @@ from master.api_master_views import (
     MasterNotificationMarkReadAPIView,
 )
 
+# === Annotator + Reviewer dashboards ===
+from master.api_role_dashboards import (
+    AnnotatorDashboardAPIView,
+    ReviewerDashboardAPIView,
+)
+
 app_name = 'api'
 
 urlpatterns = [
@@ -76,4 +82,10 @@ urlpatterns = [
     path('master/notifications/', MasterNotificationListAPIView.as_view(), name='master_notifications'),
     path('master/notifications/read-all/', MasterNotificationMarkReadAPIView.as_view(), name='master_notif_read_all'),
     path('master/notifications/<int:pk>/read/', MasterNotificationMarkReadAPIView.as_view(), name='master_notif_read'),
+
+    # ============================================================
+    # ANNOTATOR + REVIEWER DASHBOARDS (BARU)
+    # ============================================================
+    path('annotator/dashboard/', AnnotatorDashboardAPIView.as_view(), name='annotator_dashboard'),
+    path('reviewer/dashboard/',  ReviewerDashboardAPIView.as_view(),  name='reviewer_dashboard'),
 ]
