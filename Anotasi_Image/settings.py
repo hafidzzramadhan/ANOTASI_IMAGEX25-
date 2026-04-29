@@ -247,6 +247,12 @@ AI_API_URL = os.getenv(
     "https://pursue-various-engineer-corporate.trycloudflare.com/api/proses-gambar/"
 )
 
+# CSRF Trusted Origins (untuk Railway / production HTTPS)
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host.strip()}"
+    for host in os.getenv("ALLOWED_HOSTS", "").split(",")
+    if host.strip() and not host.strip().startswith("localhost") and not host.strip().startswith("127.")
+]
 # ============================================================================
 # SECURITY (production hardening — auto-aktif kalau DEBUG=False)
 # ============================================================================
