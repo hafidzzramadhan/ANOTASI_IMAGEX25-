@@ -1,0 +1,8 @@
+<p>Halo {{ user.username }},</p>
+<p>Klik link di bawah ini untuk mengaktifkan akun Anda:</p>
+<p>
+    <a href="http://{{ domain }}{% url 'activate' uidb64=uid token=token %}">
+        Aktivasi Akun
+    </a>
+</p>
+<p>Jika Anda tidak mendaftar, abaikan email ini.</p>

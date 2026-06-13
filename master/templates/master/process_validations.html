@@ -1,0 +1,401 @@
+{% extends 'base_master.html' %}
+{% block content %}
+{% csrf_token %}
+
+
+{% if not show_details %}
+
+    <!-- =======================================================
+         MODE 1: JOB LIST (landing)
+         ======================================================= -->
+    <div class="space-y-6">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Process Validation</h1>
+            <p class="text-sm text-gray-500 mt-1">Review & finalize job yang udah selesai di-annotate</p>
+        </div>
+
+        <!-- Stats summary -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div class="text-xs text-gray-500 uppercase">Total Jobs</div>
+                <div class="text-2xl font-bold mt-1">{{ jobs|length }}</div>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
+                <div class="text-xs text-orange-700 uppercase">In Progress</div>
+                <div class="text-2xl font-bold mt-1 text-orange-700" id="statInProgress">0</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                <div class="text-xs text-blue-700 uppercase">Ready to Validate</div>
+                <div class="text-2xl font-bold mt-1 text-blue-700" id="statReady">0</div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                <div class="text-xs text-green-700 uppercase">Completed</div>
+                <div class="text-2xl font-bold mt-1 text-green-700" id="statCompleted">0</div>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3">
+            <input type="text" id="jobSearchInput"
+                   placeholder="Cari job by title..."
+                   class="flex-1 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-chip active px-3 py-1 rounded-full text-sm border" data-status="all">Semua</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="in_progress">In Progress</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="not_assign">Not Assigned</button>
+                <button class="filter-chip px-3 py-1 rounded-full text-sm border" data-status="completed">Completed</button>
+            </div>
+        </div>
+
+        <!-- Job List -->
+        <div id="jobListContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {% for job in jobs %}
+            <div class="job-card bg-white p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                 data-job-title="{{ job.title|lower }}"
+                 data-job-status="{{ job.status }}">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0 mb-4">
+                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        {% if job.get_first_image_url %}
+                            <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" class="w-full h-full object-cover">
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
+                        <div class="space-y-1 mt-2 text-sm text-gray-500">
+                            <p class="flex justify-between">
+                                <span>Images:</span>
+                                <span class="font-medium text-gray-700">{{ job.total_images }}</span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Annotator:</span>
+                                <span class="text-right truncate max-w-40">{{ job.worker_annotator.email|default:'-' }}</span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Reviewer:</span>
+                                <span class="text-right truncate max-w-40">{{ job.worker_reviewer.email|default:'-' }}</span>
+                            </p>
+                            <p class="flex justify-between items-center">
+                                <span>Status:</span>
+                                <span class="px-2 py-1 rounded-full text-xs
+                                    {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                                    {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                                    {% elif job.status == 'completed' %}bg-green-100 text-green-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ job.get_status_display|default:job.status }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t pt-3">
+                    <a href="{% url 'master:process_validation_detail' job.id %}"
+                       class="block w-full bg-[#4527A0] hover:bg-purple-900 text-white text-center px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Review Job →
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+                <p class="font-medium">Belum ada job yang perlu di-validate</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="noResultsMessage" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+            Tidak ada job yang cocok dengan filter
+        </div>
+    </div>
+
+    <style>
+        .filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+        .filter-chip:hover { background: #f3f4f6; }
+        .filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hitung stats
+        const cards = document.querySelectorAll('.job-card');
+        let inProgress = 0, completed = 0, notAssigned = 0;
+        cards.forEach(c => {
+            const s = c.dataset.jobStatus;
+            if (s === 'in_progress') inProgress++;
+            else if (s === 'completed') completed++;
+            else if (s === 'not_assign') notAssigned++;
+        });
+        document.getElementById('statInProgress').textContent = inProgress;
+        document.getElementById('statCompleted').textContent = completed;
+        // Ready to validate = in_progress dengan semua image finished (kira-kira)
+        document.getElementById('statReady').textContent = inProgress;
+
+        // Filter
+        const searchInput = document.getElementById('jobSearchInput');
+        const chips = document.querySelectorAll('.filter-chip');
+        let activeStatus = 'all', searchQuery = '';
+
+        function applyFilter() {
+            let visible = 0;
+            cards.forEach(card => {
+                const title = card.dataset.jobTitle || '';
+                const status = card.dataset.jobStatus || '';
+                const matchStatus = activeStatus === 'all' || status === activeStatus;
+                const matchSearch = !searchQuery || title.includes(searchQuery);
+                if (matchStatus && matchSearch) { card.style.display = ''; visible++; }
+                else card.style.display = 'none';
+            });
+            document.getElementById('noResultsMessage').classList.toggle('hidden', visible > 0 || cards.length === 0);
+        }
+
+        searchInput.addEventListener('input', e => { searchQuery = e.target.value.toLowerCase(); applyFilter(); });
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                activeStatus = chip.dataset.status;
+                applyFilter();
+            });
+        });
+    });
+    </script>
+
+{% else %}
+
+    <!-- =======================================================
+         MODE 2: JOB DETAIL (review images + finish action)
+         ======================================================= -->
+    <div class="space-y-6">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-gray-500">
+            <a href="{% url 'master:process_validations' %}" class="hover:text-blue-600">Process Validation</a>
+            <span>/</span>
+            <span class="text-gray-800 font-medium">{{ job.title }}</span>
+        </div>
+
+        <!-- Job Header -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold">{{ job.title }}</h1>
+                    <p class="text-gray-500 mt-1">{{ job.description|default:"Tidak ada deskripsi" }}</p>
+                    <div class="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
+                        <div><span class="font-medium">Annotator:</span> {{ job.worker_annotator.email|default:"-" }}</div>
+                        <div><span class="font-medium">Reviewer:</span> {{ job.worker_reviewer.email|default:"-" }}</div>
+                        <div><span class="font-medium">Total Images:</span> {{ images|length }}</div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <span class="inline-block px-3 py-1 rounded-full text-sm
+                        {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                        {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                        {% elif job.status == 'completed' %}bg-green-100 text-green-700{% endif %}">
+                        {{ job.get_status_display|default:job.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Stats -->
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+            <div class="bg-gray-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
+                <div class="text-xs text-gray-500 uppercase">Unannotated</div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-blue-700">{{ status_counts.annotated }}</div>
+                <div class="text-xs text-blue-700 uppercase">Annotated</div>
+            </div>
+            <div class="bg-yellow-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-yellow-700">{{ status_counts.in_review }}</div>
+                <div class="text-xs text-yellow-700 uppercase">In Review</div>
+            </div>
+            <div class="bg-orange-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-orange-700">{{ status_counts.in_rework }}</div>
+                <div class="text-xs text-orange-700 uppercase">In Rework</div>
+            </div>
+            <div class="bg-red-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-red-700">{{ status_counts.Issue }}</div>
+                <div class="text-xs text-red-700 uppercase">Issues</div>
+            </div>
+            <div class="bg-green-50 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-green-700">{{ status_counts.finished }}</div>
+                <div class="text-xs text-green-700 uppercase">Finished</div>
+            </div>
+        </div>
+
+        <!-- Action Bar: Finish All Job -->
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <div class="font-medium text-blue-900">Finalisasi Job</div>
+                <div class="text-sm text-blue-700 mt-1">Klik "Finish All Job" kalau semua image udah OK — bakal mark job sebagai completed.</div>
+            </div>
+            <button onclick="finishAllJob({{ job.id }})"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition"
+                    {% if job.status == 'completed' %}disabled{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                {% if job.status == 'completed' %}Already Completed{% else %}Finish All Job{% endif %}
+            </button>
+        </div>
+
+        <!-- Image Filter Chips -->
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div class="flex flex-wrap gap-2">
+                <button class="img-filter-chip active px-3 py-1 rounded-full text-sm border" data-status="all">Semua ({{ images|length }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="unannotated">Unannotated ({{ status_counts.unannotated }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="annotated">Annotated ({{ status_counts.annotated }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="in_review">In Review ({{ status_counts.in_review }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="issue">Issues ({{ status_counts.Issue }})</button>
+                <button class="img-filter-chip px-3 py-1 rounded-full text-sm border" data-status="finished">Finished ({{ status_counts.finished }})</button>
+            </div>
+        </div>
+
+        <!-- Image Grid -->
+        <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for image in images %}
+            <div class="image-item bg-white rounded-lg shadow-sm overflow-hidden"
+                 data-image-status="{{ image.status }}"
+                 data-image-id="{{ image.id }}">
+                <div class="relative aspect-square bg-gray-100">
+                    {% if image.image %}
+                        <img src="{{ image.image.url }}" alt="Image {{ image.id }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">No image</div>
+                    {% endif %}
+                    <!-- Status badge top-right -->
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs
+                        {% if image.status == 'unannotated' %}bg-gray-100 text-gray-700
+                        {% elif image.status == 'annotated' %}bg-blue-100 text-blue-700
+                        {% elif image.status == 'in_review' %}bg-yellow-100 text-yellow-700
+                        {% elif image.status == 'in_rework' %}bg-orange-100 text-orange-700
+                        {% elif image.status == 'issue' %}bg-red-100 text-red-700
+                        {% elif image.status == 'finished' %}bg-green-100 text-green-700{% endif %}">
+                        {{ image.status }}
+                    </span>
+                </div>
+                <div class="p-3">
+                    <div class="text-xs text-gray-500 truncate">ID #{{ image.id }}</div>
+                    {% if image.status != 'finished' %}
+                        <button onclick="finishImage({{ image.id }}, this)"
+                                class="mt-2 w-full bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            ✓ Mark as Finished
+                        </button>
+                    {% else %}
+                        <div class="mt-2 text-center text-green-600 text-xs font-medium">✓ Completed</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+                Belum ada image di job ini
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="noImageResults" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
+            Tidak ada image dengan status tersebut
+        </div>
+    </div>
+
+    <style>
+        .img-filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
+        .img-filter-chip:hover { background: #f3f4f6; }
+        .img-filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
+    </style>
+
+    <script>
+    function getCSRF() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    // Image filter
+    document.addEventListener('DOMContentLoaded', function () {
+        const chips = document.querySelectorAll('.img-filter-chip');
+        const items = document.querySelectorAll('.image-item');
+        const noResults = document.getElementById('noImageResults');
+
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filter = chip.dataset.status;
+                let visible = 0;
+                items.forEach(it => {
+                    const match = filter === 'all' || it.dataset.imageStatus === filter;
+                    it.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                noResults.classList.toggle('hidden', visible > 0);
+            });
+        });
+    });
+
+    // Finish single image
+    function finishImage(imageId, btn) {
+        if (!confirm('Mark image ini sebagai finished?')) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        fetch("{% url 'master:finish_image' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+            body: JSON.stringify({ image_id: imageId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update UI tanpa reload
+                const card = btn.closest('.image-item');
+                card.dataset.imageStatus = 'finished';
+                const badge = card.querySelector('.absolute.top-2.right-2');
+                if (badge) {
+                    badge.textContent = 'finished';
+                    badge.className = 'absolute top-2 right-2 px-2 py-1 rounded-full text-xs bg-green-100 text-green-700';
+                }
+                btn.parentElement.innerHTML = '<div class="text-xs text-gray-500 truncate">ID #' + imageId + '</div><div class="mt-2 text-center text-green-600 text-xs font-medium">✓ Completed</div>';
+            } else {
+                alert('Error: ' + (data.message || 'unknown'));
+                btn.disabled = false;
+                btn.textContent = '✓ Mark as Finished';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Network error: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = '✓ Mark as Finished';
+        });
+    }
+
+    // Finish entire job
+    function finishAllJob(jobId) {
+        if (!confirm('Yakin mau finalisasi job ini?\n\nSemua image akan di-mark sebagai finished dan job akan di-close. Aksi ini bisa dilakukan tapi sebaiknya cuma kalau bener-bener udah beres.')) {
+            return;
+        }
+
+        fetch("{% url 'master:finish_job' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+            body: JSON.stringify({ job_id: jobId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message || 'Job berhasil di-finalisasi!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'unknown'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Network error: ' + err.message);
+        });
+    }
+    </script>
+
+{% endif %}
+
+{% endblock %}

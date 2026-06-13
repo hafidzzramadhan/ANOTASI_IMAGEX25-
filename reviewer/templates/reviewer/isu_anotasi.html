@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review — Anotasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #f0f4f9;
+            font-family: 'DM Sans', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── TOP BAR ── */
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid #e4eaf3;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            height: 58px;
+        }
+
+        /* ── MAIN LAYOUT ── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 0;
+        }
+
+        /* ── LEFT PANEL ── */
+        .left-panel {
+            width: 272px;
+            flex-shrink: 0;
+            background: #fff;
+            border-right: 1px solid #e4eaf3;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px 16px;
+            gap: 6px;
+        }
+
+        .panel-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            padding-left: 2px;
+        }
+
+        .detail-card {
+            background: #f8fafd;
+            border: 1px solid #e8eef8;
+            border-radius: 12px;
+            padding: 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            margin-bottom: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .detail-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: #eff4ff;
+            color: #4f6ef7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 11px;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            font-family: 'DM Mono', monospace;
+            line-height: 1.2;
+        }
+
+        .colour-swatch {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .swatch-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e8eef8;
+            margin: 2px 0;
+        }
+
+        /* Custom primary button state cloned from utility */
+        .cu-btn-primary {
+            background: #4f6ef7;
+            color: #fff;
+            transition: background 0.15s;
+        }
+        .cu-btn-primary:hover {
+            background: #3b5bdb;
+        }
+
+        /* ── PAGINATION NAV ── */
+        .pagination-card {
+            background: #f8fafd;
+            border: 1px solid #e8eef8;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-top: 4px;
+        }
+
+        .pag-counter {
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .pag-counter strong {
+            color: #1e293b;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .pag-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pag-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1.5px solid #dde6f5;
+            color: #4f6ef7;
+            background: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .pag-btn:hover:not(.disabled) {
+            background: #4f6ef7;
+            color: #fff;
+            border-color: #4f6ef7;
+        }
+
+        .pag-btn.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .pag-dots {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .pag-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+            border: 1.5px solid #dde6f5;
+            color: #64748b;
+            background: #fff;
+        }
+
+        .pag-dot:hover {
+            background: #eff4ff;
+            color: #4f6ef7;
+            border-color: #b0c4ff;
+        }
+
+        .pag-dot.active {
+            background: #4f6ef7;
+            color: #fff;
+            border-color: #4f6ef7;
+            box-shadow: 0 2px 8px rgba(79,110,247,0.35);
+        }
+
+        /* ── STATUS badge ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+        .badge-finished    { background: #d1fae5; color: #065f46; }
+        .badge-in-review   { background: #dbeafe; color: #1d4ed8; }
+        .badge-rework      { background: #ffedd5; color: #c2410c; }
+        .badge-annotated   { background: #e0e7ff; color: #4338ca; }
+        .badge-in-progress { background: #fef3c7; color: #b45309; }
+        .badge-issue       { background: #fee2e2; color: #b91c1c; }
+        .badge-default     { background: #f3f4f6; color: #374151; }
+
+        /* ── CANVAS ── */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background: #f0f4f9;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 32px rgba(79,110,247,0.10);
+            background: #fff;
+        }
+
+        .canvas-wrapper img {
+            display: block;
+            max-width: 100%;
+            max-height: calc(100vh - 58px - 40px);
+            object-fit: contain;
+        }
+
+        #annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* ── BACK BUTTON ── */
+        .back-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: #f1f5fb;
+            border: 1.5px solid #e4eaf3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4f6ef7;
+            text-decoration: none;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover { background: #eff4ff; }
+
+        /* Scrollbar for left panel */
+        .left-panel::-webkit-scrollbar { width: 4px; }
+        .left-panel::-webkit-scrollbar-track { background: transparent; }
+        .left-panel::-webkit-scrollbar-thumb { background: #dde6f5; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'reviewer:task_review' profile_id %}" class="back-btn">
+                <i class="fas fa-chevron-left text-xs"></i>
+            </a>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-800 text-sm" id="file-name-display" style="font-family:'DM Mono',monospace">Loading…</span>
+
+                    <span class="status-badge
+                        {% if status == 'finished' %}badge-finished
+                        {% elif status == 'in_review' %}badge-in-review
+                        {% elif status == 'in_rework' %}badge-rework
+                        {% elif status == 'annotated' %}badge-annotated
+                        {% elif status == 'in_progress' %}badge-in-progress
+                        {% elif status == 'issue' %}badge-issue
+                        {% else %}badge-default{% endif %}"
+                        id="status-badge-display">
+                        {% if status == 'finished' %}Finished
+                        {% elif status == 'in_review' %}In Review
+                        {% elif status == 'in_rework' %}Rework
+                        {% elif status == 'annotated' %}Annotated
+                        {% elif status == 'in_progress' %}In Progress
+                        {% elif status == 'issue' %}Issue
+                        {% else %}{{ status|title }}{% endif %}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 font-medium" style="font-family:'DM Mono',monospace"></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400 font-medium" id="top-counter">
+                Image <strong id="top-current" class="text-slate-700">—</strong> / <strong id="top-total" class="text-slate-700">—</strong>
+            </span>
+        </div>
+    </div>
+
+    <div class="layout">
+
+        <aside class="left-panel">
+
+            <p class="panel-title">Aksi Review</p>
+            <div class="flex items-center gap-2 mb-4">
+                <button type="button"
+                        onclick="openIssueModal({{ gambar_id }}, '{{ gambar.name|escapejs }}')"
+                        class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-200 text-amber-700 bg-amber-50/50 hover:bg-amber-50 transition flex items-center justify-center gap-1.5"
+                        title="Buat issue & kirim balik ke annotator">
+                    <i class="fas fa-flag"></i> Issue
+                </button>
+
+                {% if status != 'finished' %}
+                <button type="button"
+                        id="btn-finish-review"
+                        onclick="finishReview({{ gambar_id }}, this)"
+                        class="flex-1 cu-btn-primary px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
+                        title="Mark as finished">
+                    <i class="fas fa-check"></i> Finish
+                </button>
+                {% else %}
+                <span class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 flex items-center justify-center gap-1.5">
+                    <i class="fas fa-circle-check"></i> Finished
+                </span>
+                {% endif %}
+            </div>
+
+            <p class="panel-title">Detail Pekerjaan</p>
+
+            <div class="detail-card">
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-briefcase"></i></div>
+                    <div>
+                        <div class="detail-label">ID Job</div>
+                        <div class="detail-value">{{ profile_id }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-image"></i></div>
+                    <div>
+                        <div class="detail-label">ID Image</div>
+                        <div class="detail-value" id="panel-image-id">{{ gambar_id|default:"—" }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-layer-group"></i></div>
+                    <div>
+                        <div class="detail-label">Segmentasi</div>
+                        <div class="detail-value">{{ segmentasi|default:"—" }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-vector-square"></i></div>
+                    <div>
+                        <div class="detail-label">Shape</div>
+                        <div class="detail-value">{{ shape|default:"—" }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-palette"></i></div>
+                    <div>
+                        <div class="detail-label">Colour</div>
+                        <div class="detail-value">
+                            <div class="colour-swatch">
+                                <span class="swatch-dot" id="swatch" style="background-color: {{ colour|default:'#cccccc' }}"></span>
+                                <span id="colour-val">{{ colour|default:"—" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="panel-title" style="margin-top:6px">Navigasi Image</p>
+
+            <div class="pagination-card">
+                <div class="pag-counter">
+                    Image <strong id="pag-current">—</strong> dari <strong id="pag-total">—</strong>
+                </div>
+
+                <div class="pag-buttons">
+                    <a id="btn-prev" href="#" class="pag-btn disabled">
+                        <i class="fas fa-arrow-left text-[10px]"></i> Prev
+                    </a>
+                    <a id="btn-next" href="#" class="pag-btn disabled">
+                        Next <i class="fas fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+
+                <div class="pag-dots" id="pag-dots"></div>
+            </div>
+
+        </aside>
+
+        <main class="canvas-area">
+            <div class="canvas-wrapper" id="canvas-wrapper">
+                <img id="main-image" src="{{ gambar.url }}" alt="{{ gambar.name }}">
+                <canvas id="annotation-canvas"></canvas>
+            </div>
+        </main>
+
+    </div>
+
+    <div id="issueModal"
+         class="fixed inset-0 z-[100] bg-black/50 hidden items-center justify-center p-4"
+         onclick="if(event.target === this) closeIssueModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <i class="fas fa-flag"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900">Buat Issue</h3>
+                        <p class="text-xs text-gray-500" id="issueImageHint">—</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="issueForm" class="p-5 space-y-4" onsubmit="submitIssue(event)">
+                <input type="hidden" id="issueImageId" value="">
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Judul Issue</label>
+                    <input type="text" id="issueTitle"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                           placeholder="Contoh: Polygon kurang akurat di area kanan">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Deskripsi <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="issueNote" rows="4" required
+                              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none"
+                              placeholder="Jelasin apa yang harus diperbaiki annotator..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-2">Priority</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="priority" value="low" class="peer sr-only">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-300 transition">
+                                Low
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="priority" value="medium" class="peer sr-only" checked>
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:border-amber-300 transition">
+                                Medium
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="priority" value="high" class="peer sr-only">
+                            <div class="text-center px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 transition">
+                                High
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="issueError" class="hidden text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"></div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeIssueModal()"
+                            class="flex-1 px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="issueSubmitBtn"
+                            class="flex-1 cu-btn-primary px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Kirim ke Annotator
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastBox" class="fixed bottom-6 right-6 z-[110] space-y-2"></div>
+
+    <script>
+        /* ────────────────────────────────────────
+           CONFIG — data dari Django template
+           ──────────────────────────────────────── */
+        const TOTAL_IMAGES   = parseInt("{{ total_images|default:1 }}", 10) || 1;
+        const CURRENT_INDEX  = parseInt("{{ current_index|default:0 }}", 10) || 0;
+        const PROFILE_ID     = "{{ profile_id }}";
+
+        // Ambil CSRF Token secara native dari Cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        const CSRF = getCookie('csrftoken');
+
+        /* ────────────────────────────────────────
+           CANVAS SETUP
+           ──────────────────────────────────────── */
+        const canvas  = document.getElementById('annotation-canvas');
+        const ctx     = canvas.getContext('2d');
+        const mainImg = document.getElementById('main-image');
+
+        function setupCanvas() {
+            canvas.width  = mainImg.clientWidth;
+            canvas.height = mainImg.clientHeight;
+        }
+
+        window.addEventListener('load', () => {
+            const rawPath  = "{{ gambar.name }}";
+            const fileName = rawPath.split('/').pop();
+            document.getElementById('file-name-display').textContent = fileName;
+
+            if (mainImg.complete) setupCanvas();
+            else mainImg.onload = setupCanvas;
+
+            buildPagination();
+        });
+
+        window.addEventListener('resize', setupCanvas);
+
+        /* ────────────────────────────────────────
+           PAGINATION
+           ──────────────────────────────────────── */
+        function imageUrl(index) {
+            return `/reviewer/isu_anotasi/${index}/?profile_id=${PROFILE_ID}`;
+        }
+
+        function buildPagination() {
+            const cur   = CURRENT_INDEX;
+            const total = TOTAL_IMAGES;
+
+            document.getElementById('pag-current').textContent = cur + 1;
+            document.getElementById('pag-total').textContent   = total;
+            document.getElementById('top-current').textContent = cur + 1;
+            document.getElementById('top-total').textContent   = total;
+
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            if (cur > 0) {
+                btnPrev.href = imageUrl(cur - 1);
+                btnPrev.classList.remove('disabled');
+            } else {
+                btnPrev.classList.add('disabled');
+            }
+
+            if (cur < total - 1) {
+                btnNext.href = imageUrl(cur + 1);
+                btnNext.classList.remove('disabled');
+            } else {
+                btnNext.classList.add('disabled');
+            }
+
+            const dotsEl   = document.getElementById('pag-dots');
+            dotsEl.innerHTML = '';
+            const maxDots  = 10;
+            let start = Math.max(0, cur - Math.floor(maxDots / 2));
+            let end   = Math.min(total - 1, start + maxDots - 1);
+            if (end - start < maxDots - 1) start = Math.max(0, end - maxDots + 1);
+
+            for (let i = start; i <= end; i++) {
+                const a = document.createElement('a');
+                a.href        = imageUrl(i);
+                a.textContent = i + 1;
+                a.className   = 'pag-dot' + (i === cur ? ' active' : '');
+                if (i === cur) a.style.pointerEvents = 'none';
+                dotsEl.appendChild(a);
+            }
+        }
+
+        /* ────────────────────────────────────────
+           KEYBOARD NAVIGATION
+           ──────────────────────────────────────── */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft'  && CURRENT_INDEX > 0)
+                window.location.href = imageUrl(CURRENT_INDEX - 1);
+            if (e.key === 'ArrowRight' && CURRENT_INDEX < TOTAL_IMAGES - 1)
+                window.location.href = imageUrl(CURRENT_INDEX + 1);
+            if (e.key === 'Escape') closeIssueModal();
+        });
+
+        /* ────────────────────────────────────────
+           TOAST NOTIFICATION SYSTEM
+           ──────────────────────────────────────── */
+        function showToast(msg, type = 'success') {
+            const box = document.getElementById('toastBox');
+            const tone = type === 'error'
+                ? 'bg-red-600 text-white'
+                : type === 'warn'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-emerald-600 text-white';
+            const t = document.createElement('div');
+            t.className = `${tone} px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 transition transform translate-x-4 opacity-0`;
+            t.innerHTML = `<i class="fas fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> ${msg}`;
+            box.appendChild(t);
+            requestAnimationFrame(() => {
+                t.classList.remove('translate-x-4', 'opacity-0');
+            });
+            setTimeout(() => {
+                t.classList.add('translate-x-4', 'opacity-0');
+                setTimeout(() => t.remove(), 300);
+            }, 3000);
+        }
+
+        /* ────────────────────────────────────────
+           ISSUE HANDLERS
+           ──────────────────────────────────────── */
+        function openIssueModal(imageId, imageName) {
+            document.getElementById('issueImageId').value = imageId;
+            document.getElementById('issueImageHint').textContent = `Image: ${imageName.split('/').pop()}`;
+            document.getElementById('issueTitle').value = `Issue on image ${imageId}`;
+            document.getElementById('issueNote').value = '';
+            document.getElementById('issueError').classList.add('hidden');
+            document.querySelector('input[name="priority"][value="medium"]').checked = true;
+            const m = document.getElementById('issueModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            setTimeout(() => document.getElementById('issueNote').focus(), 100);
+        }
+
+        function closeIssueModal() {
+            const m = document.getElementById('issueModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        async function submitIssue(e) {
+            e.preventDefault();
+            const imageId = document.getElementById('issueImageId').value;
+            const title = document.getElementById('issueTitle').value.trim();
+            const note = document.getElementById('issueNote').value.trim();
+            const priority = document.querySelector('input[name="priority"]:checked').value;
+            const errorBox = document.getElementById('issueError');
+            const btn = document.getElementById('issueSubmitBtn');
+
+            if (!note) {
+                errorBox.textContent = 'Deskripsi tidak boleh kosong.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+
+            try {
+                const res = await fetch(`/reviewer/make_issue/${imageId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF,
+                    },
+                    body: JSON.stringify({ title, note, priority }),
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    closeIssueModal();
+                    showToast('Issue dibuat — annotator sudah dinotifikasi.');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    errorBox.textContent = data.error || 'Gagal membuat issue.';
+                    errorBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorBox.textContent = 'Network error: ' + err.message;
+                errorBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim ke Annotator';
+            }
+        }
+
+        /* ────────────────────────────────────────
+           FINISH REVIEW HANDLER
+           ──────────────────────────────────────── */
+        async function finishReview(imageId, btnEl) {
+            if (!confirm('Mark image ini sebagai FINISHED?')) return;
+
+            const original = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const res = await fetch(`/reviewer/finish_review/${imageId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF,
+                    },
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.job_completed ? 'Image finished — JOB SELESAI!' : 'Image finished.');
+                    setTimeout(() => window.location.reload(), 700);
+                } else {
+                    showToast(data.error || 'Gagal finish review', 'error');
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = original;
+                }
+            } catch (err) {
+                showToast('Network error: ' + err.message, 'error');
+                btnEl.disabled = false;
+                btnEl.innerHTML = original;
+            }
+        }
+    </script>
+</body>
+</html>

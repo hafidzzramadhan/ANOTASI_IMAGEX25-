@@ -1,0 +1,266 @@
+{% extends 'base_reviewer.html' %}
+{% load static %}
+
+{% block title %}Review Task #{{ profile_id }} — Reviewer{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data>
+
+    <div>
+        <a href="{% url 'reviewer:home_reviewer' %}"
+           class="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5">
+            <i class="fas fa-arrow-left text-[10px]"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-mono text-gray-400">JOB #{{ profile_id }}</span>
+            </div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Review Task</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ total_images }} image{{ total_images|pluralize }} siap di-review. Klik gambar untuk membuka canvas detail.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'reviewer:done_task' profile_id %}"
+               onclick="return confirm('Mark seluruh job sebagai SELESAI dan kirim ke Master?');"
+               class="cu-btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <i class="fas fa-circle-check"></i> Done All Task
+            </a>
+        </div>
+    </div>
+
+    <div class="cu-card p-4 md:p-6">
+
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-base md:text-lg font-semibold text-gray-900">Daftar Image</h2>
+                <p class="text-xs text-gray-500 mt-1">Gunakan aksi review (Issue/Finish) langsung di dalam menu detail canvas.</p>
+            </div>
+        </div>
+
+        {% if data_job %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+
+            {% for item in data_job %}
+            <div class="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md hover:border-blue-300 transition group">
+
+                <a href="{% url 'reviewer:isu_anotasi' forloop.counter0 %}?profile_id={{ profile_id }}"
+                   class="block relative aspect-video bg-gray-100 overflow-hidden">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.image.name }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-image text-3xl"></i>
+                        </div>
+                    {% endif %}
+
+                    <div class="absolute top-2 left-2">
+                        {% if item.status == 'finished' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">Finished</span>
+                        {% elif item.status == 'in_review' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-sm">In Review</span>
+                        {% elif item.status == 'in_rework' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500 text-white shadow-sm">Rework</span>
+                        {% elif item.status == 'annotated' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-500 text-white shadow-sm">Annotated</span>
+                        {% elif item.status == 'in_progress' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">In Progress</span>
+                        {% elif item.status == 'issue' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">Issue</span>
+                        {% else %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-500 text-white shadow-sm">{{ item.status|title }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
+                        <span class="opacity-0 group-hover:opacity-100 transition bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5">
+                            <i class="fas fa-pen-ruler"></i> Buka Canvas
+                        </span>
+                    </div>
+                </a>
+
+                <div class="p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-mono text-gray-400">#{{ item.id }}</div>
+                            <div class="text-sm font-semibold text-gray-900 truncate" title="{{ item.image.name }}">
+                                {% with jid=item.job.id|stringformat:"s" %}{{ item.image.name|cut:"job_images/"|cut:jid|cut:"/" }}{% endwith %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-2 text-[11px] text-gray-500 pb-1">
+                        <span class="flex items-center gap-1" title="Annotator">
+                            <i class="fas fa-user-pen text-blue-400"></i>
+                            {{ item.annotator.username|default:"—" }}
+                        </span>
+                        {% if item.label_time %}
+                        <span class="flex items-center gap-1" title="Label time">
+                            <i class="fas fa-stopwatch text-blue-400"></i>
+                            {{ item.label_time }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4">
+                <i class="fas fa-image text-2xl text-blue-400"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900">Belum ada image di job ini</h3>
+            <p class="text-sm text-gray-500 mt-1">Master belum upload image ke job ini.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // CSRF helper
+    // ============================================================
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+    const CSRF = getCookie('csrftoken') || '{{ csrf_token }}';
+
+    // ============================================================
+    // Toast
+    // ============================================================
+    function showToast(msg, type = 'success') {
+        const box = document.getElementById('toastBox');
+        const tone = type === 'error'
+            ? 'bg-red-600 text-white'
+            : type === 'warn'
+                ? 'bg-amber-500 text-white'
+                : 'bg-emerald-600 text-white';
+        const t = document.createElement('div');
+        t.className = `${tone} px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 transition transform translate-x-4 opacity-0`;
+        t.innerHTML = `<i class="fas fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> ${msg}`;
+        box.appendChild(t);
+        requestAnimationFrame(() => {
+            t.classList.remove('translate-x-4', 'opacity-0');
+        });
+        setTimeout(() => {
+            t.classList.add('translate-x-4', 'opacity-0');
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+
+    // ============================================================
+    // Issue modal
+    // ============================================================
+    function openIssueModal(imageId, imageName) {
+        document.getElementById('issueImageId').value = imageId;
+        document.getElementById('issueImageHint').textContent = `Image: ${imageName}`;
+        document.getElementById('issueTitle').value = `Issue on image ${imageId}`;
+        document.getElementById('issueNote').value = '';
+        document.getElementById('issueError').classList.add('hidden');
+        document.querySelector('input[name="priority"][value="medium"]').checked = true;
+        const m = document.getElementById('issueModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        setTimeout(() => document.getElementById('issueNote').focus(), 100);
+    }
+
+    function closeIssueModal() {
+        const m = document.getElementById('issueModal');
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeIssueModal();
+    });
+
+    async function submitIssue(e) {
+        e.preventDefault();
+        const imageId = document.getElementById('issueImageId').value;
+        const title = document.getElementById('issueTitle').value.trim();
+        const note = document.getElementById('issueNote').value.trim();
+        const priority = document.querySelector('input[name="priority"]:checked').value;
+        const errorBox = document.getElementById('issueError');
+        const btn = document.getElementById('issueSubmitBtn');
+
+        if (!note) {
+            errorBox.textContent = 'Deskripsi tidak boleh kosong.';
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+
+        try {
+            const res = await fetch(`/reviewer/make_issue/${imageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF,
+                },
+                body: JSON.stringify({ title, note, priority }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                closeIssueModal();
+                showToast('Issue dibuat — annotator sudah dinotifikasi.');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                errorBox.textContent = data.error || 'Gagal membuat issue.';
+                errorBox.classList.remove('hidden');
+            }
+        } catch (err) {
+            errorBox.textContent = 'Network error: ' + err.message;
+            errorBox.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim ke Annotator';
+        }
+    }
+
+    // ============================================================
+    // Finish review
+    // ============================================================
+    async function finishReview(imageId, btnEl) {
+        if (!confirm('Mark image ini sebagai FINISHED?')) return;
+
+        const original = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch(`/reviewer/finish_review/${imageId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF,
+                },
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(data.job_completed ? 'Image finished — JOB SELESAI!' : 'Image finished.');
+                setTimeout(() => window.location.reload(), 700);
+            } else {
+                showToast(data.error || 'Gagal finish review', 'error');
+                btnEl.disabled = false;
+                btnEl.innerHTML = original;
+            }
+        } catch (err) {
+            showToast('Network error: ' + err.message, 'error');
+            btnEl.disabled = false;
+            btnEl.innerHTML = original;
+        }
+    }
+</script>
+{% endblock %}

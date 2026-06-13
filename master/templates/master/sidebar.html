@@ -1,0 +1,28 @@
+{% extends 'master/home.html' %}
+{% block content%}
+<div class="h-screen w-64 bg-[#4527A0] text-white fixed flex flex-col">
+    <div class="flex items-center justify-center h-20 border-b border-gray-700">
+        <img src="/static/images/trisakti.png" alt="Logo Trisakti" class="h-12">
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2">
+        <a href="{% url 'master:home' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Home
+        </a>
+        <a href="{% url 'master:assign_roles' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Assign Roles
+        </a>
+        <a href="{% url 'master:job_settings' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Job Settings
+        </a>
+        <a href="{% url 'master/issue_solving' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Issue Solving
+        </a>
+        <a href="{% url 'master:process_validations' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Process Validation
+        </a>
+        <a href="{% url 'master:performance' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1]">
+            Performance
+        </a>
+    </nav>
+</div>
+{% endblock %} 

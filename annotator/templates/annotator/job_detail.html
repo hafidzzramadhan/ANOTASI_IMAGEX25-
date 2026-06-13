@@ -1,0 +1,442 @@
+{% extends 'base_annotator.html' %}
+{% load static %}
+
+{% block title %}{{ job.title }} — Annotator{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- =====================================================
+         BREADCRUMB + HEADER
+         ===================================================== -->
+    <div>
+        <div class="flex items-center text-xs text-[#6D28D9]/60 mb-2 gap-2">
+            <a href="{% url 'annotator:annotate' %}" class="hover:text-[#7C3AED]">Dashboard</a>
+            <i class="fas fa-chevron-right text-[8px]"></i>
+            <a href="{% url 'annotator:annotate' %}" class="hover:text-[#7C3AED]">My Jobs</a>
+            <i class="fas fa-chevron-right text-[8px]"></i>
+            <span class="text-slate-900 font-medium">{{ job.title }}</span>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#A78BFA] to-[#7C3AED] flex items-center justify-center text-white font-bold shadow-lg">
+                    {{ job.title|slice:":1"|upper }}
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-900">{{ job.title }}</h1>
+                    <p class="text-xs text-[#6D28D9]/70">{{ all_images.count }} images · {{ status_counts.finished|add:status_counts.annotated }} done</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if all_images.exists %}
+                <a href="{% url 'annotator:label_image' job.id all_images.first.id %}"
+                   class="pa-btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
+                    <i class="fas fa-pen-to-square"></i>
+                    {% if status_counts.unannotated > 0 %}Mulai Labeling{% else %}Buka Canvas{% endif %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         TABS
+         ===================================================== -->
+    <div class="flex items-center gap-1 border-b border-[#EDE4FB] -mt-2">
+        <a href="?tab=data" class="px-4 py-2.5 text-sm font-medium border-b-2 transition
+            {% if current_tab == 'data' or not current_tab %}border-[#7C3AED] text-[#7C3AED]{% else %}border-transparent text-[#6D28D9]/60 hover:text-slate-900{% endif %}">
+            <i class="fas fa-images mr-1.5"></i> Data Image
+        </a>
+        <a href="?tab=issues" class="px-4 py-2.5 text-sm font-medium border-b-2 transition
+            {% if current_tab == 'issues' %}border-[#7C3AED] text-[#7C3AED]{% else %}border-transparent text-[#6D28D9]/60 hover:text-slate-900{% endif %}">
+            <i class="fas fa-circle-exclamation mr-1.5"></i> Issues
+            {% if issue_counts.open > 0 %}
+                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full pa-pill-rose font-bold">{{ issue_counts.open }}</span>
+            {% endif %}
+        </a>
+        <a href="?tab=overview" class="px-4 py-2.5 text-sm font-medium border-b-2 transition
+            {% if current_tab == 'overview' %}border-[#7C3AED] text-[#7C3AED]{% else %}border-transparent text-[#6D28D9]/60 hover:text-slate-900{% endif %}">
+            <i class="fas fa-chart-pie mr-1.5"></i> Overview
+        </a>
+    </div>
+
+    <!-- =====================================================
+         TAB: DATA
+         ===================================================== -->
+    {% if current_tab == 'data' or not current_tab %}
+    <div class="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+
+        <!-- Status filter sidebar -->
+        <div class="pa-card p-4 h-fit">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-[#6D28D9]/60 mb-3 px-1">Status Filter</h3>
+            <div class="space-y-1">
+                <a href="?tab=data" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if not current_status %}bg-[#EDE9FE] text-[#7C3AED] font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span>All Status</span>
+                    <span class="text-xs font-medium">{{ all_images.count }}</span>
+                </a>
+
+                <a href="?tab=data&status=unannotated" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'unannotated' %}bg-amber-50 text-amber-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Unannotated</span>
+                    <span class="text-xs font-medium">{{ status_counts.unannotated }}</span>
+                </a>
+
+                <a href="?tab=data&status=in_progress" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'in_progress' %}bg-sky-50 text-sky-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>In Progress</span>
+                    <span class="text-xs font-medium">{{ status_counts.in_progress }}</span>
+                </a>
+
+                <a href="?tab=data&status=in_review" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'in_review' %}bg-yellow-50 text-yellow-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>In Review</span>
+                    <span class="text-xs font-medium">{{ status_counts.in_review }}</span>
+                </a>
+
+                <a href="?tab=data&status=in_rework" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'in_rework' %}bg-rose-50 text-rose-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>In Rework</span>
+                    <span class="text-xs font-medium">{{ status_counts.in_rework }}</span>
+                </a>
+
+                <a href="?tab=data&status=annotated" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'annotated' %}bg-emerald-50 text-emerald-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Annotated</span>
+                    <span class="text-xs font-medium">{{ status_counts.annotated }}</span>
+                </a>
+
+                <a href="?tab=data&status=finished" class="flex justify-between items-center px-3 py-2 rounded-lg text-sm transition
+                    {% if current_status == 'finished' %}bg-purple-50 text-purple-700 font-semibold{% else %}text-slate-900 hover:bg-[#FFFFFF]{% endif %}">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>Finished</span>
+                    <span class="text-xs font-medium">{{ status_counts.finished }}</span>
+                </a>
+            </div>
+
+            <!-- View toggle -->
+            <div class="mt-5 pt-5 border-t border-[#EDE4FB]">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-[#6D28D9]/60 mb-2 px-1">View</h3>
+                <div class="flex gap-1 bg-[#FFFFFF] rounded-lg p-1">
+                    <button id="view-grid" class="flex-1 py-1.5 text-xs font-semibold rounded-md bg-white text-[#7C3AED] shadow-sm transition">
+                        <i class="fas fa-grid-2"></i> Grid
+                    </button>
+                    <button id="view-list" class="flex-1 py-1.5 text-xs font-semibold rounded-md text-[#6D28D9]/60 hover:text-slate-900 transition">
+                        <i class="fas fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image grid/list -->
+        <div class="pa-card overflow-hidden">
+
+            <!-- LIST VIEW -->
+            <div id="list-view" class="hidden overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="text-left text-[11px] font-bold uppercase tracking-wider text-[#6D28D9]/60 bg-[#FFFFFF]">
+                            <th class="px-5 py-3">Image ID</th>
+                            <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3">Label time</th>
+                            <th class="px-5 py-3">Review time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#EDE4FB]">
+                        {% for image in images %}
+                        <tr class="hover:bg-[#FFFFFF] cursor-pointer" onclick="window.location='{% url 'annotator:label_image' job.id image.id %}'">
+                            <td class="px-5 py-3.5">
+                                <span class="text-sm font-semibold text-[#7C3AED]">#{{ image.id }}.jpg</span>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                {% include "annotator/_image_status_pill.html" with status=image.status %}
+                            </td>
+                            <td class="px-5 py-3.5 text-sm text-slate-900">{{ image.label_time|default:"0" }}s</td>
+                            <td class="px-5 py-3.5 text-sm text-slate-900">{{ image.review_time|default:"-" }}{% if image.review_time %}s{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="px-5 py-12 text-center text-sm text-[#6D28D9]/60">No images for this filter.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- GRID VIEW (default) -->
+            <div id="grid-view" class="p-5">
+                {% if images %}
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {% for image in images %}
+                    <a href="{% url 'annotator:label_image' job.id image.id %}"
+                       class="group relative block bg-[#FFFFFF] rounded-2xl overflow-hidden border border-[#EDE4FB] hover:border-[#A78BFA] hover:shadow-lg transition">
+                        <!-- thumbnail -->
+                        <div class="aspect-square bg-[#EDE9FE] overflow-hidden relative">
+                            {% if image.image %}
+                                <img src="{{ image.image.url }}" alt="img {{ image.id }}"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-[#A78BFA]">
+                                    <i class="fas fa-image text-3xl"></i>
+                                </div>
+                            {% endif %}
+                            <!-- status overlay -->
+                            <div class="absolute top-2 right-2">
+                                {% include "annotator/_image_status_pill.html" with status=image.status %}
+                            </div>
+                        </div>
+                        <!-- meta -->
+                        <div class="p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs font-semibold text-slate-900 truncate">#{{ image.id }}.jpg</div>
+                                <i class="fas fa-pen-to-square text-[#A78BFA] text-xs opacity-0 group-hover:opacity-100 transition"></i>
+                            </div>
+                            <div class="text-[10px] text-[#6D28D9]/60 mt-0.5">
+                                {{ image.label_time|default:"0" }}s label
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-16">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-50 mb-4">
+                        <i class="fas fa-image text-3xl text-[#A78BFA]"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-900 mb-1">No images found</h3>
+                    <p class="text-sm text-[#6D28D9]/70">Coba ganti filter status di sidebar kiri.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- =====================================================
+         TAB: ISSUES
+         ===================================================== -->
+    {% if current_tab == 'issues' %}
+    <div class="pa-card overflow-hidden">
+
+        <!-- Header -->
+        <div class="px-5 py-4 border-b border-[#EDE4FB] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Issues &amp; Feedback</h2>
+                <p class="text-xs text-[#6D28D9]/70">Feedback dari reviewer/master soal anotasi lu.</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="px-2.5 py-1 rounded-full pa-pill-rose font-semibold">
+                    {{ issue_counts.open }} Open
+                </span>
+                <span class="px-2.5 py-1 rounded-full pa-pill-peach font-semibold">
+                    {{ issue_counts.eskalasi }} Escalated
+                </span>
+                <span class="px-2.5 py-1 rounded-full pa-pill-mint font-semibold">
+                    {{ issue_counts.closed }} Closed
+                </span>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="px-5 py-3 bg-[#FFFFFF] border-b border-[#EDE4FB] flex items-center gap-1 overflow-x-auto">
+            <a href="?tab=issues&issue_status=all" class="px-3 py-1.5 text-xs font-semibold rounded-full transition whitespace-nowrap
+                {% if issue_filter == 'all' or not issue_filter %}bg-[#A78BFA] text-white{% else %}text-slate-900 hover:bg-[#EDE9FE]{% endif %}">All</a>
+            <a href="?tab=issues&issue_status=open" class="px-3 py-1.5 text-xs font-semibold rounded-full transition whitespace-nowrap
+                {% if issue_filter == 'open' %}bg-[#A78BFA] text-white{% else %}text-slate-900 hover:bg-[#EDE9FE]{% endif %}">Open</a>
+            <a href="?tab=issues&issue_status=eskalasi" class="px-3 py-1.5 text-xs font-semibold rounded-full transition whitespace-nowrap
+                {% if issue_filter == 'eskalasi' %}bg-[#A78BFA] text-white{% else %}text-slate-900 hover:bg-[#EDE9FE]{% endif %}">Escalated</a>
+            <a href="?tab=issues&issue_status=reworking" class="px-3 py-1.5 text-xs font-semibold rounded-full transition whitespace-nowrap
+                {% if issue_filter == 'reworking' %}bg-[#A78BFA] text-white{% else %}text-slate-900 hover:bg-[#EDE9FE]{% endif %}">Reworking</a>
+            <a href="?tab=issues&issue_status=closed" class="px-3 py-1.5 text-xs font-semibold rounded-full transition whitespace-nowrap
+                {% if issue_filter == 'closed' %}bg-[#A78BFA] text-white{% else %}text-slate-900 hover:bg-[#EDE9FE]{% endif %}">Closed</a>
+        </div>
+
+        <!-- Issues list -->
+        <div class="divide-y divide-[#EDE4FB]">
+            {% for issue in issues %}
+            <div class="px-5 py-4 hover:bg-[#FFFFFF] transition" data-issue-id="{{ issue.id }}" data-full-message="{{ issue.message|default:issue.description|default:'No message provided' }}">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center
+                        {% if issue.status == 'open' %}bg-rose-100 text-rose-600
+                        {% elif issue.status == 'eskalasi' %}bg-amber-100 text-amber-600
+                        {% elif issue.status == 'reworking' %}bg-sky-100 text-sky-600
+                        {% elif issue.status == 'closed' %}bg-emerald-100 text-emerald-600
+                        {% else %}bg-gray-100 text-gray-500{% endif %}">
+                        <i class="fas fa-circle-exclamation"></i>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-3 flex-wrap">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm font-semibold text-slate-900">Issue #{{ issue.id }}</h3>
+                                    {% if issue.status == 'open' %}
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full pa-pill-rose font-bold">OPEN</span>
+                                    {% elif issue.status == 'eskalasi' %}
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full pa-pill-peach font-bold">ESCALATED</span>
+                                    {% elif issue.status == 'reworking' %}
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full pa-pill-sky font-bold">REWORKING</span>
+                                    {% elif issue.status == 'closed' %}
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full pa-pill-mint font-bold">CLOSED</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm text-slate-900 mt-0.5 font-medium">{{ issue.title|default:"Untitled Issue" }}</p>
+                                <p class="text-xs text-[#6D28D9]/70 mt-1.5 line-clamp-2">{{ issue.description|default:"No message provided" }}</p>
+
+                                <div class="flex items-center gap-3 mt-2 text-[11px] text-[#6D28D9]/60">
+                                    {% if issue.image %}
+                                    <span><i class="fas fa-image mr-1 opacity-70"></i>#{{ issue.image.id }}.jpg</span>
+                                    {% endif %}
+                                    {% if issue.annotation_id %}
+                                    <span><i class="fas fa-tag mr-1 opacity-70"></i>Anno #{{ issue.annotation_id }}</span>
+                                    {% endif %}
+                                    <span><i class="fas fa-user mr-1 opacity-70"></i>{{ issue.created_by.username|default:"System" }} · {{ issue.created_by.role|default:"-"|title }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="px-5 py-16 text-center">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-emerald-50 mb-4">
+                    <i class="fas fa-circle-check text-3xl text-emerald-500"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-900 mb-1">Tidak ada issue</h3>
+                <p class="text-sm text-[#6D28D9]/70 max-w-sm mx-auto">
+                    {% if issue_filter == 'open' %}Gak ada open issue. Kerjaan lu rapih!
+                    {% elif issue_filter == 'eskalasi' %}Gak ada issue yang escalated.
+                    {% elif issue_filter == 'reworking' %}Gak ada issue yang lagi di-rework.
+                    {% elif issue_filter == 'closed' %}Belum ada issue yang closed.
+                    {% else %}Belum ada issue di-report buat job ini.{% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- =====================================================
+         TAB: OVERVIEW
+         ===================================================== -->
+    {% if current_tab == 'overview' %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Side info -->
+        <div class="space-y-4">
+            <div class="pa-card p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-[#6D28D9]/60 mb-2">Description</h3>
+                <p class="text-sm text-slate-900">{{ job.description|default:"No description" }}</p>
+            </div>
+
+            <div class="pa-card p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-[#6D28D9]/60 mb-2">Stats</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-[#6D28D9]/70">Total images</span><span class="font-bold text-slate-900">{{ all_images.count }}</span></div>
+                    <div class="flex justify-between"><span class="text-[#6D28D9]/70">Classes</span><span class="font-bold text-slate-900">{{ job.classes.count|default:"0" }}</span></div>
+                    <div class="flex justify-between"><span class="text-[#6D28D9]/70">Created</span><span class="font-bold text-slate-900">{{ job.date_created|date:"d M Y" }}</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress cards -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="pa-card p-5">
+                <h3 class="text-base font-bold text-slate-900 mb-4">Labeling Progress</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div class="rounded-xl p-3.5 bg-amber-50 border border-amber-100">
+                        <div class="text-2xl font-bold text-amber-700">{{ status_counts.unannotated }}</div>
+                        <div class="text-xs text-amber-700/70 mt-0.5">Unannotated</div>
+                    </div>
+                    <div class="rounded-xl p-3.5 bg-sky-50 border border-sky-100">
+                        <div class="text-2xl font-bold text-sky-700">{{ status_counts.in_progress }}</div>
+                        <div class="text-xs text-sky-700/70 mt-0.5">In Progress</div>
+                    </div>
+                    <div class="rounded-xl p-3.5 bg-yellow-50 border border-yellow-100">
+                        <div class="text-2xl font-bold text-yellow-700">{{ status_counts.in_review }}</div>
+                        <div class="text-xs text-yellow-700/70 mt-0.5">In Review</div>
+                    </div>
+                    <div class="rounded-xl p-3.5 bg-rose-50 border border-rose-100">
+                        <div class="text-2xl font-bold text-rose-700">{{ status_counts.in_rework }}</div>
+                        <div class="text-xs text-rose-700/70 mt-0.5">In Rework</div>
+                    </div>
+                    <div class="rounded-xl p-3.5 bg-emerald-50 border border-emerald-100">
+                        <div class="text-2xl font-bold text-emerald-700">{{ status_counts.annotated }}</div>
+                        <div class="text-xs text-emerald-700/70 mt-0.5">Annotated</div>
+                    </div>
+                    <div class="rounded-xl p-3.5 bg-purple-50 border border-purple-100">
+                        <div class="text-2xl font-bold text-purple-700">{{ status_counts.finished }}</div>
+                        <div class="text-xs text-purple-700/70 mt-0.5">Finished</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pa-card p-5">
+                <h3 class="text-base font-bold text-slate-900 mb-4">Quick Navigation</h3>
+                <div class="space-y-2">
+                    <a href="?tab=data" class="flex items-center justify-between px-4 py-3 bg-[#FFFFFF] hover:bg-[#EDE9FE] rounded-xl transition">
+                        <span class="text-sm font-medium text-slate-900">All Images ({{ all_images.count }})</span>
+                        <i class="fas fa-arrow-right text-[#A78BFA] text-xs"></i>
+                    </a>
+                    <a href="?tab=data&status=unannotated" class="flex items-center justify-between px-4 py-3 bg-amber-50 hover:bg-amber-100 rounded-xl transition">
+                        <span class="text-sm font-medium text-amber-800">Unannotated ({{ status_counts.unannotated }})</span>
+                        <i class="fas fa-arrow-right text-amber-600 text-xs"></i>
+                    </a>
+                    <a href="?tab=data&status=in_rework" class="flex items-center justify-between px-4 py-3 bg-rose-50 hover:bg-rose-100 rounded-xl transition">
+                        <span class="text-sm font-medium text-rose-800">Need Rework ({{ status_counts.in_rework }})</span>
+                        <i class="fas fa-arrow-right text-rose-600 text-xs"></i>
+                    </a>
+                    <a href="?tab=data&status=finished" class="flex items-center justify-between px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-xl transition">
+                        <span class="text-sm font-medium text-purple-800">Finished ({{ status_counts.finished }})</span>
+                        <i class="fas fa-arrow-right text-purple-600 text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+<script>
+    // View toggle
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const gridBtn  = document.getElementById('view-grid');
+    const listBtn  = document.getElementById('view-list');
+
+    if (gridBtn && listBtn) {
+        function setView(mode) {
+            if (mode === 'grid') {
+                gridView?.classList.remove('hidden');
+                listView?.classList.add('hidden');
+                gridBtn.classList.add('bg-white', 'text-[#7C3AED]', 'shadow-sm');
+                gridBtn.classList.remove('text-[#6D28D9]/60');
+                listBtn.classList.remove('bg-white', 'text-[#7C3AED]', 'shadow-sm');
+                listBtn.classList.add('text-[#6D28D9]/60');
+            } else {
+                gridView?.classList.add('hidden');
+                listView?.classList.remove('hidden');
+                listBtn.classList.add('bg-white', 'text-[#7C3AED]', 'shadow-sm');
+                listBtn.classList.remove('text-[#6D28D9]/60');
+                gridBtn.classList.remove('bg-white', 'text-[#7C3AED]', 'shadow-sm');
+                gridBtn.classList.add('text-[#6D28D9]/60');
+            }
+            localStorage.setItem('annotatorJobDetailView', mode);
+        }
+
+        gridBtn.addEventListener('click', () => setView('grid'));
+        listBtn.addEventListener('click', () => setView('list'));
+
+        // Restore view preference
+        const saved = localStorage.getItem('annotatorJobDetailView');
+        if (saved === 'list') setView('list');
+    }
+</script>
+{% endblock %}

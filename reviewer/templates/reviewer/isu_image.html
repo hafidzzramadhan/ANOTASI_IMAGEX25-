@@ -1,0 +1,200 @@
+{% extends 'base_reviewer.html' %}
+{% load static %}
+
+{% block title %}Image Issues — Reviewer{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- ===========================================================
+         BREADCRUMB + HERO
+         =========================================================== -->
+    <div>
+        <a href="{% url 'reviewer:isu' %}"
+           class="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5">
+            <i class="fas fa-arrow-left text-[10px]"></i> Kembali ke Issue Management
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Image Issues</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                {% if focus_image %}
+                    Issue di image <span class="font-semibold text-gray-700">#{{ focus_image.id }}</span> — {{ image_issues|length }} issue.
+                {% else %}
+                    Issue dikelompokkan per image. Klik image buat lihat detail review-nya.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- ===========================================================
+         FOCUS MODE — single image
+         =========================================================== -->
+    {% if focus_image %}
+    <div class="cu-card p-4 md:p-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <!-- Image preview -->
+            <div class="md:col-span-1">
+                <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    {% if focus_image.image %}
+                        <img src="{{ focus_image.image.url }}" alt="{{ focus_image.image.name }}"
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-image text-4xl"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-3 space-y-1.5">
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-folder text-blue-400 mr-1"></i> {{ focus_image.job.title }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-user-pen text-blue-400 mr-1"></i> {{ focus_image.annotator.username|default:"—" }}
+                    </div>
+                    <div class="text-xs">
+                        {% if focus_image.status == 'finished' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Finished</span>
+                        {% elif focus_image.status == 'in_rework' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100">In Rework</span>
+                        {% elif focus_image.status == 'in_review' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">In Review</span>
+                        {% else %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-100">{{ focus_image.status|title }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <a href="{% url 'reviewer:task_review' focus_image.job.id %}"
+                   class="cu-btn-soft w-full mt-3 px-3 py-2 rounded-lg text-xs flex items-center justify-center gap-1.5">
+                    <i class="fas fa-folder-open"></i> Buka Job
+                </a>
+            </div>
+
+            <!-- Issues for this image -->
+            <div class="md:col-span-2">
+                <h2 class="text-base md:text-lg font-semibold text-gray-900 mb-3">
+                    {{ image_issues|length }} Issue di Image Ini
+                </h2>
+
+                {% if image_issues %}
+                <div class="space-y-3">
+                    {% for issue in image_issues %}
+                    <div class="border border-gray-200 rounded-xl p-4 bg-white">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="text-xs font-mono text-gray-400">#{{ issue.id }}</span>
+
+                            {% if issue.priority == 'high' %}
+                                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-100">High</span>
+                            {% elif issue.priority == 'medium' %}
+                                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Medium</span>
+                            {% else %}
+                                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Low</span>
+                            {% endif %}
+
+                            {% if issue.status == 'open' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Open</span>
+                            {% elif issue.status == 'reworking' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">Reworking</span>
+                            {% elif issue.status == 'closed' %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Closed</span>
+                            {% else %}
+                                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100">{{ issue.status|title }}</span>
+                            {% endif %}
+                        </div>
+
+                        <h3 class="text-sm font-bold text-gray-900">{{ issue.title }}</h3>
+                        <p class="text-sm text-gray-600 mt-1 whitespace-pre-line">{{ issue.description }}</p>
+
+                        <div class="flex items-center gap-3 mt-3 text-[11px] text-gray-500">
+                            <span><i class="fas fa-user-pen text-blue-400"></i> {{ issue.assigned_to.username }}</span>
+                            <span><i class="fas fa-clock text-blue-400"></i> {{ issue.created_at|date:"d M Y H:i" }}</span>
+                            {% if issue.created_by %}
+                            <span><i class="fas fa-user text-blue-400"></i> by {{ issue.created_by.username }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12 px-4 border border-dashed border-gray-200 rounded-xl">
+                    <i class="fas fa-circle-check text-3xl text-emerald-400 mb-2"></i>
+                    <p class="text-sm text-gray-500">Belum ada issue di image ini.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ===========================================================
+         GROUPED MODE — list of images with issue count
+         =========================================================== -->
+    <div class="cu-card p-4 md:p-6">
+        {% if grouped_images %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+
+            {% for g in grouped_images %}
+            <a href="{% url 'reviewer:isu_image' %}?image_id={{ g.image.id }}"
+               class="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md hover:border-blue-300 transition group block">
+
+                <div class="relative aspect-video bg-gray-100 overflow-hidden">
+                    {% if g.image.image %}
+                        <img src="{{ g.image.image.url }}" alt="{{ g.image.image.name }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <i class="fas fa-image text-3xl"></i>
+                        </div>
+                    {% endif %}
+
+                    <!-- Issue count badge -->
+                    <div class="absolute top-2 right-2">
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500 text-white shadow-sm flex items-center gap-1">
+                            <i class="fas fa-flag text-[8px]"></i> {{ g.count }}
+                        </span>
+                    </div>
+
+                    <!-- Status badge -->
+                    <div class="absolute top-2 left-2">
+                        {% if g.image.status == 'in_rework' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500 text-white shadow-sm">Rework</span>
+                        {% elif g.image.status == 'finished' %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">Finished</span>
+                        {% else %}
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-700 text-white shadow-sm">{{ g.image.status|title }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="p-3">
+                    <div class="text-xs font-mono text-gray-400">#{{ g.image.id }}</div>
+                    <div class="text-sm font-semibold text-gray-900 truncate">
+                        {% with jid=g.image.job.id|stringformat:"s" %}{{ g.image.image.name|cut:"job_images/"|cut:jid|cut:"/" }}{% endwith %}
+                    </div>
+                    <div class="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
+                        <span><i class="fas fa-folder text-blue-400"></i> {{ g.image.job.title|truncatechars:18 }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-4">
+                <i class="fas fa-circle-check text-2xl text-emerald-500"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900">Belum ada image bermasalah</h3>
+            <p class="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+                Belum ada issue terkait image apapun. Issue baru akan tampil di sini setelah lu kirim balik ke annotator.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

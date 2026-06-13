@@ -1,0 +1,852 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labeling — {{ job.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Library untuk Dropdown Cerdas (Select2) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pa-lav-50:  #FFFFFF;
+            --pa-lav-100: #F5F3FF;
+            --pa-lav-200: #EDE9FE;
+            --pa-lav-300: #DDD6FE;
+            --pa-lav-400: #C4B5FD;
+            --pa-lav-500: #A78BFA;
+            --pa-lav-600: #7C3AED;
+            --pa-lav-700: #7C3AED;
+            --pa-lav-800: #6D28D9;
+            --pa-lav-900: #4C1D95;
+        }
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            background:
+                radial-gradient(circle at 0% 0%, #EDE9FE 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, #DDD6FE 0%, transparent 40%),
+                #FFFFFF;
+            min-height: 100vh;
+            color: #0F172A;
+        }
+        .pa-card {
+            background: white;
+            border: 1px solid var(--pa-lav-200);
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px rgba(76, 29, 149, 0.04);
+        }
+        .pa-pill-lav   { background: var(--pa-lav-100); color: var(--pa-lav-800); }
+
+        .pa-btn-primary {
+            background: linear-gradient(135deg, #A78BFA, #7C3AED);
+            color: white;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+            transition: all 0.18s;
+        }
+        .pa-btn-primary:hover {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        .pa-btn-ghost {
+            background: var(--pa-lav-100);
+            color: var(--pa-lav-800);
+            transition: all 0.18s;
+        }
+        .pa-btn-ghost:hover {
+            background: var(--pa-lav-200);
+        }
+        .pa-btn-mint {
+            background: #34D399;
+            color: white;
+            transition: all 0.18s;
+        }
+        .pa-btn-rose {
+            background: #FB7185;
+            color: white;
+            transition: all 0.18s;
+        }
+        .pa-btn-blue {
+            background: #3B82F6;
+            color: white;
+            transition: all 0.18s;
+        }
+
+        .pa-input {
+            background: var(--pa-lav-50);
+            border: 1.5px solid var(--pa-lav-200);
+            transition: all 0.18s;
+            color: var(--pa-lav-900);
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 45px !important;
+            display: flex !important;
+            align-items: center !important;
+            border: 1.5px solid var(--pa-lav-200) !important;
+            border-radius: 0.75rem !important;
+            background-color: var(--pa-lav-50) !important;
+            transition: all 0.18s;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 14px !important;
+            color: var(--pa-lav-900) !important;
+            font-size: 0.875rem !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px !important;
+            right: 8px !important;
+        }
+        .select2-dropdown {
+            border: 1px solid var(--pa-lav-200) !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .select2-results__option {
+            padding: 10px 14px !important;
+            font-size: 0.875rem !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--pa-lav-500) !important;
+        }
+
+        .topbar-pastel {
+            background: linear-gradient(120deg, #C4B5FD 0%, #A78BFA 60%, #7C3AED 100%);
+            color: white;
+        }
+
+        .mode-btn-inactive {
+            background: var(--pa-lav-100);
+            color: var(--pa-lav-700);
+        }
+
+        input[type=range] {
+            accent-color: var(--pa-lav-600);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<div class="topbar-pastel px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
+    <div class="flex items-center gap-3 min-w-0">
+        <a href="{% url 'annotator:job_detail' job.id %}" class="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition flex-shrink-0">
+            <i class="fas fa-arrow-left text-sm"></i>
+        </a>
+        <div class="min-w-0">
+            <div class="flex items-center gap-2 text-xs text-white/80">
+                <span class="truncate">{{ job.title }}</span>
+                <span class="opacity-60">/</span>
+                <span>Labeling</span>
+            </div>
+            <div class="text-sm font-semibold truncate">
+                <i class="fas fa-image opacity-80 mr-1"></i>
+                {{ image.image.name|default:"Image" }}
+            </div>
+        </div>
+    </div>
+    <button id="labelStatusBtn" onclick="toggleLabelStatus()" class="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 transition cursor-pointer">
+        <span class="w-2 h-2 rounded-full bg-rose-300" id="labelAssistDot"></span>
+        Label Assist
+    </button>
+</div>
+
+<!-- Sub-toolbar -->
+<div class="bg-white/80 backdrop-blur-sm border-b border-[#EDE4FB] px-6 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+        <button onclick="navigateImage('prev')" class="pa-btn-ghost w-9 h-9 rounded-xl text-sm flex items-center justify-center font-bold">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="px-3 py-1.5 rounded-xl bg-[#FFFFFF] border border-[#EDE4FB] text-xs font-semibold text-slate-900">
+            <i class="fas fa-images mr-1 opacity-60"></i>
+            {{ current_image_index }} <span class="opacity-50">/</span> {{ total_image }}
+        </div>
+        <button onclick="navigateImage('next')" class="pa-btn-ghost w-9 h-9 rounded-xl text-sm flex items-center justify-center font-bold">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <button onclick="finishAnnotation()" class="pa-btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold">
+        <i class="fas fa-check"></i> Finish
+    </button>
+</div>
+
+<!-- CONTENT -->
+<div class="flex flex-col lg:flex-row gap-4 px-6 py-6 pb-10">
+    <!-- SIDEBAR -->
+    <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
+
+        <!-- Class + Mode + Tool -->
+        <div class="pa-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-900">
+                    <i class="fas fa-tag text-[#A78BFA] mr-1"></i> Annotation
+                </h2>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full pa-pill-lav uppercase tracking-wide">Active</span>
+            </div>
+
+            <!-- Label Class -->
+            <div class="mb-4">
+                <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Select Label</label>
+                <select id="labelSelect" class="w-full">
+                    {% for cls in classes %}
+                        <option value="{{ cls }}">{{ cls }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Mode -->
+            <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Mode</label>
+            <div class="flex gap-2 mb-4">
+                <button id="modeDraw" class="pa-btn-mint flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+                <button id="modeDelete" class="mode-btn-inactive flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+
+            <!-- Tool -->
+            <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Annotation Tool</label>
+            <div class="flex gap-2 mb-4">
+                <button id="toolBox" class="pa-btn-blue flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-vector-square"></i> Box
+                </button>
+                <button id="toolPolygon" class="mode-btn-inactive flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5">
+                    <i class="fas fa-draw-polygon"></i> Polygon
+                </button>
+            </div>
+
+            <!-- Size Slider -->
+            <label class="block text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-1.5">Box Size</label>
+            <input type="range" id="boxSizeSlider" min="20" max="300" value="80" class="w-full">
+            <div class="text-[11px] text-center text-slate-500 mt-1 mb-2 font-semibold"><span id="boxSizeDisplay">80</span> px</div>
+
+            <p class="text-[11px] text-[#6D28D9]/60 mt-2 border-t border-purple-100 pt-3">
+                <i class="fas fa-circle-info"></i> Current mode: <strong id="modeText" class="text-slate-900">Add (Box)</strong><br>
+                <span id="polygonHint" class="hidden text-emerald-600 mt-1"><i class="fas fa-mouse-pointer"></i> <b>Klik</b> titik awal untuk menutup polygon. <b>Arahkan kursor</b> ke garis tepi untuk memunculkan titik edit.</span>
+            </p>
+        </div>
+
+        <!-- Job segmentation type -->
+        <div class="pa-card p-5">
+            <h3 class="text-[11px] font-semibold text-slate-900/70 uppercase tracking-wide mb-2">Job Segmentation Type</h3>
+            <div class="px-3 py-2.5 rounded-xl bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] border border-[#DDD6FE] flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center" id="segIconContainer">
+                    <i class="fas fa-shapes text-[#7C3AED] text-sm" id="segIcon"></i>
+                </div>
+                <div class="text-sm font-semibold text-slate-900" id="segTypeDisplay">{{ job.segmentation_type|title }}</div>
+            </div>
+            <div class="mt-3 text-xs text-[#6D28D9]/80 leading-relaxed" id="segInstruction">
+                Instruksi berdasarkan tipe pekerjaan.
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE CANVAS -->
+    <div class="flex-1 pa-card p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-900">
+                <i class="fas fa-image text-[#A78BFA] mr-1"></i> Canvas
+            </h2>
+        </div>
+
+        <div class="relative w-full bg-[#FFFFFF] rounded-2xl border border-[#EDE4FB] flex flex-col items-center justify-center min-h-[400px] p-4 overflow-hidden">
+            {% if image.image %}
+                <div class="relative inline-block" id="canvasContainer">
+                    <img id="labelingImage" src="{{ image.image.url }}" class="max-w-full max-h-[70vh] rounded-xl shadow-sm select-none" draggable="false"/>
+                    <canvas id="annotationsCanvas" class="absolute top-0 left-0 cursor-crosshair"></canvas>
+                </div>
+            {% else %}
+                <div class="py-16 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-50 mb-3">
+                        <i class="fas fa-image-slash text-rose-400 text-2xl"></i>
+                    </div>
+                    <p class="text-rose-500 font-semibold text-sm">Image tidak tersedia</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================
+    // STATE VARIABLES
+    // ============================
+    let currentMode = 'add';
+    let currentTool = 'box';
+    let boxSize = 80;
+    let polygonPoints = [];
+    let existingAnnotations = [];
+
+    // --- ROBOWFLOW STYLE LOGIC VARIABLES ---
+    let isDragging = false;
+    let draggedAnnIndex = -1;
+    let draggedPtIndex = -1;
+    let dragMoved = false;
+    let hoveredAnnIndex = -1; // VARIABEL BARU: Menyimpan index polygon yang sedang di-hover
+
+    const HANDLE_RADIUS = 5;
+    const HOVER_RADIUS = 12;
+
+    const segType = "{{ job.segmentation_type|lower|default:'instance' }}";
+
+    if (segType === 'semantic') {
+        document.getElementById('segInstruction').innerHTML = '<strong class="text-slate-900">Semantic:</strong> Warna akan sama untuk label/class yang sama.';
+        document.getElementById('segIcon').style.color = '#3B82F6';
+    } else if (segType === 'instance') {
+        document.getElementById('segInstruction').innerHTML = '<strong class="text-slate-900">Instance:</strong> Warna akan berbeda secara otomatis untuk setiap objek/instance.';
+        document.getElementById('segIcon').style.color = '#10B981';
+    } else if (segType === 'panoptic') {
+        document.getElementById('segInstruction').innerHTML = '<strong class="text-slate-900">Panoptic:</strong> Setiap objek/instance akan memiliki warna unik secara otomatis.';
+        document.getElementById('segIcon').style.color = '#8B5CF6';
+    }
+
+    const colorPalette = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#6366F1'];
+    let semanticColors = {};
+
+    const canvas = document.getElementById('annotationsCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const image = document.getElementById('labelingImage');
+
+    // ============================
+    // UI LISTENERS
+    // ============================
+    document.getElementById('modeDraw').addEventListener('click', function () {
+        currentMode = 'add';
+        updateModeUI();
+    });
+
+    document.getElementById('modeDelete').addEventListener('click', function () {
+        currentMode = 'delete';
+        updateModeUI();
+    });
+
+    document.getElementById('toolBox').addEventListener('click', function () {
+        currentTool = 'box';
+        polygonPoints = [];
+        updateModeUI();
+        redrawCanvas();
+    });
+
+    document.getElementById('toolPolygon').addEventListener('click', function () {
+        currentTool = 'polygon';
+        updateModeUI();
+    });
+
+    document.getElementById('boxSizeSlider').addEventListener('input', function(e) {
+        boxSize = parseInt(e.target.value);
+        document.getElementById('boxSizeDisplay').innerText = boxSize;
+    });
+
+    function updateModeUI() {
+        const drawBtn = document.getElementById('modeDraw');
+        const deleteBtn = document.getElementById('modeDelete');
+        const toolBox = document.getElementById('toolBox');
+        const toolPoly = document.getElementById('toolPolygon');
+        const slider = document.getElementById('boxSizeSlider');
+        const polyHint = document.getElementById('polygonHint');
+        const modeText = document.getElementById('modeText');
+
+        drawBtn.className = "flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 mode-btn-inactive";
+        deleteBtn.className = "flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 mode-btn-inactive";
+
+        if (currentMode === 'add') {
+            drawBtn.classList.replace('mode-btn-inactive', 'pa-btn-mint');
+        } else {
+            deleteBtn.classList.replace('mode-btn-inactive', 'pa-btn-rose');
+            polygonPoints = [];
+            redrawCanvas();
+        }
+
+        toolBox.className = "flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 mode-btn-inactive";
+        toolPoly.className = "flex-1 px-3 py-2 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 mode-btn-inactive";
+
+        if (currentTool === 'box') {
+            toolBox.classList.replace('mode-btn-inactive', 'pa-btn-blue');
+            slider.disabled = false;
+            slider.classList.remove('opacity-50');
+            polyHint.classList.add('hidden');
+        } else {
+            toolPoly.classList.replace('mode-btn-inactive', 'pa-btn-blue');
+            slider.disabled = true;
+            slider.classList.add('opacity-50');
+            polyHint.classList.remove('hidden');
+        }
+
+        modeText.innerText = `${currentMode === 'add' ? 'Add' : 'Delete'} (${currentTool === 'box' ? 'Box' : 'Polygon'})`;
+    }
+
+    function setupCanvas() {
+        if (!image || !canvas) return;
+        canvas.style.width = image.clientWidth + 'px';
+        canvas.style.height = image.clientHeight + 'px';
+        canvas.width = image.clientWidth;
+        canvas.height = image.clientHeight;
+    }
+
+    // --- RUMUS MATEMATIKA UNTUK DETEKSI GARIS ---
+    function sqr(x) { return x * x; }
+    function dist2(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y); }
+    function distToSegment(p, v, w) {
+        let l2 = dist2(v, w);
+        if (l2 === 0) return Math.sqrt(dist2(p, v));
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        let proj = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+        return Math.sqrt(dist2(p, proj));
+    }
+
+    function getHitPoint(x, y) {
+        if (currentMode === 'delete') return null;
+
+        // 1. Cek apakah lagi gambar polygon & mouse dekat titik awal (untuk nutup)
+        if (currentMode === 'add' && currentTool === 'polygon' && polygonPoints.length > 2) {
+            const startX = polygonPoints[0].x;
+            const startY = polygonPoints[0].y;
+            if (Math.hypot(x - startX, y - startY) <= HOVER_RADIUS) {
+                return { type: 'start_point' };
+            }
+        }
+
+        // 2. Cek apakah mouse di atas TITIK SUDUT (Vertex)
+        for (let i = existingAnnotations.length - 1; i >= 0; i--) {
+            const ann = existingAnnotations[i];
+            if (ann.points && ann.points.length > 0) {
+                for (let j = 0; j < ann.points.length; j++) {
+                    const px = scaleToCanvas(ann.points[j].x, 'x');
+                    const py = scaleToCanvas(ann.points[j].y, 'y');
+                    if (Math.hypot(x - px, y - py) <= HOVER_RADIUS) {
+                        return { type: 'existing', annIndex: i, ptIndex: j };
+                    }
+                }
+            }
+        }
+
+        // 3. Cek apakah mouse di atas GARIS (Edge)
+        for (let i = existingAnnotations.length - 1; i >= 0; i--) {
+            const ann = existingAnnotations[i];
+            if (ann.points && ann.points.length > 2) {
+                for (let j = 0; j < ann.points.length; j++) {
+                    const p1 = { x: scaleToCanvas(ann.points[j].x, 'x'), y: scaleToCanvas(ann.points[j].y, 'y') };
+                    const nextIdx = (j + 1) % ann.points.length;
+                    const p2 = { x: scaleToCanvas(ann.points[nextIdx].x, 'x'), y: scaleToCanvas(ann.points[nextIdx].y, 'y') };
+                    const mousePt = { x: x, y: y };
+
+                    if (distToSegment(mousePt, p1, p2) <= 8) {
+                        return { type: 'edge', annIndex: i, insertAt: nextIdx };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    if (canvas) {
+        // --- 1. MOUSE DOWN (Mulai tarik / Mulai klik) ---
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            dragMoved = false;
+
+            if (currentMode === 'delete') {
+                deleteAnnotation(x, y);
+                return;
+            }
+
+            const hit = getHitPoint(x, y);
+            if (hit) {
+                if (hit.type === 'existing') {
+                    isDragging = true;
+                    draggedAnnIndex = hit.annIndex;
+                    draggedPtIndex = hit.ptIndex;
+                    canvas.style.cursor = 'grabbing';
+                }
+                else if (hit.type === 'edge') {
+                    const ann = existingAnnotations[hit.annIndex];
+                    ann.points.splice(hit.insertAt, 0, {
+                        x: scaleToImage(x, 'x'),
+                        y: scaleToImage(y, 'y')
+                    });
+
+                    isDragging = true;
+                    draggedAnnIndex = hit.annIndex;
+                    draggedPtIndex = hit.insertAt;
+                    canvas.style.cursor = 'grabbing';
+                }
+            }
+        });
+
+        // --- 2. MOUSE MOVE (Proses tarik, Hover, & Garis bantu) ---
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Jika sedang men-drag titik
+            if (isDragging) {
+                dragMoved = true;
+                const ann = existingAnnotations[draggedAnnIndex];
+                ann.points[draggedPtIndex] = { x: scaleToImage(x, 'x'), y: scaleToImage(y, 'y') };
+                redrawCanvas();
+                return;
+            }
+
+            const hit = getHitPoint(x, y);
+
+            // --- LOGIKA BARU: DETEKSI HOVER UNTUK MEMUNCULKAN TITIK ---
+            let newHovered = hit && hit.annIndex !== undefined ? hit.annIndex : -1;
+            if (newHovered !== hoveredAnnIndex) {
+                hoveredAnnIndex = newHovered;
+                redrawCanvas(); // Render ulang jika status hover berubah (muncul/hilang titiknya)
+            }
+
+            if (hit) {
+                if (hit.type === 'start_point') canvas.style.cursor = 'pointer';
+                else if (hit.type === 'existing') canvas.style.cursor = 'grab';
+                else if (hit.type === 'edge') canvas.style.cursor = 'copy';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+
+            if (currentMode === 'add' && currentTool === 'polygon' && polygonPoints.length > 0) {
+                redrawCanvas();
+                if (hit && hit.type === 'start_point') {
+                    ctx.beginPath();
+                    ctx.arc(polygonPoints[0].x, polygonPoints[0].y, HANDLE_RADIUS + 4, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(16, 185, 129, 0.5)';
+                    ctx.fill();
+                }
+                ctx.beginPath();
+                const lastPt = polygonPoints[polygonPoints.length - 1];
+                ctx.moveTo(lastPt.x, lastPt.y);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = '#A78BFA';
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        });
+
+        // HILANGKAN TITIK JIKA MOUSE KELUAR DARI CANVAS
+        canvas.addEventListener('mouseleave', () => {
+            hoveredAnnIndex = -1;
+            redrawCanvas();
+        });
+
+        // --- 3. MOUSE UP (Selesai tarik atau Eksekusi Klik) ---
+        canvas.addEventListener('mouseup', (e) => {
+            if (e.button !== 0) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'crosshair';
+                if (dragMoved) {
+                    saveAnnotation(existingAnnotations[draggedAnnIndex]);
+                }
+                return;
+            }
+
+            if (!dragMoved && currentMode === 'add') {
+                const hit = getHitPoint(x, y);
+
+                if (currentTool === 'box') {
+                    const boxSize = parseInt(document.getElementById('boxSizeSlider').value);
+                    saveAnnotation({
+                        type: 'box',
+                        x_min: scaleToImage(x - boxSize/2, 'x'),
+                        y_min: scaleToImage(y - boxSize/2, 'y'),
+                        x_max: scaleToImage(x + boxSize/2, 'x'),
+                        y_max: scaleToImage(y + boxSize/2, 'y'),
+                        label: $('#labelSelect').val()
+                    });
+                }
+                else if (currentTool === 'polygon') {
+                    if (hit && hit.type === 'start_point') {
+                        const label = $('#labelSelect').val();
+                        const scaledPoints = polygonPoints.map(p => ({
+                            x: scaleToImage(p.x, 'x'),
+                            y: scaleToImage(p.y, 'y')
+                        }));
+                        const xArr = scaledPoints.map(p => p.x);
+                        const yArr = scaledPoints.map(p => p.y);
+
+                        saveAnnotation({
+                            type: 'polygon',
+                            points: scaledPoints,
+                            x_min: Math.min(...xArr),
+                            y_min: Math.min(...yArr),
+                            x_max: Math.max(...xArr),
+                            y_max: Math.max(...yArr),
+                            label: label
+                        });
+                        polygonPoints = [];
+                        redrawCanvas();
+                    } else if (!hit) {
+                        polygonPoints.push({x, y});
+                        redrawCanvas();
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function redrawCanvas() {
+        if (!image || !canvas || !image.naturalWidth) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        existingAnnotations.forEach((ann, index) => {
+
+            // --- [PENANGKAL BUG SQLITE] ---
+            if (typeof ann.points === 'string') {
+                try {
+                    ann.points = JSON.parse(ann.points);
+                } catch (e) {
+                    console.error("Gagal parse points", e);
+                }
+            }
+            // ------------------------------
+
+            // ==========================================================
+            // 🌟 LOGIKA PEWARNAAN YANG BENAR (SEMANTIC VS INSTANCE)
+            // ==========================================================
+            let color;
+            if (segType === 'semantic') {
+                // Jika Semantic: Kunci warna berdasarkan NAMA LABEL
+                if (!semanticColors[ann.label]) {
+                    semanticColors[ann.label] = colorPalette[Object.keys(semanticColors).length % colorPalette.length];
+                }
+                color = semanticColors[ann.label];
+            } else {
+                // Jika Instance: Tiap objek warnanya beda-beda
+                color = colorPalette[index % colorPalette.length];
+            }
+            // ==========================================================
+
+            ctx.lineWidth = 2;
+            ctx.font = '12px "Plus Jakarta Sans", Arial';
+
+            if (ann.type === 'polygon' || (ann.points && ann.points.length > 0)) {
+
+                // 1. BENTUK JALUR POLYGON
+                ctx.beginPath();
+                ann.points.forEach((p, idx) => {
+                    const px = scaleToCanvas(p.x, 'x');
+                    const py = scaleToCanvas(p.y, 'y');
+                    if (idx === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                });
+                ctx.closePath();
+
+                // 2. WARNAI BAGIAN DALAM POLYGON (40% Transparan)
+                ctx.save();
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+
+                // 3. GAMBAR GARIS TEPINYA (100% Solid)
+                ctx.strokeStyle = color;
+                ctx.stroke();
+
+                // 4. GAMBAR TITIK-TITIK PUTIH (HANYA MUNCUL JIKA MOUSE MENDEKAT / HOVER)
+                if (index === hoveredAnnIndex || (isDragging && index === draggedAnnIndex)) {
+                    ann.points.forEach((p) => {
+                        const px = scaleToCanvas(p.x, 'x');
+                        const py = scaleToCanvas(p.y, 'y');
+
+                        ctx.save();
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(px, py, HANDLE_RADIUS, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.restore();
+                    });
+                }
+
+                // Teks Nama Label
+                ctx.fillStyle = color;
+                ctx.fillText(`${ann.label} ${segType !== 'semantic' ? `(#${index+1})` : ''}`, scaleToCanvas(ann.points[0].x, 'x'), scaleToCanvas(ann.points[0].y, 'y') - 8);
+
+            } else {
+                // LOGIKA UNTUK BOX (KOTAK)
+                const box = ann.bbox || [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
+                const x = scaleToCanvas(box[0], 'x');
+                const y = scaleToCanvas(box[1], 'y');
+                const w = scaleToCanvas(box[2] - box[0], 'x');
+                const h = scaleToCanvas(box[3] - box[1], 'y');
+
+                ctx.strokeStyle = color;
+                ctx.strokeRect(x, y, w, h);
+
+                // Isi Box Transparan agar seragam dengan polygon
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, w, h);
+                ctx.restore();
+
+                ctx.fillStyle = color;
+                ctx.fillText(`${ann.label} ${segType !== 'semantic' ? `(#${index+1})` : ''}`, x + 3, y - 5);
+            }
+        });
+
+        // GAMBAR POLYGON SEMENTARA (Saat user masih nge-klik belum ditutup)
+        if (polygonPoints.length > 0) {
+            ctx.strokeStyle = '#7C3AED';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            polygonPoints.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+
+                ctx.save();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.strokeStyle = '#7C3AED';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            });
+            ctx.stroke();
+        }
+    }
+
+    function scaleToImage(val, axis) {
+        return axis === 'x' ? val * (image.naturalWidth / canvas.width) : val * (image.naturalHeight / canvas.height);
+    }
+    function scaleToCanvas(val, axis) {
+        return axis === 'x' ? val * (canvas.width / image.naturalWidth) : val * (canvas.height / image.naturalHeight);
+    }
+
+    function fetchAnnotations() {
+        fetch("{% url 'annotator:get_result_json' image.id %}")
+            .then(r => r.json())
+            .then(data => {
+                existingAnnotations = data;
+                redrawCanvas();
+            });
+    }
+
+    function saveAnnotation(data) {
+        fetch("{% url 'annotator:save_annotation' image.id %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(data)
+        })
+        .then(() => fetchAnnotations())
+        .catch(err => console.error(err));
+    }
+
+    function deleteAnnotation(x, y) {
+        let target = null;
+        existingAnnotations.forEach(ann => {
+            const bx = scaleToCanvas(ann.x_min, 'x');
+            const by = scaleToCanvas(ann.y_min, 'y');
+            const bw = scaleToCanvas(ann.x_max - ann.x_min, 'x');
+            const bh = scaleToCanvas(ann.y_max - ann.y_min, 'y');
+
+            if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
+                target = ann;
+            }
+        });
+
+        if (!target) return;
+
+        fetch("{% url 'annotator:delete_annotation' image.id %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(target)
+        })
+        .then(() => fetchAnnotations());
+    }
+
+    function toggleLabelStatus() {
+        const btn = document.getElementById('labelStatusBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        fetch("{% url 'annotator:send_image' image.id %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                fetchAnnotations();
+            }
+            btn.innerHTML = originalText;
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerHTML = originalText;
+        });
+    }
+
+    function finishAnnotation() {
+        fetch(`/annotator/finish-annotation/{{ image.id }}/`, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' } })
+        .then(r => r.json())
+        .then(d => alert(d.message || 'Annotation finished'));
+    }
+
+    window.addEventListener('load', function () {
+        if (!image) return;
+        if (image.complete) {
+            setupCanvas();
+            loadInitialData();
+        } else {
+            image.onload = function () {
+                setupCanvas();
+                loadInitialData();
+            };
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!image || !image.naturalWidth) return;
+        setupCanvas();
+        redrawCanvas();
+    });
+
+    function loadInitialData() {
+        try {
+            existingAnnotations = JSON.parse('{{ annotations_json|safe }}');
+            redrawCanvas();
+            updateModeUI();
+        } catch (e) {
+            console.warn('No annotations to draw');
+        }
+    }
+
+    $(document).ready(function() {
+        $('#labelSelect').select2({
+            tags: true,
+            placeholder: "Cari atau ketik label...",
+            width: '100%'
+        });
+    });
+</script>
+
+</body>
+</html>
