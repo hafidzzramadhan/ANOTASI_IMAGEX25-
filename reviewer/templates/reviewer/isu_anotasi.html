@@ -566,10 +566,102 @@
         const canvas  = document.getElementById('annotation-canvas');
         const ctx     = canvas.getContext('2d');
         const mainImg = document.getElementById('main-image');
+        const IMAGE_WIDTH = parseFloat("{{ lebar_gambar|default:0 }}") || 1;
+        const IMAGE_HEIGHT = parseFloat("{{ tinggi_gambar|default:0 }}") || 1;
+        const ANNOTATIONS = JSON.parse('{{ annotations_json|escapejs }}' || '[]');
 
         function setupCanvas() {
             canvas.width  = mainImg.clientWidth;
             canvas.height = mainImg.clientHeight;
+            drawAnnotations();
+        }
+
+        function scaleX(value) {
+            const sourceWidth = mainImg.naturalWidth || IMAGE_WIDTH;
+            return (parseFloat(value) / sourceWidth) * canvas.width;
+        }
+
+        function scaleY(value) {
+            const sourceHeight = mainImg.naturalHeight || IMAGE_HEIGHT;
+            return (parseFloat(value) / sourceHeight) * canvas.height;
+        }
+
+        function normalizePoints(points) {
+            if (!points) return [];
+            if (typeof points === 'string') {
+                try {
+                    points = JSON.parse(points);
+                } catch (err) {
+                    return [];
+                }
+            }
+            if (!Array.isArray(points)) return [];
+            return points
+                .map(point => ({
+                    x: scaleX(point.x),
+                    y: scaleY(point.y),
+                }))
+                .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+        }
+
+        function drawLabel(text, x, y, color) {
+            const label = text || 'Unknown';
+            ctx.font = '600 12px DM Sans, sans-serif';
+            const width = ctx.measureText(label).width + 12;
+            const top = Math.max(2, y - 24);
+
+            ctx.fillStyle = color;
+            ctx.fillRect(x, top, width, 20);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(label, x + 6, top + 14);
+        }
+
+        function drawAnnotations() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ANNOTATIONS.forEach((ann, index) => {
+                const color = ann.color || '#4f6ef7';
+                const label = ann.label || 'Unknown';
+                const points = normalizePoints(ann.points);
+
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+
+                if ((ann.type === 'polygon' || points.length > 0) && points.length > 1) {
+                    ctx.beginPath();
+                    points.forEach((point, pointIndex) => {
+                        if (pointIndex === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    });
+                    ctx.closePath();
+                    ctx.globalAlpha = 0.18;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.stroke();
+
+                    points.forEach(point => {
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    drawLabel(label, points[0].x, points[0].y, color);
+                    return;
+                }
+
+                const box = ann.bbox || [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
+                if (!box || box.some(value => value === null || value === undefined)) return;
+
+                const x = scaleX(box[0]);
+                const y = scaleY(box[1]);
+                const w = scaleX(box[2]) - x;
+                const h = scaleY(box[3]) - y;
+                if (![x, y, w, h].every(Number.isFinite)) return;
+
+                ctx.strokeRect(x, y, w, h);
+                drawLabel(label, x, y, color);
+            });
         }
 
         window.addEventListener('load', () => {

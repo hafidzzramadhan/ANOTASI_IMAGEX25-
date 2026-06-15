@@ -354,11 +354,22 @@ def isu_anotasi(request, index=0):
 
     annotation_data = []
     for ann in anotasi_list:
-        if ann.x_min is not None and ann.y_min is not None:
+        label = ann.segmentation.label if ann.segmentation else (ann.label or 'Unknown')
+        color = ann.segmentation.color if ann.segmentation else (profile.color or '#4f6ef7')
+        points = getattr(ann, 'points', None)
+        bbox = [ann.x_min, ann.y_min, ann.x_max, ann.y_max]
+
+        has_polygon = isinstance(points, list) and len(points) > 0
+        has_box = all(value is not None for value in bbox)
+        if has_polygon or has_box:
             annotation_data.append({
-                'label': ann.segmentation.label if ann.segmentation else (ann.label or 'Unknown'),
-                'bbox': [ann.x_min, ann.y_min, ann.x_max, ann.y_max],
-                'is_auto_generated': getattr(ann, 'is_auto_generated', False)
+                'id': ann.id,
+                'label': label,
+                'type': getattr(ann, 'type', 'box'),
+                'points': points,
+                'bbox': bbox if has_box else None,
+                'color': color,
+                'is_auto_generated': getattr(ann, 'is_auto_generated', False),
             })
 
     # --- Status Counts ---

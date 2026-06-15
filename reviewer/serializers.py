@@ -148,20 +148,27 @@ class AnnotationSerializer(serializers.ModelSerializer):
     polygon_points = serializers.SerializerMethodField()
     label          = serializers.SerializerMethodField()
     color          = serializers.SerializerMethodField()
+    type           = serializers.CharField(read_only=True)
+    points         = serializers.SerializerMethodField()
 
     class Meta:
         model  = Annotation
         fields = [
-            'id', 'label', 'color',
+            'id', 'label', 'color', 'type', 'points',
             'x_min', 'y_min', 'x_max', 'y_max',
             'polygon_points',
         ]
 
     def get_polygon_points(self, obj):
+        if getattr(obj, 'points', None):
+            return obj.points
         if obj.segmentation:
             pts = obj.segmentation.polygon_points.all().order_by('order_index')
             return PolygonPointSerializer(pts, many=True).data
         return []
+
+    def get_points(self, obj):
+        return getattr(obj, 'points', None) or []
 
     def get_label(self, obj):
         if obj.segmentation:
@@ -171,6 +178,8 @@ class AnnotationSerializer(serializers.ModelSerializer):
     def get_color(self, obj):
         if obj.segmentation:
             return obj.segmentation.color
+        if obj.job_image and obj.job_image.job:
+            return obj.job_image.job.color
         return None
 
 
