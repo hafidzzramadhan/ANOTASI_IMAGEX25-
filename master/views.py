@@ -13,11 +13,23 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Q, F
 from django.db.models.functions import Coalesce
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from functools import wraps
 from django.utils import timezone
 import json
 from .tokens import account_activation_token
-from .models import CustomUser, Dataset, Issue, JobProfile, JobImage, Notification,Issue
+from .models import (
+    CustomUser,
+    Dataset,
+    Issue,
+    JobProfile,
+    JobImage,
+    Notification,
+    Project,
+    ProjectInvite,
+    ProjectMember,
+)
 from .forms import SignUpForm
 
 def create_job_notification(job, recipient, sender):
@@ -62,6 +74,187 @@ def master_required(view_func):
                 return redirect('master:access_denied')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
+
+
+def get_project_or_403(request, unique_id):
+    project = get_object_or_404(Project, unique_id=unique_id)
+    member = ProjectMember.objects.filter(
+        project=project,
+        user=request.user
+    ).first()
+    if not member:
+        raise PermissionDenied
+    return project, member.role
+
+
+def get_current_project_or_redirect(request):
+    unique_id = request.session.get('current_project_uuid')
+    if not unique_id:
+        messages.error(request, 'Pilih project dari lobby terlebih dahulu.')
+        return None, None, redirect('master:lobby')
+
+    try:
+        project, role = get_project_or_403(request, unique_id)
+        return project, role, None
+    except PermissionDenied:
+        request.session.pop('current_project_uuid', None)
+        request.session.pop('current_project_role', None)
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return None, None, redirect('master:lobby')
+
+
+@login_required
+def lobby_view(request):
+    memberships = (
+        ProjectMember.objects
+        .filter(user=request.user)
+        .select_related('project')
+        .annotate(member_count=Count('project__memberships'))
+        .order_by('-project__created_at')
+    )
+    pending_invites = (
+        ProjectInvite.objects
+        .filter(status='pending')
+        .filter(Q(invited_user=request.user) | Q(invited_email__iexact=request.user.email))
+        .select_related('project', 'invited_by')
+        .order_by('-created_at')
+    )
+
+    return render(request, 'master/lobby.html', {
+        'memberships': memberships,
+        'pending_invites': pending_invites,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_project_view(request):
+    name = (request.POST.get('name') or '').strip()
+    description = (request.POST.get('description') or '').strip()
+
+    if not name:
+        messages.error(request, 'Nama project wajib diisi.')
+        return redirect('master:lobby')
+
+    with transaction.atomic():
+        project = Project.objects.create(
+            name=name,
+            description=description,
+            created_by=request.user,
+        )
+        ProjectMember.objects.create(
+            project=project,
+            user=request.user,
+            role='master',
+        )
+
+    messages.success(request, f'Project "{project.name}" berhasil dibuat.')
+    return redirect('master:lobby')
+
+
+@login_required
+@require_http_methods(["POST"])
+def invite_member_view(request, unique_id):
+    try:
+        project, role = get_project_or_403(request, unique_id)
+    except PermissionDenied:
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return redirect('master:lobby')
+
+    if role != 'master':
+        messages.error(request, 'Hanya master project yang bisa mengundang member.')
+        return redirect('master:lobby')
+
+    username_or_email = (request.POST.get('username_or_email') or '').strip()
+    invite_role = request.POST.get('role')
+    valid_roles = {choice[0] for choice in ProjectMember.ROLE_CHOICES}
+
+    if not username_or_email or invite_role not in valid_roles:
+        messages.error(request, 'Isi username/email dan role yang valid.')
+        return redirect('master:lobby')
+
+    invited_user = (
+        CustomUser.objects
+        .filter(Q(username__iexact=username_or_email) | Q(email__iexact=username_or_email))
+        .first()
+    )
+    invited_email = invited_user.email if invited_user else username_or_email
+
+    if invited_user and ProjectMember.objects.filter(project=project, user=invited_user).exists():
+        messages.info(request, 'User tersebut sudah menjadi member project ini.')
+        return redirect('master:lobby')
+
+    ProjectInvite.objects.create(
+        project=project,
+        invited_by=request.user,
+        invited_user=invited_user,
+        invited_email=invited_email,
+        role=invite_role,
+    )
+    messages.success(request, f'Invite untuk {invited_email} sudah dibuat.')
+    return redirect('master:lobby')
+
+
+@login_required
+def accept_invite_view(request, token):
+    invite = get_object_or_404(ProjectInvite, token=token, status='pending')
+    if invite.invited_user and invite.invited_user != request.user:
+        messages.error(request, 'Invite ini bukan untuk akun Anda.')
+        return redirect('master:lobby')
+    if invite.invited_email.lower() != request.user.email.lower() and invite.invited_user is None:
+        messages.error(request, 'Email akun Anda tidak cocok dengan invite ini.')
+        return redirect('master:lobby')
+
+    with transaction.atomic():
+        invite.invited_user = request.user
+        invite.status = 'accepted'
+        invite.save(update_fields=['invited_user', 'status'])
+        ProjectMember.objects.get_or_create(
+            project=invite.project,
+            user=request.user,
+            defaults={'role': invite.role},
+        )
+
+    messages.success(request, f'Anda bergabung ke project "{invite.project.name}".')
+    return redirect('master:lobby')
+
+
+@login_required
+def decline_invite_view(request, token):
+    invite = get_object_or_404(ProjectInvite, token=token, status='pending')
+    if invite.invited_user and invite.invited_user != request.user:
+        messages.error(request, 'Invite ini bukan untuk akun Anda.')
+        return redirect('master:lobby')
+    if invite.invited_email.lower() != request.user.email.lower() and invite.invited_user is None:
+        messages.error(request, 'Email akun Anda tidak cocok dengan invite ini.')
+        return redirect('master:lobby')
+
+    invite.status = 'declined'
+    invite.save(update_fields=['status'])
+    messages.info(request, f'Invite project "{invite.project.name}" ditolak.')
+    return redirect('master:lobby')
+
+
+@login_required
+def enter_project_view(request, unique_id):
+    try:
+        project, role = get_project_or_403(request, unique_id)
+    except PermissionDenied:
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return redirect('master:lobby')
+
+    request.session['current_project_uuid'] = str(project.unique_id)
+    request.session['current_project_id'] = project.id
+    request.session['current_project_role'] = role
+    messages.success(request, f'Masuk ke project "{project.name}" sebagai {role}.')
+
+    if role == 'master':
+        return redirect('master:home')
+    if role == 'annotator':
+        return redirect('/annotator/')
+    if role == 'reviewer':
+        return redirect('/reviewer/')
+    return redirect('master:lobby')
 
 def signup_view(request):
     if request.method == "POST":
@@ -127,18 +320,7 @@ def login_view(request):
                 # Only log in non-guest users
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                
-                # Redirect based on user role
-                if user.role == 'master':
-                    return redirect("master:home")
-                elif user.role == 'annotator':
-                    return redirect("/annotator/")
-                elif user.role == 'reviewer':
-                    return redirect("/reviewer/")
-                else:
-                    messages.warning(request, "Role tidak dikenal. Silakan hubungi administrator.")
-                    logout(request)  # Logout if unknown role
-                    return redirect("master:login")
+                return redirect("master:lobby")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -178,8 +360,19 @@ def activate(request, uidb64, token):
 
 @master_required
 def home_view(request):
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
+    project_jobs = JobProfile.objects.filter(project=current_project)
+    project_images = JobImage.objects.filter(job__project=current_project)
+    project_issues = Issue.objects.filter(job__project=current_project)
+
     # Real data for Status Section - get users with job assignments
-    annotators_reviewers = CustomUser.objects.filter(role__in=['annotator', 'reviewer']).order_by('email')
+    annotators_reviewers = CustomUser.objects.filter(
+        project_memberships__project=current_project,
+        project_memberships__role__in=['annotator', 'reviewer']
+    ).distinct().order_by('email')
     
     # Real status data - determine user status based on job assignments
     status_list = []
@@ -188,11 +381,13 @@ def home_view(request):
         has_active_jobs = False
         if user.role == 'annotator':
             has_active_jobs = JobProfile.objects.filter(
+                project=current_project,
                 worker_annotator=user, 
                 status__in=['in_progress']
             ).exists()
         elif user.role == 'reviewer':
             has_active_jobs = JobProfile.objects.filter(
+                project=current_project,
                 worker_reviewer=user, 
                 status__in=['in_progress']
             ).exists()
@@ -205,9 +400,9 @@ def home_view(request):
             # Check if user has any jobs assigned but not active
             has_any_jobs = False
             if user.role == 'annotator':
-                has_any_jobs = JobProfile.objects.filter(worker_annotator=user).exists()
+                has_any_jobs = project_jobs.filter(worker_annotator=user).exists()
             elif user.role == 'reviewer':
-                has_any_jobs = JobProfile.objects.filter(worker_reviewer=user).exists()
+                has_any_jobs = project_jobs.filter(worker_reviewer=user).exists()
             
             if has_any_jobs:
                 status = 'Ready'
@@ -224,13 +419,13 @@ def home_view(request):
     
     # Real data for Assignment Stats Card
     # Calculate the same statistics as in performance view
-    total_images = JobImage.objects.count()
+    total_images = project_images.count()
     
     # Calculate status counts
-    unannotated_count = JobImage.objects.filter(status='unannotated').count()
-    in_review_count = JobImage.objects.filter(status='in_review').count()
-    in_rework_count = JobImage.objects.filter(status='in_rework').count()
-    finished_count = JobImage.objects.filter(status='finished').count()
+    unannotated_count = project_images.filter(status='unannotated').count()
+    in_review_count = project_images.filter(status='in_review').count()
+    in_rework_count = project_images.filter(status='in_rework').count()
+    finished_count = project_images.filter(status='finished').count()
     
     # Calculate assigned count (total - unannotated)
     assigned_count = total_images - unannotated_count
@@ -264,12 +459,14 @@ def home_view(request):
         }
     }
 
-    issues_count = JobImage.objects.filter(status='issue').count()
+    issues_count = project_images.filter(status='issue').count()
     in_progress_count = in_review_count + in_rework_count
     
     context = {
-        'users': CustomUser.objects.all(),
-        'datasets': Dataset.objects.all().order_by('-date_created'),
+        'current_project': current_project,
+        'current_project_role': current_role,
+        'users': CustomUser.objects.filter(project_memberships__project=current_project).distinct(),
+        'datasets': Dataset.objects.filter(project=current_project).order_by('-date_created'),
         'status_list': status_list,
         'assignment_stats': assignment_stats,
         'in_progress_count': in_progress_count,
@@ -281,18 +478,17 @@ def home_view(request):
         'total_images': total_images,
 
         # ↓ TAMBAH ISSUE STATS ↓
-    'total_issues': Issue.objects.count(),
-    'issues_count': Issue.objects.count(),
-    'issue_count': Issue.objects.count(),
-    'total_issues': Issue.objects.count(),
-    'active_issues': Issue.objects.exclude(status='closed').count(),
-    'issues_butuh_review': Issue.objects.filter(status__in=['open', 'eskalasi', 'reworking']).count(),
-    'issues_open': Issue.objects.filter(status='open').count(),
-    'issues_eskalasi': Issue.objects.filter(status='eskalasi').count(),
-    'issues_reworking': Issue.objects.filter(status='reworking').count(),
-    'issues_closed': Issue.objects.filter(status='closed').count(),
-    'issues_active': Issue.objects.exclude(status='closed').count(),
-    'issues_high_priority': Issue.objects.filter(
+    'total_issues': project_issues.count(),
+    'issues_count': project_issues.count(),
+    'issue_count': project_issues.count(),
+    'active_issues': project_issues.exclude(status='closed').count(),
+    'issues_butuh_review': project_issues.filter(status__in=['open', 'eskalasi', 'reworking']).count(),
+    'issues_open': project_issues.filter(status='open').count(),
+    'issues_eskalasi': project_issues.filter(status='eskalasi').count(),
+    'issues_reworking': project_issues.filter(status='reworking').count(),
+    'issues_closed': project_issues.filter(status='closed').count(),
+    'issues_active': project_issues.exclude(status='closed').count(),
+    'issues_high_priority': project_issues.filter(
         priority='high', status__in=['open', 'eskalasi', 'reworking']
     ).count(),
     }
@@ -366,10 +562,15 @@ def update_role(request):
 
 @master_required
 def job_settings_view(request):
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     if request.method == 'POST':
         try:
             # Create new job profile
             job = JobProfile.objects.create(
+                project=current_project,
                 title=request.POST.get('title'),
                 description=request.POST.get('description'),
                 segmentation_type=request.POST.get('segmentation'),
@@ -382,8 +583,12 @@ def job_settings_view(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
 
-    jobs = JobProfile.objects.all().order_by('-date_created', '-id')
-    return render(request, "master/job_settings.html", {'jobs': jobs})
+    jobs = JobProfile.objects.filter(project=current_project).order_by('-date_created', '-id')
+    return render(request, "master/job_settings.html", {
+        'jobs': jobs,
+        'current_project': current_project,
+        'current_project_role': current_role,
+    })
 
 @login_required
 def issue_detail_view(request, job_id):
@@ -394,8 +599,12 @@ def issue_detail_view(request, job_id):
     """
     try:
         from .models import Annotation, Segmentation, SegmentationType, PolygonPoint
-        
-        job = get_object_or_404(JobProfile, id=job_id)
+
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'error': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job = get_object_or_404(JobProfile, id=job_id, project=current_project)
         print("=== Debug Info ===")
         print(f"Job ID: {job_id}")
         print(f"Job Title: {job.title}")
@@ -646,6 +855,10 @@ def performance_view(request):
 @master_required
 def process_validations_view(request, job_id=None):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return redirect_response
+
         if job_id:
             print(f"Fetching job details for job_id: {job_id}")
             
@@ -653,7 +866,7 @@ def process_validations_view(request, job_id=None):
             job = JobProfile.objects.select_related(
                 'worker_annotator',
                 'worker_reviewer'
-            ).get(id=job_id)
+            ).get(id=job_id, project=current_project)
             
             # Get images with status, ordered by ID (ascending)
             images = job.images.all().order_by('id')
@@ -689,12 +902,13 @@ def process_validations_view(request, job_id=None):
             ).select_related(
                 'worker_annotator',
                 'worker_reviewer'
-            ).order_by('-date_created')
+            ).filter(project=current_project).order_by('-date_created')
             
             print(f"Found {jobs.count()} jobs")
             
             context = {
                 'jobs': jobs,
+                'current_project': current_project,
                 'show_details': False,
                 'current_date': timezone.now().strftime('%d %B %Y')
             }
@@ -712,6 +926,10 @@ def process_validations_view(request, job_id=None):
 @require_http_methods(["POST"])
 def add_dataset(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         name = request.POST.get('name')
         labeler_id = request.POST.get('labeler')
         dataset_file = request.FILES.get('dataset_file')
@@ -727,6 +945,7 @@ def add_dataset(request):
 
         # Create dataset record
         dataset = Dataset.objects.create(
+            project=current_project,
             name=name,
             labeler_id=labeler_id,
             file_path=file_path
@@ -753,6 +972,10 @@ def add_dataset_view(request):
     """
     if request.method == 'POST':
         try:
+            current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+            if redirect_response:
+                return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
             name = request.POST.get('name')
             labeler_id = request.POST.get('labeler')
             dataset_file = request.FILES.get('dataset_file')
@@ -766,6 +989,7 @@ def add_dataset_view(request):
             # Assign file instance langsung ke FileField.
             # Django otomatis save ke MEDIA_ROOT/datasets/ sesuai upload_to di model.
             dataset = Dataset.objects.create(
+                project=current_project,
                 name=name,
                 labeler_id=labeler_id,
                 file_path=dataset_file,
@@ -793,7 +1017,12 @@ def add_dataset_view(request):
 @require_http_methods(["POST"])
 def create_job_profile(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         job = JobProfile.objects.create(
+            project=current_project,
             title=request.POST.get('title'),
             description=request.POST.get('description'),
             segmentation_type=request.POST.get('segmentation'),
@@ -822,7 +1051,11 @@ def job_profile_detail(request, job_id):
     Retrieves a job by its ID and constructs a JSON response containing job details, assigned worker emails, segmentation and shape types, color, status, formatted start and end dates, the URL of the first associated image, and counts of images by various statuses. Returns an error response if the job cannot be retrieved or another exception occurs.
     """
     try:
-        job = get_object_or_404(JobProfile, id=job_id)
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'error': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job = get_object_or_404(JobProfile, id=job_id, project=current_project)
         print(f"Found job: {job.id}")  # Debug log
 
         data = {
@@ -860,7 +1093,11 @@ def edit_dataset_view(request, dataset_id):
     Endpoint: POST /master/edit_dataset/<id>/
     Update dataset (name, labeler, optional file baru).
     """
-    dataset = get_object_or_404(Dataset, id=dataset_id)
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+    dataset = get_object_or_404(Dataset, id=dataset_id, project=current_project)
 
     if request.method == 'POST':
         try:
@@ -893,7 +1130,11 @@ def edit_dataset_view(request, dataset_id):
 def delete_dataset_view(request, dataset_id):
     if request.method == 'POST':
         try:
-            dataset = get_object_or_404(Dataset, id=dataset_id)
+            current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+            if redirect_response:
+                return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+            dataset = get_object_or_404(Dataset, id=dataset_id, project=current_project)
             dataset.delete()
             return JsonResponse({
                 'status': 'success',
@@ -914,8 +1155,12 @@ def delete_dataset_view(request, dataset_id):
 @require_http_methods(["POST"])
 def upload_job_images(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         job_id = request.POST.get('job_id')
-        job = JobProfile.objects.get(id=job_id)
+        job = JobProfile.objects.get(id=job_id, project=current_project)
         files = request.FILES.getlist('images[]')
 
         current_count = JobImage.objects.filter(job=job).count()
@@ -977,7 +1222,15 @@ def upload_job_images(request):
 def get_workers(request, role):
     """Get list of available workers by role"""
     try:
-        workers = CustomUser.objects.filter(role=role, is_active=True)
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        workers = CustomUser.objects.filter(
+            project_memberships__project=current_project,
+            project_memberships__role=role,
+            is_active=True
+        ).distinct()
         return JsonResponse({
             'workers': [{
                 'id': worker.id,
@@ -997,13 +1250,19 @@ def get_workers(request, role):
 def assign_worker(request):
     """Assign worker to a job"""
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         data = json.loads(request.body)
         job_id = data.get('job_id')
         worker_id = data.get('worker_id')
         role = data.get('role')
 
-        job = JobProfile.objects.get(id=job_id)
+        job = JobProfile.objects.get(id=job_id, project=current_project)
         worker = CustomUser.objects.get(id=worker_id)
+        if not ProjectMember.objects.filter(project=current_project, user=worker, role=role).exists():
+            return JsonResponse({'status': 'error', 'message': 'Worker is not a project member with that role'}, status=403)
 
         if role == 'annotator':
             job.worker_annotator = worker
@@ -1028,6 +1287,10 @@ def assign_worker(request):
 @require_http_methods(["POST"])
 def assign_workers(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         data = json.loads(request.body)
         job_id = data.get('job_id')
         annotator_id = data.get('annotator_id')
@@ -1039,9 +1302,13 @@ def assign_workers(request):
                 'message': 'Missing required fields'
             }, status=400)
 
-        job = JobProfile.objects.get(id=job_id)
+        job = JobProfile.objects.get(id=job_id, project=current_project)
         annotator = CustomUser.objects.get(id=annotator_id)
         reviewer = CustomUser.objects.get(id=reviewer_id)
+        if not ProjectMember.objects.filter(project=current_project, user=annotator, role='annotator').exists():
+            return JsonResponse({'status': 'error', 'message': 'Annotator is not a member of this project'}, status=403)
+        if not ProjectMember.objects.filter(project=current_project, user=reviewer, role='reviewer').exists():
+            return JsonResponse({'status': 'error', 'message': 'Reviewer is not a member of this project'}, status=403)
 
         # Update job with worker assignments
         job.worker_annotator = annotator
@@ -1119,7 +1386,11 @@ def handle_dataset_upload(dataset_file):
 @login_required
 def get_job_profile(request, job_id):
     try:
-        job = JobProfile.objects.select_related('worker_annotator', 'worker_reviewer').get(id=job_id)
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'error': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job = JobProfile.objects.select_related('worker_annotator', 'worker_reviewer').get(id=job_id, project=current_project)
 
         # Debug logging
         print(f"Retrieved job: {job.id}, annotator: {job.worker_annotator}, reviewer: {job.worker_reviewer}")
@@ -1211,6 +1482,10 @@ def issue_solving_view(request):
       ?job_id=9
     """
     from master.models import Issue
+
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
  
     tab = request.GET.get('tab', 'active')
     priority_filter = request.GET.get('priority', '')
@@ -1218,7 +1493,7 @@ def issue_solving_view(request):
  
     qs = Issue.objects.select_related(
         'job', 'image', 'assigned_to', 'created_by'
-    ).prefetch_related('comments__created_by').order_by('-priority', '-created_at')
+    ).filter(job__project=current_project).prefetch_related('comments__created_by').order_by('-priority', '-created_at')
  
     # Tab filter
     if tab == 'closed':
@@ -1235,21 +1510,23 @@ def issue_solving_view(request):
     issues = list(qs)
  
     # Stats summary (global, tidak terpengaruh filter)
-    total = Issue.objects.count()
-    closed = Issue.objects.filter(status='closed').count()
+    project_issues = Issue.objects.filter(job__project=current_project)
+    total = project_issues.count()
+    closed = project_issues.filter(status='closed').count()
     stats = {
         'total': total,
         'active': total - closed,
-        'eskalasi': Issue.objects.filter(status='eskalasi').count(),
-        'open': Issue.objects.filter(status='open').count(),
-        'reworking': Issue.objects.filter(status='reworking').count(),
+        'eskalasi': project_issues.filter(status='eskalasi').count(),
+        'open': project_issues.filter(status='open').count(),
+        'reworking': project_issues.filter(status='reworking').count(),
         'closed': closed,
-        'high_priority': Issue.objects.filter(
+        'high_priority': project_issues.filter(
             priority='high', status__in=['open', 'eskalasi', 'reworking']
         ).count(),
     }
  
     jobs_with_issues = JobProfile.objects.filter(
+        project=current_project,
         issues__isnull=False
     ).distinct().order_by('-date_created')
  
@@ -1261,6 +1538,7 @@ def issue_solving_view(request):
         'filter_priority': priority_filter,
         'filter_job_id': job_id,
         'current_date': timezone.now().strftime('%d %B %Y'),
+        'current_project': current_project,
     }
  
     return render(request, 'master/Issue_solving.html', context)
@@ -1269,9 +1547,13 @@ def issue_solving_view(request):
 @require_http_methods(["POST"])
 def finish_image(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         data = json.loads(request.body)
         image_id = data.get('image_id')
-        image = JobImage.objects.get(id=image_id)
+        image = JobImage.objects.get(id=image_id, job__project=current_project)
         image.status = 'finished'
         image.save()
         
@@ -1289,9 +1571,13 @@ def finish_image(request):
 @require_http_methods(["POST"])
 def finish_job(request):
     try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
         data = json.loads(request.body)
         job_id = data.get('job_id')
-        job = JobProfile.objects.get(id=job_id)
+        job = JobProfile.objects.get(id=job_id, project=current_project)
         
         # Mark job as completed
         job.status = 'finish'
@@ -1397,7 +1683,11 @@ def edit_job_profile(request, job_id):
     POST -> update job & return success
     """
     try:
-        job = JobProfile.objects.get(id=job_id)
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job = JobProfile.objects.get(id=job_id, project=current_project)
     except JobProfile.DoesNotExist:
         return JsonResponse(
             {'status': 'error', 'message': 'Job profile tidak ditemukan'},
@@ -1460,7 +1750,11 @@ def delete_job_profile(request, job_id):
     yang berelasi (on_delete=CASCADE di model).
     """
     try:
-        job = JobProfile.objects.get(id=job_id)
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job = JobProfile.objects.get(id=job_id, project=current_project)
         job_title = job.title
         job.delete()
         return JsonResponse({

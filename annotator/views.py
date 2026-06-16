@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from functools import wraps
 # --- [CATATAN: TAMBAHAN BARU 1] - Import MasterLabel, Segmentation, SegmentationType, AnnotationTool di atas agar rapi ---
-from master.models import JobProfile, JobImage, Notification, Issue, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool
+from master.models import JobProfile, JobImage, Notification, Issue, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool, ProjectMember
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
@@ -51,6 +51,17 @@ YOLO_TRANSLATIONS = {
 }
 
 # Create your views here.
+
+def get_current_project_for_role(request, role):
+    project_id = request.session.get('current_project_id')
+    if not project_id:
+        messages.error(request, 'Pilih project dari lobby terlebih dahulu.')
+        return None, redirect('master:lobby')
+    if not ProjectMember.objects.filter(project_id=project_id, user=request.user, role=role).exists():
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return None, redirect('master:lobby')
+    return project_id, None
+
 
 @login_required
 def profile_view(request):
@@ -154,7 +165,11 @@ def signin_view(request):
 
 @annotator_required
 def annotate_view(request):
-    jobs = JobProfile.objects.filter(worker_annotator=request.user).annotate(
+    project_id, redirect_response = get_current_project_for_role(request, 'annotator')
+    if redirect_response:
+        return redirect_response
+
+    jobs = JobProfile.objects.filter(project_id=project_id, worker_annotator=request.user).annotate(
         total_images=Count('images'),
         completed_images=Count('images', filter=Q(images__status='annotated'))
     ).order_by('-date_created')
@@ -174,6 +189,10 @@ def annotate_view(request):
 
 @annotator_required
 def notifications_view(request):
+    project_id, redirect_response = get_current_project_for_role(request, 'annotator')
+    if redirect_response:
+        return redirect_response
+
     current_user = request.user
     notifications = Notification.objects.filter(
         recipient=current_user
@@ -188,7 +207,11 @@ def notifications_view(request):
 
 @annotator_required
 def job_detail_view(request, job_id):
-    job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
+    project_id, redirect_response = get_current_project_for_role(request, 'annotator')
+    if redirect_response:
+        return redirect_response
+
+    job = get_object_or_404(JobProfile, id=job_id, project_id=project_id, worker_annotator=request.user)
     all_images = job.images.all().order_by('id')
 
     current_tab = request.GET.get('tab', 'data')
@@ -272,7 +295,11 @@ def accept_notification_view(request, notification_id):
 
 @annotator_required
 def label_image_view(request, job_id, image_id):
-    job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
+    project_id, redirect_response = get_current_project_for_role(request, 'annotator')
+    if redirect_response:
+        return redirect_response
+
+    job = get_object_or_404(JobProfile, id=job_id, project_id=project_id, worker_annotator=request.user)
     image = get_object_or_404(JobImage, id=image_id, job=job)
 
     all_images= job.images.all()
@@ -345,7 +372,11 @@ def send_image_view(request, image_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
-    image_obj = get_object_or_404(JobImage, id=image_id)
+    project_id = request.session.get('current_project_id')
+    if not project_id:
+        return JsonResponse({'success': False, 'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
+    image_obj = get_object_or_404(JobImage, id=image_id, job__project_id=project_id, job__worker_annotator=request.user)
     image_file = image_obj.image
 
     # 1. CEK SETTINGAN DARI JOB PROFILE [PENTING]
@@ -447,7 +478,8 @@ def send_image_view(request, image_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def get_result_json(request, image_id):
-    image_obj = get_object_or_404(JobImage, id=image_id)
+    project_id = request.session.get('current_project_id')
+    image_obj = get_object_or_404(JobImage, id=image_id, job__project_id=project_id, job__worker_annotator=request.user)
     # Tambahkan 'id', 'type', dan 'points' di dalam .values()
     annotations = Annotation.objects.filter(job_image=image_obj).values(
         'id', 'label', 'type', 'points', 'x_min', 'y_min', 'x_max', 'y_max', 'is_auto_generated'
@@ -461,7 +493,11 @@ def finish_annotation_view(request, image_id):
         return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
     try:
-        image_obj = get_object_or_404(JobImage, id=image_id)
+        project_id, redirect_response = get_current_project_for_role(request, 'annotator')
+        if redirect_response:
+            return JsonResponse({'success': False, 'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
+        image_obj = get_object_or_404(JobImage, id=image_id, job__project_id=project_id)
         if image_obj.job.worker_annotator != request.user:
             return JsonResponse({'success': False, 'error': 'You are not assigned to this job'}, status=403)
 
@@ -476,8 +512,12 @@ def finish_annotation_view(request, image_id):
 @csrf_exempt
 def save_annotation(request, image_id):
     if request.method == 'POST':
+        project_id = request.session.get('current_project_id')
+        if not project_id:
+            return JsonResponse({'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
         data = json.loads(request.body)
-        image = get_object_or_404(JobImage, id=image_id)
+        image = get_object_or_404(JobImage, id=image_id, job__project_id=project_id, job__worker_annotator=request.user)
 
         ann_id = data.get('id')
 
@@ -519,16 +559,21 @@ def save_annotation(request, image_id):
 @csrf_exempt
 def delete_annotation(request, image_id):
     if request.method == 'POST':
+        project_id = request.session.get('current_project_id')
+        if not project_id:
+            return JsonResponse({'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
+        image = get_object_or_404(JobImage, id=image_id, job__project_id=project_id, job__worker_annotator=request.user)
         data = json.loads(request.body)
         ann_id = data.get('id')
 
         # Hapus berdasarkan ID agar jauh lebih akurat
         if ann_id:
-            Annotation.objects.filter(id=ann_id, job_image_id=image_id).delete()
+            Annotation.objects.filter(id=ann_id, job_image=image).delete()
         else:
             # Fallback jika hapus kotak yang belum punya ID
             Annotation.objects.filter(
-                job_image_id=image_id,
+                job_image=image,
                 x_min=data.get('x_min'),
                 y_min=data.get('y_min'),
                 label=data.get('label')

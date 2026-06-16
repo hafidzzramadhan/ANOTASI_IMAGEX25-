@@ -1,0 +1,421 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby — AnotasiImage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue-1: #B8D4E8;
+            --blue-2: #D6EAF8;
+            --blue-3: #EBF5FB;
+            --mint: #B2DFDB;
+            --lavender: #E8DAEF;
+            --ink: #1F2A44;
+            --muted: #64748B;
+            --card: rgba(255, 255, 255, 0.82);
+            --border: rgba(148, 163, 184, 0.24);
+            --shadow: 0 22px 50px rgba(31, 42, 68, 0.10);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 18% 16%, rgba(178, 223, 219, 0.45), transparent 32%),
+                radial-gradient(circle at 84% 12%, rgba(232, 218, 239, 0.50), transparent 30%),
+                linear-gradient(135deg, #FFFFFF 0%, var(--blue-3) 44%, var(--blue-2) 100%);
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 24px 0 44px;
+        }
+
+        .nav {
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 0 18px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(31, 42, 68, 0.07);
+            backdrop-filter: blur(14px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            font-size: 20px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--blue-1), var(--mint));
+            color: #16324F;
+            font-weight: 800;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn-primary {
+            background: #4F8FC9;
+            color: white;
+            box-shadow: 0 12px 24px rgba(79, 143, 201, 0.22);
+        }
+        .btn-mint { background: var(--mint); color: #16413D; }
+        .btn-lavender { background: var(--lavender); color: #4A2D57; }
+        .btn-ghost { background: rgba(255,255,255,0.78); color: var(--ink); border: 1px solid var(--border); }
+        .btn-danger { background: #FDE2E2; color: #9F1D1D; }
+
+        .hero {
+            margin: 34px 0 24px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .panel,
+        .project-card,
+        .empty-state {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+        }
+
+        .greeting {
+            padding: 28px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(30px, 5vw, 52px);
+            letter-spacing: -0.05em;
+            line-height: 1.02;
+        }
+
+        .subtext {
+            margin: 12px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 620px;
+        }
+
+        .create-form {
+            padding: 24px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 26px 0 14px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 13px;
+            font: inherit;
+            background: rgba(255,255,255,0.78);
+            color: var(--ink);
+            outline: none;
+        }
+
+        textarea { min-height: 92px; resize: vertical; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .project-card {
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .project-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .project-name {
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        .project-desc {
+            color: var(--muted);
+            line-height: 1.5;
+            min-height: 42px;
+            font-size: 14px;
+        }
+
+        .pill {
+            align-self: start;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            background: var(--blue-2);
+            color: #244D71;
+            white-space: nowrap;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .invite-form {
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+        }
+
+        .invite-form .btn { grid-column: 1 / -1; }
+
+        .invite-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .invite-item {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid var(--border);
+        }
+
+        .invite-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            padding: 36px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .messages {
+            display: grid;
+            gap: 8px;
+            margin: 16px 0 0;
+        }
+
+        .message {
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.80);
+            border: 1px solid var(--border);
+            color: var(--ink);
+        }
+
+        @media (max-width: 920px) {
+            .hero,
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .shell { width: min(100% - 20px, 1180px); padding-top: 10px; }
+            .nav { height: auto; align-items: flex-start; flex-direction: column; padding: 14px; }
+            .nav-user { width: 100%; justify-content: space-between; }
+            .greeting, .create-form { padding: 20px; }
+            .invite-form { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <nav class="nav">
+            <div class="brand">
+                <div class="brand-mark">AI</div>
+                <span>AnotasiImage</span>
+            </div>
+            <div class="nav-user">
+                <span>{{ request.user.first_name|default:request.user.username }}</span>
+                <a class="btn btn-ghost" href="{% url 'master:logout' %}">Logout</a>
+            </div>
+        </nav>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <section class="hero">
+            <div class="panel greeting">
+                <div>
+                    <h1>Halo, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+                    <p class="subtext">Pilih project untuk masuk ke dashboard sesuai role kamu, atau buat ruang kerja baru untuk tim anotasi berikutnya.</p>
+                </div>
+                <a class="btn btn-primary" href="#create-project">+ Buat Project Baru</a>
+            </div>
+
+            <form id="create-project" class="panel create-form" method="post" action="{% url 'master:create_project' %}">
+                {% csrf_token %}
+                <h2>Project Baru</h2>
+                <input name="name" placeholder="Nama project" required>
+                <textarea name="description" placeholder="Deskripsi singkat project"></textarea>
+                <button class="btn btn-primary" type="submit">+ Buat Project Baru</button>
+            </form>
+        </section>
+
+        <section>
+            <div class="section-head">
+                <div>
+                    <h2>Project Saya</h2>
+                    <p class="subtext">Semua project yang kamu ikuti sebagai master, annotator, atau reviewer.</p>
+                </div>
+            </div>
+
+            {% if memberships %}
+                <div class="grid">
+                    {% for membership in memberships %}
+                        <article class="project-card">
+                            <div class="project-top">
+                                <div>
+                                    <div class="project-name">{{ membership.project.name }}</div>
+                                    <p class="project-desc">{{ membership.project.description|default:"Belum ada deskripsi." }}</p>
+                                </div>
+                                <span class="pill">{{ membership.role|title }}</span>
+                            </div>
+
+                            <div class="meta">
+                                <span>{{ membership.member_count }} member</span>
+                                <span>{{ membership.project.created_at|date:"d M Y" }}</span>
+                            </div>
+
+                            <a class="btn btn-primary" href="{% url 'master:enter_project' membership.project.unique_id %}">Masuk</a>
+
+                            {% if membership.role == 'master' %}
+                                <form class="invite-form" method="post" action="{% url 'master:invite_member' membership.project.unique_id %}">
+                                    {% csrf_token %}
+                                    <input name="username_or_email" placeholder="Username atau email">
+                                    <select name="role">
+                                        <option value="annotator">Annotator</option>
+                                        <option value="reviewer">Reviewer</option>
+                                        <option value="master">Master</option>
+                                    </select>
+                                    <button class="btn btn-mint" type="submit">Undang Member</button>
+                                </form>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>Belum ada project</h2>
+                    <p>Mulai dengan membuat project baru, lalu undang annotator dan reviewer dari lobby ini.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <section>
+            <div class="section-head">
+                <div>
+                    <h2>Undangan Pending</h2>
+                    <p class="subtext">Terima atau tolak undangan project yang masuk ke akun kamu.</p>
+                </div>
+            </div>
+
+            {% if pending_invites %}
+                <div class="invite-list">
+                    {% for invite in pending_invites %}
+                        <div class="invite-item">
+                            <strong>{{ invite.project.name }}</strong>
+                            <span class="subtext">Dari {{ invite.invited_by.email }} sebagai {{ invite.role|title }}</span>
+                            <div class="invite-actions">
+                                <a class="btn btn-mint" href="{% url 'master:accept_invite' invite.token %}">Terima</a>
+                                <a class="btn btn-danger" href="{% url 'master:decline_invite' invite.token %}">Tolak</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>Tidak ada undangan baru</h2>
+                    <p>Kalau ada project yang mengundang kamu, undangannya akan muncul di sini.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</body>
+</html>

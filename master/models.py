@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models.functions import Cast
 from django.conf import settings
 import os
+import uuid
 
 class User(models.Model):
     ROLE_CHOICES = [
@@ -85,6 +86,7 @@ class CustomUser(AbstractUser):
         return self.email
 
 class Dataset(models.Model):
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True, related_name='datasets')
     name = models.CharField(max_length=255)
     labeler = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date_created = models.DateTimeField(default=timezone.now)
@@ -94,7 +96,73 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
+
+class Project(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unique_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectMember(models.Model):
+    ROLE_CHOICES = [
+        ('master', 'Master'),
+        ('annotator', 'Annotator'),
+        ('reviewer', 'Reviewer'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='project_memberships')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['project', 'user']
+        ordering = ['project', 'role', 'user__email']
+
+    def __str__(self):
+        return f"{self.user.email} as {self.role} in {self.project.name}"
+
+
+class ProjectInvite(models.Model):
+    ROLE_CHOICES = ProjectMember.ROLE_CHOICES
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invites')
+    invited_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_project_invites')
+    invited_user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='received_project_invites',
+    )
+    invited_email = models.EmailField()
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Invite {self.invited_email} to {self.project.name} as {self.role}"
+
+
 class JobProfile(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='jobs')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     image_count = models.IntegerField(default=0)
@@ -126,7 +194,6 @@ class JobProfile(models.Model):
     end_date = models.DateField()
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     estimated_duration = models.DurationField(null=True, blank=True)
-    project_id = models.BigIntegerField(null=True, blank=True)
     worker_annotator = models.ForeignKey(
         CustomUser,
         on_delete=models.SET_NULL,
