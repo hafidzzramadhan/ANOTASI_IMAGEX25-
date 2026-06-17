@@ -312,12 +312,6 @@ def login_view(request):
 
         if user is not None:
             if user.is_active:
-                # Check role BEFORE logging in
-                if user.role == 'guest':
-                    messages.info(request, "Akun Anda masih dalam status guest. Akun akan dapat digunakan setelah mendapat akses dari admin. Anda akan mendapat notifikasi melalui email ketika akun sudah diaktifkan.")
-                    return redirect("master:login")
-                
-                # Only log in non-guest users
                 login(request, user)
                 messages.success(request, "Login berhasil!")
                 return redirect("master:lobby")
