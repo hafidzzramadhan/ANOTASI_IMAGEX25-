@@ -4,418 +4,711 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby — AnotasiImage</title>
+    <title>Lobby — Ramadhan's Labeller</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --blue-1: #B8D4E8;
-            --blue-2: #D6EAF8;
-            --blue-3: #EBF5FB;
-            --mint: #B2DFDB;
-            --lavender: #E8DAEF;
-            --ink: #1F2A44;
-            --muted: #64748B;
-            --card: rgba(255, 255, 255, 0.82);
-            --border: rgba(148, 163, 184, 0.24);
-            --shadow: 0 22px 50px rgba(31, 42, 68, 0.10);
+            --pastel-pink: #FA92C1;        
+            --pastel-pink-soft: #FFF0F4;   
+            --accent-purple: #9B7EBD;      
+            --cream-light: #FFFDF0;        
+            --cream-border: #EFE6D5;       
+            
+            --charcoal: #000000;           
+            --btn-dark: #000000;           
+            --btn-neon-green: #ffea4b;     
+            --muted-rose: #555555;         
+            --pure-white: #FFFFFF;
+            --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.02);
+            --shadow-md: 0 12px 34px rgba(250, 146, 193, 0.12);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0;
+        }
 
         body {
-            margin: 0;
             min-height: 100vh;
-            font-family: 'Inter', Arial, sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(circle at 18% 16%, rgba(178, 223, 219, 0.45), transparent 32%),
-                radial-gradient(circle at 84% 12%, rgba(232, 218, 239, 0.50), transparent 30%),
-                linear-gradient(135deg, #FFFFFF 0%, var(--blue-3) 44%, var(--blue-2) 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--charcoal);
+            background: 
+                radial-gradient(circle at 80% 20%, rgba(250, 146, 193, 0.38), transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(255, 240, 244, 0.5), transparent 50%),
+                linear-gradient(135deg, #FFFFFF 0%, #FFF5F6 60%, var(--pastel-pink-soft) 100%);
+            padding-bottom: 40px;
         }
 
-        a { color: inherit; text-decoration: none; }
+        a { 
+            color: inherit; 
+            text-decoration: none; 
+        }
 
-        .shell {
-            width: min(1180px, calc(100% - 32px));
+        /* Layout Structure */
+        .workspace {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            min-height: 100vh;
+            max-width: 1650px;
             margin: 0 auto;
-            padding: 24px 0 44px;
         }
 
-        .nav {
-            height: 68px;
+        /* Sidebar Navigation */
+        .sidebar {
+            background: var(--pure-white);
+            border-right: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 35px 24px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: space-between;
-            gap: 16px;
-            padding: 0 18px;
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(31, 42, 68, 0.07);
-            backdrop-filter: blur(14px);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            gap: 24px;
+            overflow-y: auto;
         }
 
-        .brand {
+        .sidebar-top-group {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .brand-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px; /* Ditambahkan spasi tambahan agar tidak terlalu nempel dengan logo */
+        }
+
+        .logo-duo-wrapper {
             display: flex;
             align-items: center;
+            gap: 24px;
+        }
+
+        .app-logo {
+            height: 76px; 
+            width: auto;
+        }
+
+        .logo-framed {
+            width: 76px; 
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .logo-plain {
+            width: 138px; 
+            height: 92px; 
+            object-fit: contain !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        .brand-name {
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: -0.04em;
+            color: var(--charcoal);
+            margin-top: 4px; /* Spasi mikro pelengkap teks */
+        }
+
+        /* Kotak Masuk Undangan */
+        .sidebar-invitations-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 1px dashed rgba(0, 0, 0, 0.1);
+            padding-top: 24px;
+        }
+
+        .sidebar-invitations-panel h4 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--charcoal);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-invite-list {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .sidebar-invite-card {
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar-invite-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--charcoal);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-invite-desc {
+            font-size: 11px;
+            color: var(--muted-rose);
+            line-height: 1.4;
+        }
+
+        .sidebar-invite-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .sidebar-invite-actions .btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .sidebar-invite-empty {
+            font-size: 12px;
+            color: var(--muted-rose);
+            text-align: center;
+            padding: 20px 10px;
+            background: rgba(0, 0, 0, 0.01);
+            border-radius: 12px;
+            border: 1px dashed rgba(0, 0, 0, 0.05);
+        }
+
+        /* User Profile Card */
+        .user-profile-card {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: var(--muted-rose);
+        }
+
+        /* Main Content Container */
+        .main-content {
+            padding: 40px 50px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* Reusable UI Panels */
+        .glass-panel {
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
             font-weight: 800;
             letter-spacing: -0.02em;
-            font-size: 20px;
+            color: var(--charcoal);
         }
 
-        .brand-mark {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(135deg, var(--blue-1), var(--mint));
-            color: #16324F;
-            font-weight: 800;
-        }
-
-        .nav-user {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--muted);
+        .section-header p {
             font-size: 14px;
+            color: var(--muted-rose);
+            margin-top: 4px;
         }
 
+        /* Buttons */
         .btn {
-            border: 0;
-            border-radius: 12px;
-            padding: 10px 14px;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
             font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: transform 0.16s ease, box-shadow 0.16s ease;
+            border: none;
+            transition: var(--transition);
         }
 
-        .btn:hover { transform: translateY(-1px); }
+        /* AKSES DASHBOARD (Hitam Pekat) */
         .btn-primary {
-            background: #4F8FC9;
-            color: white;
-            box-shadow: 0 12px 24px rgba(79, 143, 201, 0.22);
+            background: var(--btn-dark);
+            color: var(--pure-white);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
         }
-        .btn-mint { background: var(--mint); color: #16413D; }
-        .btn-lavender { background: var(--lavender); color: #4A2D57; }
-        .btn-ghost { background: rgba(255,255,255,0.78); color: var(--ink); border: 1px solid var(--border); }
-        .btn-danger { background: #FDE2E2; color: #9F1D1D; }
 
-        .hero {
-            margin: 34px 0 24px;
+        .btn-primary:hover {
+            background: #222222;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* KONFIRMASI & BANGUN PROJECT (Neon Green) */
+        .btn-submit-neon {
+            background: var(--btn-neon-green);
+            color: var(--charcoal);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-submit-neon:hover {
+            background: #fff243;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgb(251, 255, 0);
+        }
+
+        .btn-secondary {
+            background: var(--pure-white);
+            color: var(--charcoal);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.02);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #FFF0F2;
+            color: #D32F4E;
+            border: 1px solid rgba(211, 47, 78, 0.1);
+        }
+
+        .btn-danger:hover {
+            background: #FFE2E6;
+        }
+
+        /* Forms */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--charcoal);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--charcoal);
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Hero Area Atas */
+        .dashboard-hero {
             display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 20px;
-            align-items: stretch;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 30px;
+            margin-top: 24px; 
+            margin-bottom: 44px;
         }
 
-        .panel,
-        .project-card,
-        .empty-state {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(14px);
-        }
-
-        .greeting {
-            padding: 28px;
-            min-height: 220px;
+        .welcome-card {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        h1 {
-            margin: 0;
-            font-size: clamp(30px, 5vw, 52px);
-            letter-spacing: -0.05em;
-            line-height: 1.02;
+        .welcome-card h1 {
+            font-size: clamp(28px, 4vw, 36px);
+            letter-spacing: -0.04em;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            color: var(--charcoal);
         }
 
-        .subtext {
-            margin: 12px 0 0;
-            color: var(--muted);
+        .welcome-card h1 span {
+            color: var(--accent-purple);
+        }
+
+        .welcome-card p {
+            color: var(--muted-rose);
+            font-size: 15px;
             line-height: 1.6;
-            max-width: 620px;
         }
 
-        .create-form {
-            padding: 24px;
-            display: grid;
-            gap: 12px;
-        }
-
-        .section-head {
+        .form-header-row {
             display: flex;
-            align-items: end;
+            align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            margin: 26px 0 14px;
-        }
-
-        h2 {
-            margin: 0;
-            font-size: 20px;
-            letter-spacing: -0.02em;
-        }
-
-        input,
-        textarea,
-        select {
             width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 13px;
-            font: inherit;
-            background: rgba(255,255,255,0.78);
-            color: var(--ink);
-            outline: none;
         }
 
-        textarea { min-height: 92px; resize: vertical; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .project-card {
-            padding: 18px;
-            display: grid;
-            gap: 16px;
-        }
-
-        .project-top {
+        .create-form-box {
             display: flex;
-            justify-content: space-between;
-            gap: 12px;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .project-name {
-            font-weight: 800;
+        .create-form-box h3 {
             font-size: 18px;
-            letter-spacing: -0.02em;
+            font-weight: 700;
+            color: var(--charcoal);
         }
 
-        .project-desc {
-            color: var(--muted);
-            line-height: 1.5;
-            min-height: 42px;
-            font-size: 14px;
+        /* TANDA + HITAM PEKAT & DI-SCALE SEUKURAN TINGGI LOGO 1 (76px) */
+        .plus-indicator {
+            font-size: 76px; /* Diperbesar seukuran tinggi logo 1 */
+            font-weight: 400; /* Dibuat sedikit proporsional agar presisi bulat/kotak simetris */
+            line-height: 1;
+            color: #000000; /* Hitam pekat sesuai request */
+            user-select: none;
+            display: inline-block;
         }
 
-        .pill {
-            align-self: start;
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-size: 12px;
-            font-weight: 800;
-            background: var(--blue-2);
-            color: #244D71;
-            white-space: nowrap;
+        /* Project Workspace Area */
+        .project-section {
+            margin-top: 64px; 
+            margin-bottom: 44px;
         }
 
-        .meta {
+        .projects-layout-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 24px;
+        }
+
+        .elegant-project-card {
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 260px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .elegant-project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header-top {
             display: flex;
             justify-content: space-between;
-            color: var(--muted);
-            font-size: 13px;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 12px;
         }
 
-        .invite-form {
-            border-top: 1px solid var(--border);
-            padding-top: 14px;
-            display: grid;
-            grid-template-columns: 1fr 120px;
-            gap: 10px;
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--charcoal);
         }
 
-        .invite-form .btn { grid-column: 1 / -1; }
+        .role-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: var(--cream-light);
+            color: var(--charcoal);
+            border: 1px solid var(--cream-border);
+        }
 
-        .invite-list {
-            display: grid;
+        .card-description {
+            font-size: 14px;
+            color: var(--muted-rose);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .card-action-drawer {
+            display: flex;
+            flex-direction: column;
             gap: 12px;
         }
 
-        .invite-item {
-            display: grid;
-            gap: 10px;
-            padding: 14px;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.72);
-            border: 1px solid var(--border);
-        }
-
-        .invite-actions {
+        .card-bottom-meta {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 16px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: var(--muted-rose);
         }
 
-        .empty-state {
-            padding: 36px;
-            text-align: center;
-            color: var(--muted);
-        }
-
-        .messages {
+        .inline-invite-form {
             display: grid;
+            grid-template-columns: 1.2fr 1fr auto;
             gap: 8px;
-            margin: 16px 0 0;
+            border-top: 1px dashed rgba(0, 0, 0, 0.08);
+            padding-top: 16px;
         }
 
-        .message {
-            border-radius: 14px;
-            padding: 12px 14px;
-            background: rgba(255,255,255,0.80);
-            border: 1px solid var(--border);
-            color: var(--ink);
+        .inline-invite-form input, 
+        .inline-invite-form select {
+            padding: 10px 12px;
+            font-size: 13px;
+            border-radius: 10px;
         }
 
-        @media (max-width: 920px) {
-            .hero,
-            .grid {
+        .inline-invite-form .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+        }
+
+        /* Empty States */
+        .empty-illustration-state {
+            padding: 44px;
+            text-align: center;
+            background: var(--pure-white);
+            border: 2px dashed rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-lg);
+            color: var(--muted-rose);
+        }
+
+        .empty-illustration-state h3 {
+            font-size: 16px;
+            color: var(--charcoal);
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        /* Responsive Media Queries */
+        @media (max-width: 1150px) {
+            .workspace {
                 grid-template-columns: 1fr;
+            }
+            .sidebar {
+                height: auto;
+                position: relative;
+                padding: 24px;
+                flex-direction: column;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            }
+            .sidebar-top-group {
+                gap: 20px;
+            }
+            .main-content {
+                padding: 30px 20px;
             }
         }
 
-        @media (max-width: 620px) {
-            .shell { width: min(100% - 20px, 1180px); padding-top: 10px; }
-            .nav { height: auto; align-items: flex-start; flex-direction: column; padding: 14px; }
-            .nav-user { width: 100%; justify-content: space-between; }
-            .greeting, .create-form { padding: 20px; }
-            .invite-form { grid-template-columns: 1fr; }
+        @media (max-width: 768px) {
+            .dashboard-hero,
+            .projects-layout-grid {
+                grid-template-columns: 1fr;
+            }
+            .inline-invite-form {
+                grid-template-columns: 1fr;
+            }
+            .logo-duo-wrapper {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="shell">
-        <nav class="nav">
-            <div class="brand">
-                <div class="brand-mark">AI</div>
-                <span>AnotasiImage</span>
-            </div>
-            <div class="nav-user">
-                <span>{{ request.user.first_name|default:request.user.username }}</span>
-                <a class="btn btn-ghost" href="{% url 'master:logout' %}">Logout</a>
-            </div>
-        </nav>
-
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="message">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        <section class="hero">
-            <div class="panel greeting">
-                <div>
-                    <h1>Halo, {{ request.user.first_name|default:request.user.username }} 👋</h1>
-                    <p class="subtext">Pilih project untuk masuk ke dashboard sesuai role kamu, atau buat ruang kerja baru untuk tim anotasi berikutnya.</p>
+    <div class="workspace">
+        
+        <!-- SIDEBAR KIRI -->
+        <aside class="sidebar">
+            <div class="sidebar-top-group">
+                <!-- Brand Nav & Logo Resmi Ramadhan's Labeller -->
+                <div class="brand-section">
+                    <div class="logo-duo-wrapper">
+                        {% load static %}
+                        <img class="app-logo logo-framed" src="{% static 'images/logo.png' %}" alt="Logo 1">
+                        <img class="app-logo logo-plain" src="{% static 'images/logo3.png' %}" alt="Logo 2">
+                    </div>
+                    <span class="brand-name">Ramadhan's Labeller</span>
                 </div>
-                <a class="btn btn-primary" href="#create-project">+ Buat Project Baru</a>
-            </div>
 
-            <form id="create-project" class="panel create-form" method="post" action="{% url 'master:create_project' %}">
-                {% csrf_token %}
-                <h2>Project Baru</h2>
-                <input name="name" placeholder="Nama project" required>
-                <textarea name="description" placeholder="Deskripsi singkat project"></textarea>
-                <button class="btn btn-primary" type="submit">+ Buat Project Baru</button>
-            </form>
-        </section>
-
-        <section>
-            <div class="section-head">
-                <div>
-                    <h2>Project Saya</h2>
-                    <p class="subtext">Semua project yang kamu ikuti sebagai master, annotator, atau reviewer.</p>
-                </div>
-            </div>
-
-            {% if memberships %}
-                <div class="grid">
-                    {% for membership in memberships %}
-                        <article class="project-card">
-                            <div class="project-top">
-                                <div>
-                                    <div class="project-name">{{ membership.project.name }}</div>
-                                    <p class="project-desc">{{ membership.project.description|default:"Belum ada deskripsi." }}</p>
+                <!-- KOTAK MASUK UNDANGAN -->
+                <div class="sidebar-invitations-panel">
+                    <h4>📩 Undangan Masuk</h4>
+                    <div class="sidebar-invite-list">
+                        {% if pending_invites %}
+                            {% for invite in pending_invites %}
+                                <div class="sidebar-invite-card">
+                                    <span class="sidebar-invite-title">{{ invite.project.name }}</span>
+                                    <span class="sidebar-invite-desc">
+                                        Oleh: <strong>{{ invite.invited_by.email }}</strong><br>
+                                        Role: <span style="font-weight: 600;">{{ invite.role|title }}</span>
+                                    </span>
+                                    <div class="sidebar-invite-actions">
+                                        <a class="btn" style="background: #EAFCEE; color: #1E7834;" href="{% url 'master:accept_invite' invite.token %}">Terima</a>
+                                        <a class="btn btn-danger" href="{% url 'master:decline_invite' invite.token %}">Tolak</a>
+                                    </div>
                                 </div>
-                                <span class="pill">{{ membership.role|title }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <div class="sidebar-invite-empty">
+                                Tidak ada undangan aktif.
                             </div>
-
-                            <div class="meta">
-                                <span>{{ membership.member_count }} member</span>
-                                <span>{{ membership.project.created_at|date:"d M Y" }}</span>
-                            </div>
-
-                            <a class="btn btn-primary" href="{% url 'master:enter_project' membership.project.unique_id %}">Masuk</a>
-
-                            {% if membership.role == 'master' %}
-                                <form class="invite-form" method="post" action="{% url 'master:invite_member' membership.project.unique_id %}">
-                                    {% csrf_token %}
-                                    <input name="username_or_email" placeholder="Username atau email">
-                                    <select name="role">
-                                        <option value="annotator">Annotator</option>
-                                        <option value="reviewer">Reviewer</option>
-                                        <option value="master">Master</option>
-                                    </select>
-                                    <button class="btn btn-mint" type="submit">Undang Member</button>
-                                </form>
-                            {% endif %}
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <h2>Belum ada project</h2>
-                    <p>Mulai dengan membuat project baru, lalu undang annotator dan reviewer dari lobby ini.</p>
-                </div>
-            {% endif %}
-        </section>
-
-        <section>
-            <div class="section-head">
-                <div>
-                    <h2>Undangan Pending</h2>
-                    <p class="subtext">Terima atau tolak undangan project yang masuk ke akun kamu.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            {% if pending_invites %}
-                <div class="invite-list">
-                    {% for invite in pending_invites %}
-                        <div class="invite-item">
-                            <strong>{{ invite.project.name }}</strong>
-                            <span class="subtext">Dari {{ invite.invited_by.email }} sebagai {{ invite.role|title }}</span>
-                            <div class="invite-actions">
-                                <a class="btn btn-mint" href="{% url 'master:accept_invite' invite.token %}">Terima</a>
-                                <a class="btn btn-danger" href="{% url 'master:decline_invite' invite.token %}">Tolak</a>
-                            </div>
-                        </div>
+            <!-- Profile Pengguna -->
+            <div class="user-profile-card">
+                <div class="user-info">
+                    <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
+                    <span class="user-status">Active Workspace</span>
+                </div>
+                <a class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px; width: 100%;" href="{% url 'master:logout' %}">Sign Out</a>
+            </div>
+        </aside>
+
+        <!-- AREA KONTEN UTAMA WORKSPACE -->
+        <main class="main-content">
+            {% if messages %}
+                <div class="toast-notifications">
+                    {% for message in messages %}
+                        <div class="toast-item">{{ message }}</div>
                     {% endfor %}
                 </div>
-            {% else %}
-                <div class="empty-state">
-                    <h2>Tidak ada undangan baru</h2>
-                    <p>Kalau ada project yang mengundang kamu, undangannya akan muncul di sini.</p>
-                </div>
             {% endif %}
-        </section>
+
+            <!-- Hero Section Atas -->
+            <section class="dashboard-hero">
+                <div class="glass-panel welcome-card">
+                    <div>
+                        <h1>Halo, <br><span>{{ request.user.first_name|default:request.user.username }} 👋</span></h1>
+                        <p>Selamat datang kembali. Silakan kelola ruang anotasi gambar Anda atau buat project baru untuk mulai berkolaborasi bersama tim ekosistem Anda.</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <form id="create-project" class="create-form-box" method="post" action="{% url 'master:create_project' %}">
+                        {% csrf_token %}
+                        <div class="form-header-row">
+                            <h3>Mulai Project Baru</h3>
+                            <span class="plus-indicator">+</span>
+                        </div>
+                        <div class="input-group">
+                            <input name="name" placeholder="Nama project baru Anda" required>
+                        </div>
+                        <div class="input-group">
+                            <textarea name="description" placeholder="Berikan deskripsi singkat project..."></textarea>
+                        </div>
+                        <button class="btn btn-submit-neon" type="submit">Konfirmasi & Bangun Project</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Project Workspace Grid Area -->
+            <section class="project-section">
+                <div class="section-header">
+                    <h2>Project Workspace</h2>
+                    <p>Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
+                </div>
+
+                {% if memberships %}
+                    <div class="projects-layout-grid">
+                        {% for membership in memberships %}
+                            <article class="elegant-project-card">
+                                <div>
+                                    <div class="card-header-top">
+                                        <h3 class="card-title">{{ membership.project.name }}</h3>
+                                        <span class="role-badge">{{ membership.role }}</span>
+                                    </div>
+                                    <p class="card-description">{{ membership.project.description|default:"Tidak ada deskripsi yang disematkan untuk project ini." }}</p>
+                                </div>
+
+                                <div class="card-action-drawer">
+                                    <div class="card-bottom-meta">
+                                        <div class="member-count-info">👥 <strong>{{ membership.member_count }}</strong> Anggota Tim</div>
+                                        <div>📅 {{ membership.project.created_at|date:"d M Y" }}</div>
+                                    </div>
+
+                                    <!-- Tombol Akses Dashboard Berwarna Hitam Pekat -->
+                                    <a class="btn btn-primary" href="{% url 'master:enter_project' membership.project.unique_id %}">Akses Dashboard</a>
+
+                                    {% if membership.role == 'master' %}
+                                        <form class="inline-invite-form" method="post" action="{% url 'master:invite_member' membership.project.unique_id %}">
+                                            {% csrf_token %}
+                                            <input name="username_or_email" placeholder="Username / Email" required>
+                                            <select name="role">
+                                                <option value="annotator">Annotator</option>
+                                                <option value="reviewer">Reviewer</option>
+                                                <option value="master">Master</option>
+                                            </select>
+                                            <button class="btn btn-secondary" type="submit">Undang</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-illustration-state">
+                        <h3>Belum Ada Project yang Terintegrasi</h3>
+                        <p>Mulai langkah awal Anda dengan mengisi formulir pembuatan project baru di atas.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
     </div>
 </body>
 </html>
