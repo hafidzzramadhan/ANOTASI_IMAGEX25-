@@ -4,7 +4,7 @@ from . import views
 app_name = 'master'
 
 urlpatterns = [
-    path('', views.home_view, name='index'),  # Root URL
+    path('', views.lobby_view, name='index'),  # Root URL
     path('signup/', views.signup_view, name='signup'),
     path("activate/<uidb64>/<token>/", views.activate, name="activate"),  
     path('login/', views.login_view, name='login'),

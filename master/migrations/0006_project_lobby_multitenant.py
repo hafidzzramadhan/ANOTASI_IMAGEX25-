@@ -62,16 +62,7 @@ class Migration(migrations.Migration):
             name='project',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='datasets', to='master.project'),
         ),
-        migrations.RenameField(
-            model_name='jobprofile',
-            old_name='project_id',
-            new_name='project',
-        ),
-        migrations.RunSQL(
-            sql="UPDATE master_jobprofile SET project_id = NULL WHERE project_id IS NOT NULL;",
-            reverse_sql=migrations.RunSQL.noop,
-        ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='jobprofile',
             name='project',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='jobs', to='master.project'),

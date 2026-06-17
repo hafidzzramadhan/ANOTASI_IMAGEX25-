@@ -14,12 +14,27 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
 from functools import wraps
-from master.models import CustomUser, JobProfile, JobImage, Annotation, Segmentation, Issue, Notification
+from master.models import CustomUser, JobProfile, JobImage, Annotation, Segmentation, Issue, Notification, ProjectMember
 from .forms import LoginForm
 import re
 import json
 
 # Create your views here.
+def get_current_project_for_reviewer(request):
+    project_id = request.session.get('current_project_id')
+    if not project_id:
+        messages.error(request, 'Pilih project dari lobby terlebih dahulu.')
+        return None, redirect('master:lobby')
+    if not ProjectMember.objects.filter(
+        project_id=project_id,
+        user=request.user,
+        role__in=['reviewer', 'master'],
+    ).exists():
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return None, redirect('master:lobby')
+    return project_id, None
+
+
 def reviewer_required(view_func):
     """
     Custom decorator that requires user to be logged in and have reviewer or master role
@@ -28,7 +43,7 @@ def reviewer_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('reviewer:login')
-        if request.user.role not in ['reviewer', 'master']:
+        if request.user.role not in ['reviewer', 'master'] and request.session.get('current_project_role') not in ['reviewer', 'master']:
             messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
             if request.user.role == 'annotator':
                 return redirect('/annotator/annotate/')
@@ -81,13 +96,17 @@ def get_base64_images():
 
 @reviewer_required
 def home_reviewer(request):
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
     user = request.user
 
     username = user.username
     number_email = user.email or user.phone_number or ''
     user_id = user.id
 
-    list_ProfileJob = JobProfile.objects.filter(worker_reviewer=user_id)
+    list_ProfileJob = JobProfile.objects.filter(project_id=project_id, worker_reviewer=user_id)
 
     print(f"DEBUG: Found {list_ProfileJob.count()} profiles for user {user_id}")
     for profile in list_ProfileJob:
@@ -150,13 +169,17 @@ def home_reviewer(request):
 
 @reviewer_required
 def task_review(request, id):
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
     user = request.user
 
     username = user.username
     number_email = user.email or user.phone_number or ''
     user_id = user.id
 
-    profile = get_object_or_404(JobProfile, id=id, worker_reviewer=user_id)
+    profile = get_object_or_404(JobProfile, id=id, project_id=project_id, worker_reviewer=user_id)
 
     data_job = JobImage.objects.filter(job=profile).select_related('job', 'annotator').order_by('id')
     total_images = data_job.count()
@@ -174,6 +197,10 @@ def task_review(request, id):
 
 @reviewer_required
 def isu(request):
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
     user = request.user
     username = user.username
     number_email = user.email or user.phone_number or ''
@@ -181,7 +208,7 @@ def isu(request):
     # 1. Ambil semua issue tanpa exclude
     issues_qs = (
         Issue.objects
-        .filter(job__worker_reviewer=user)
+        .filter(job__project_id=project_id, job__worker_reviewer=user)
         .select_related('job', 'image', 'assigned_to', 'created_by')
         .order_by('-created_at')
     )
@@ -277,6 +304,10 @@ def login(request):
 
 @reviewer_required
 def isu_anotasi(request, index=0):
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
     user = request.user
     profile_id_raw = request.GET.get('profile_id') or request.session.get('profile_id')
 
@@ -285,13 +316,13 @@ def isu_anotasi(request, index=0):
     except (TypeError, ValueError):
         return redirect('reviewer:home_reviewer')
 
-    profile = JobProfile.objects.filter(id=profile_id, worker_reviewer=user.id).first()
+    profile = JobProfile.objects.filter(id=profile_id, project_id=project_id, worker_reviewer=user.id).first()
     if not profile:
         return redirect('reviewer:home_reviewer')
 
     job_images = (
         JobImage.objects
-        .filter(job_id=profile_id)
+        .filter(job_id=profile_id, job__project_id=project_id)
         .select_related('job')
         .order_by('id')
     )
@@ -373,7 +404,7 @@ def isu_anotasi(request, index=0):
             })
 
     # --- Status Counts ---
-    issues_count = Issue.objects.filter(image__job_id=profile_id).count()
+    issues_count = Issue.objects.filter(image__job_id=profile_id, job__project_id=project_id).count()
 
     # --- MENGAMBIL STATUS GAMBAR SECARA DINAMIS ---
     # Diambil dari field status milik JobImage saat ini, di-lowercase agar cocok dengan template HTML
@@ -422,6 +453,10 @@ def isu_image(request):
     """
     from collections import OrderedDict
 
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
     user = request.user
     username = user.username
     number_email = user.email or user.phone_number or ''
@@ -437,7 +472,7 @@ def isu_image(request):
             focus_image = (
                 JobImage.objects
                 .select_related('job', 'annotator')
-                .filter(id=image_id, job__worker_reviewer=user)
+                .filter(id=image_id, job__project_id=project_id, job__worker_reviewer=user)
                 .first()
             )
             if focus_image:
@@ -455,7 +490,7 @@ def isu_image(request):
         grouped = OrderedDict()
         issues_with_image = (
             Issue.objects
-            .filter(job__worker_reviewer=user, image__isnull=False)
+            .filter(job__project_id=project_id, job__worker_reviewer=user, image__isnull=False)
             .select_related('image', 'image__job')
             .order_by('-created_at')
         )
@@ -487,7 +522,11 @@ def finish_review_view(request, image_id):
         return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
     try:
-        image_obj = get_object_or_404(JobImage, id=image_id)
+        project_id, redirect_response = get_current_project_for_reviewer(request)
+        if redirect_response:
+            return JsonResponse({'success': False, 'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
+        image_obj = get_object_or_404(JobImage, id=image_id, job__project_id=project_id)
 
         if image_obj.job.worker_reviewer != request.user:
             return JsonResponse({'success': False, 'error': 'You are not assigned to this job'}, status=403)
@@ -520,7 +559,11 @@ def accept_task(request, profile_id):
     Reviewer menerima sebuah JobProfile untuk di-review.
     Status JobProfile: in_progress -> in_review.
     """
-    profile = get_object_or_404(JobProfile, id=profile_id, worker_reviewer=request.user)
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
+    profile = get_object_or_404(JobProfile, id=profile_id, project_id=project_id, worker_reviewer=request.user)
     profile.status = 'in_review'
     profile.save()
     messages.success(request, f'Task "{profile.title}" diterima. Selamat me-review!')
@@ -534,7 +577,11 @@ def done_task(request, profile_id):
     Set JobProfile.status = finish, dan semua JobImage yang belum finished
     di-mark finished.
     """
-    profile = get_object_or_404(JobProfile, id=profile_id, worker_reviewer=request.user)
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
+    profile = get_object_or_404(JobProfile, id=profile_id, project_id=project_id, worker_reviewer=request.user)
     profile.status = 'finish'
     profile.save()
 
@@ -554,7 +601,11 @@ def drop_task(request, profile_id):
     Reviewer drop task (kembalikan ke in_progress, biar reviewer lain bisa ambil
     atau annotator masih bisa kerja).
     """
-    profile = get_object_or_404(JobProfile, id=profile_id, worker_reviewer=request.user)
+    project_id, redirect_response = get_current_project_for_reviewer(request)
+    if redirect_response:
+        return redirect_response
+
+    profile = get_object_or_404(JobProfile, id=profile_id, project_id=project_id, worker_reviewer=request.user)
     profile.status = 'in_progress'
     profile.save()
     messages.warning(request, f'Job "{profile.title}" telah di-drop kembali ke In Progress.')
@@ -572,6 +623,10 @@ def make_issue_view(request, image_id):
         return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
     try:
+        project_id, redirect_response = get_current_project_for_reviewer(request)
+        if redirect_response:
+            return JsonResponse({'success': False, 'error': 'Pilih project dari lobby terlebih dahulu'}, status=403)
+
         data      = json.loads(request.body)
         note      = data.get('note', '').strip()
         title     = data.get('title', '').strip() or f"Issue on image {image_id}"
@@ -580,7 +635,7 @@ def make_issue_view(request, image_id):
         if not note:
             return JsonResponse({'success': False, 'error': 'Note/description tidak boleh kosong'}, status=400)
 
-        image_obj = get_object_or_404(JobImage, id=image_id)
+        image_obj = get_object_or_404(JobImage, id=image_id, job__project_id=project_id)
 
         # Cek reviewer assigned ke job ini
         if image_obj.job.worker_reviewer != request.user:

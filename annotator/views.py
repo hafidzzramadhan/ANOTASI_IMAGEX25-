@@ -78,7 +78,7 @@ def annotator_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('/annotator/signin/')
-        if request.user.role != 'annotator':
+        if request.user.role != 'annotator' and request.session.get('current_project_role') != 'annotator':
             messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for annotators only.')
             if request.user.role == 'reviewer':
                 return redirect('/reviewer/')

@@ -61,7 +61,7 @@ def master_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('master:login')
-        if request.user.role != 'master':
+        if request.user.role != 'master' and request.session.get('current_project_role') != 'master':
             messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for administrators only.')
             # Redirect to appropriate portal based on role
             if request.user.role == 'annotator':
@@ -496,13 +496,17 @@ def home_view(request):
 
 @master_required
 def assign_roles_view(request):
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     # Get new members (guests)
     new_members = CustomUser.objects.filter(role='guest')
     new_members_data = []
 
     for user in new_members:
-        annotator_jobs = JobProfile.objects.filter(worker_annotator=user).count()
-        reviewer_jobs = JobProfile.objects.filter(worker_reviewer=user).count()
+        annotator_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
+        reviewer_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
         total_projects = annotator_jobs + reviewer_jobs
 
         new_members_data.append({
@@ -520,8 +524,8 @@ def assign_roles_view(request):
     members_data = []
 
     for user in members:
-        annotator_jobs = JobProfile.objects.filter(worker_annotator=user).count()
-        reviewer_jobs = JobProfile.objects.filter(worker_reviewer=user).count()
+        annotator_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
+        reviewer_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
         total_projects = annotator_jobs + reviewer_jobs
 
         members_data.append({
@@ -535,6 +539,7 @@ def assign_roles_view(request):
         })
 
     return render(request, "master/assign_roles.html", {
+        'current_project': current_project,
         'new_members': new_members_data,
         'members': members_data,
     })
@@ -765,17 +770,24 @@ def performance_view(request):
     """
     Renders the performance page for authenticated users.
     """
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     # Ambil semua user dengan role annotator dan reviewer
-    members = CustomUser.objects.filter(role__in=["annotator", "reviewer"]).order_by('role', 'email')
+    members = CustomUser.objects.filter(
+        project_memberships__project=current_project,
+        project_memberships__role__in=["annotator", "reviewer"]
+    ).distinct().order_by('email')
 
     # Hitung jumlah project (job) yang pernah diassign ke user (sebagai annotator/reviewer)
     member_data = []
     for user in members:
         # Hitung jumlah job sebagai annotator
-        project_count = JobProfile.objects.filter(worker_annotator=user).count()
+        project_count = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
         # Hitung jumlah job sebagai reviewer
         if user.role == 'reviewer':
-            project_count = JobProfile.objects.filter(worker_reviewer=user).count()
+            project_count = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
         member_data.append({
             'id': user.id,
             'email': user.email,
@@ -787,14 +799,15 @@ def performance_view(request):
 
     # Calculate real statistics for Card & Chart section
     # Get all job images and their status counts
-    total_images = JobImage.objects.count()
+    project_images = JobImage.objects.filter(job__project=current_project)
+    total_images = project_images.count()
     
     # Calculate status counts
-    unannotated_count = JobImage.objects.filter(status='unannotated').count()
-    in_review_count = JobImage.objects.filter(status='in_review').count()
-    in_rework_count = JobImage.objects.filter(status='in_rework').count()
-    finished_count = JobImage.objects.filter(status='finished').count()
-    issue_count = JobImage.objects.filter(status='issue').count()
+    unannotated_count = project_images.filter(status='unannotated').count()
+    in_review_count = project_images.filter(status='in_review').count()
+    in_rework_count = project_images.filter(status='in_rework').count()
+    finished_count = project_images.filter(status='finished').count()
+    issue_count = project_images.filter(status='issue').count()
     
     # Calculate assignment stats - images that are assigned (not unannotated)
     assigned_count = total_images - unannotated_count
@@ -835,6 +848,7 @@ def performance_view(request):
     # Prepare context data
     context = {
         'members': member_data,
+        'current_project': current_project,
         'total_images': total_images,
         'completion_percentage': completion_percentage,
         'chart_data': chart_data,
@@ -1781,13 +1795,20 @@ def guide_view(request):
 @master_required
 def performance_individual_view(request, user_id):
     """Detail performance per user (annotator/reviewer)."""
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     user = get_object_or_404(CustomUser, id=user_id, role__in=["annotator", "reviewer"])
+    if not ProjectMember.objects.filter(project=current_project, user=user).exists():
+        messages.error(request, 'User tersebut bukan member project ini.')
+        return redirect('master:performance')
 
     # Jobs sesuai role
     if user.role == 'annotator':
-        user_jobs = JobProfile.objects.filter(worker_annotator=user)
+        user_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user)
     else:
-        user_jobs = JobProfile.objects.filter(worker_reviewer=user)
+        user_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user)
 
     user_images = JobImage.objects.filter(job__in=user_jobs)
     total_jobs = user_jobs.count()
@@ -1846,6 +1867,7 @@ def performance_individual_view(request, user_id):
     }
 
     return render(request, "master/performance_individual.html", {
+        'current_project': current_project,
         'user_profile': user_profile,
         'user_stats': user_stats,
         'user_jobs_list': user_jobs,
