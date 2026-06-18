@@ -54,6 +54,20 @@ from master.api_issue_solving import (
     MasterIssueCommentAPIView,
 )
 
+# === Lobby / Multi-tenant (baru) ===
+from master.api_lobby_views import (
+    LobbyProjectListAPIView,
+    LobbyInviteListAPIView,
+    ProjectCreateAPIView,
+    ProjectDetailAPIView,
+    ProjectEnterAPIView,
+    ProjectMemberListAPIView,
+    ProjectMemberDetailAPIView,
+    ProjectInviteCreateAPIView,
+    InviteAcceptAPIView,
+    InviteDeclineAPIView,
+)
+
 app_name = 'api'
 
 urlpatterns = [
@@ -114,4 +128,20 @@ urlpatterns = [
     # ============================================================
     path('annotator/dashboard/', AnnotatorDashboardAPIView.as_view(), name='annotator_dashboard'),
     path('reviewer/dashboard/',  ReviewerDashboardAPIView.as_view(),  name='reviewer_dashboard'),
+
+    # ============================================================
+    # LOBBY / MULTI-TENANT (BARU)
+    # ============================================================
+    path('lobby/projects/', LobbyProjectListAPIView.as_view(), name='lobby_projects'),
+    path('lobby/invites/', LobbyInviteListAPIView.as_view(), name='lobby_invites'),
+
+    path('projects/create/', ProjectCreateAPIView.as_view(), name='project_create'),
+    path('projects/<uuid:unique_id>/', ProjectDetailAPIView.as_view(), name='project_detail'),
+    path('projects/<uuid:unique_id>/enter/', ProjectEnterAPIView.as_view(), name='project_enter'),
+    path('projects/<uuid:unique_id>/members/', ProjectMemberListAPIView.as_view(), name='project_members'),
+    path('projects/<uuid:unique_id>/members/<int:user_id>/', ProjectMemberDetailAPIView.as_view(), name='project_member_detail'),
+    path('projects/<uuid:unique_id>/invite/', ProjectInviteCreateAPIView.as_view(), name='project_invite'),
+
+    path('invites/<uuid:token>/accept/', InviteAcceptAPIView.as_view(), name='invite_accept'),
+    path('invites/<uuid:token>/decline/', InviteDeclineAPIView.as_view(), name='invite_decline'),
 ]

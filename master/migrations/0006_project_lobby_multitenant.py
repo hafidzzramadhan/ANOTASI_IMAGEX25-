@@ -62,6 +62,15 @@ class Migration(migrations.Migration):
             name='project',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='datasets', to='master.project'),
         ),
+        # NOTE: JobProfile sudah punya kolom legacy 'project_id' (BigIntegerField polos,
+        # bukan FK) dari migration 0001_initial yang tidak pernah dipakai dan sudah
+        # dihapus dari models.py. Kolom lama itu HARUS dihapus dulu, supaya tidak
+        # tabrakan nama kolom dengan FK baru 'project' (yang otomatis menjadi kolom
+        # fisik 'project_id' juga di database).
+        migrations.RemoveField(
+            model_name='jobprofile',
+            name='project_id',
+        ),
         migrations.AddField(
             model_name='jobprofile',
             name='project',
