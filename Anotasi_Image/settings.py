@@ -26,6 +26,13 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv(
     "localhost,127.0.0.1"
 ).split(",") if h.strip()]
 
+# Railway injects RAILWAY_PUBLIC_DOMAIN otomatis — pastikan domain aktif selalu diterima
+_railway_public_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+if _railway_public_domain and _railway_public_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_public_domain)
+if os.getenv("RAILWAY_ENVIRONMENT") and ".up.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".up.railway.app")
+
 # ============================================================================
 # APPS
 # ============================================================================
@@ -87,19 +94,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-if os.getenv('USE_CLOUDINARY', 'False') == 'True':
-    # Django 5.x pake STORAGES dict, bukan DEFAULT_FILE_STORAGE lagi
-    STORAGES = {
-        "default": {
-            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+_USE_CLOUDINARY = os.getenv('USE_CLOUDINARY', 'False') == 'True'
+if _USE_CLOUDINARY:
     print("[CLOUDINARY] Active, using cloud storage")
 else:
     print(f"[CLOUDINARY] NOT active. USE_CLOUDINARY={os.getenv('USE_CLOUDINARY', 'unset')!r}")
+
+# Django 5.x: STORAGES wajib untuk staticfiles di production (WhiteNoise serve dari STATIC_ROOT)
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if _USE_CLOUDINARY
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 # ============================================================================
 # URLS / WSGI
 # ============================================================================
@@ -239,6 +252,10 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'  # output collectstatic (di-gitignore)
 
+# WhiteNoise: serve file dari STATIC_ROOT setelah collectstatic (Railway release command)
+WHITENOISE_USE_FINDERS = DEBUG  # dev: boleh tanpa collectstatic; production: pakai STATIC_ROOT
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'  # = root project / media (sesuai struktur lama)
 
@@ -310,24 +327,53 @@ else:
 # SITE URL (buat link reset password di email)
 # ============================================================================
 def _resolve_site_url():
-    explicit = _env_first("SITE_URL").rstrip("/")
-    if explicit:
-        return explicit
+    """
+    URL publik aplikasi (link reset password, logo email).
+
+    Di Railway, RAILWAY_PUBLIC_DOMAIN selalu domain deploy aktif — utamakan
+    supaya SITE_URL di env yang stale tidak mengarah ke deployment lama.
+    """
     railway_domain = _env_first("RAILWAY_PUBLIC_DOMAIN")
     if railway_domain:
         return f"https://{railway_domain}"
+    explicit = _env_first("SITE_URL").rstrip("/")
+    if explicit:
+        return explicit
     for host in ALLOWED_HOSTS:
-        if host and not host.startswith("localhost") and not host.startswith("127."):
+        if host and not host.startswith(".") and not host.startswith("localhost") and not host.startswith("127."):
             return f"https://{host}"
     return "http://localhost:8000"
 
 
 SITE_URL = _resolve_site_url()
 
-# Logo di email (URL absolut). Default: {SITE_URL}/static/images/logo1.png & logo3.png
-EMAIL_LOGO1_URL = _env_first("EMAIL_LOGO1_URL", "EMAIL_LOGO_URL")
-EMAIL_LOGO2_URL = _env_first("EMAIL_LOGO2_URL")
-EMAIL_LOGO3_URL = _env_first("EMAIL_LOGO3_URL")
+
+def _default_static_asset_url(relative_path):
+    """URL absolut untuk asset di /static/ (mis. images/logo1.png)."""
+    static_url = STATIC_URL.rstrip("/")
+    return f"{SITE_URL}{static_url}/{relative_path.lstrip('/')}"
+
+
+def _email_asset_url(env_keys, relative_path):
+    """
+    URL logo email: pakai override env kalau masih valid, else bangun dari SITE_URL.
+
+    Cegah EMAIL_LOGO*_URL stale (domain Railway lama) setelah redeploy/rename service.
+    """
+    custom = _env_first(*env_keys)
+    if custom:
+        from urllib.parse import urlparse
+        site_host = urlparse(SITE_URL).netloc
+        custom_host = urlparse(custom).netloc
+        if custom_host and custom_host == site_host:
+            return custom
+    return _default_static_asset_url(relative_path)
+
+
+# Logo di email (URL absolut). Override via env hanya jika host-nya sama dengan SITE_URL aktif.
+EMAIL_LOGO1_URL = _email_asset_url(("EMAIL_LOGO1_URL", "EMAIL_LOGO_URL"), "images/logo1.png")
+EMAIL_LOGO2_URL = _email_asset_url(("EMAIL_LOGO2_URL",), "images/logo2.png")
+EMAIL_LOGO3_URL = _email_asset_url(("EMAIL_LOGO3_URL",), "images/logo3.png")
 
 # ============================================================================
 # AI API (annotator integration)
@@ -338,11 +384,14 @@ AI_API_URL = os.getenv(
 )
 
 # CSRF Trusted Origins (untuk Railway / production HTTPS)
-CSRF_TRUSTED_ORIGINS = [
-    f"https://{host.strip()}"
-    for host in os.getenv("ALLOWED_HOSTS", "").split(",")
-    if host.strip() and not host.strip().startswith("localhost") and not host.strip().startswith("127.")
-]
+_csrf_hosts = set(
+    h.strip()
+    for h in os.getenv("ALLOWED_HOSTS", "").split(",")
+    if h.strip() and not h.strip().startswith("localhost") and not h.strip().startswith("127.")
+)
+if _railway_public_domain:
+    _csrf_hosts.add(_railway_public_domain)
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in _csrf_hosts if not host.startswith(".")]
 # ============================================================================
 # SECURITY (production hardening — auto-aktif kalau DEBUG=False)
 # ============================================================================

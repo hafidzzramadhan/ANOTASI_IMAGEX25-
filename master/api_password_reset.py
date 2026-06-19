@@ -44,15 +44,40 @@ def _site_url_for_request(request):
     return configured or "http://localhost:8000"
 
 
+def _resolve_static_image_filename(filename):
+    """
+    Nama file sebenarnya di disk (case-sensitive di Linux/Railway).
+
+    Di macOS, logo3.png dan Logo3.png bisa jadi file yang sama; URL production
+    harus pakai casing yang benar-benar ada setelah git clone di Linux.
+    """
+    images_dir = settings.BASE_DIR / "master" / "static" / "images"
+    if images_dir.is_dir():
+        target = filename.lower()
+        for path in images_dir.iterdir():
+            if path.is_file() and path.name.lower() == target:
+                return path.name
+    static_root = getattr(settings, "STATIC_ROOT", None)
+    if static_root:
+        collected = static_root / "images"
+        if collected.is_dir():
+            target = filename.lower()
+            for path in collected.iterdir():
+                if path.is_file() and path.name.lower() == target:
+                    return path.name
+    return filename
+
+
 def _logo_file_candidates(filename):
     """Lokasi file logo (sumber dev + hasil collectstatic di Railway)."""
+    resolved = _resolve_static_image_filename(filename)
     base = settings.BASE_DIR
     static_root = getattr(settings, "STATIC_ROOT", None)
     paths = [
-        base / "master" / "static" / "images" / filename,
+        base / "master" / "static" / "images" / resolved,
     ]
     if static_root:
-        paths.append(static_root / "images" / filename)
+        paths.append(static_root / "images" / resolved)
     return paths
 
 
@@ -68,8 +93,9 @@ def _email_logo_url(site_url, filename, *settings_keys):
         if custom:
             return custom.strip()
 
+    resolved = _resolve_static_image_filename(filename)
     static_url = getattr(settings, "STATIC_URL", "/static/").rstrip("/")
-    url = f"{site_url}{static_url}/images/{filename}"
+    url = f"{site_url}{static_url}/images/{resolved}"
 
     if not any(p.is_file() for p in _logo_file_candidates(filename)):
         logger.warning("File logo tidak ada di server: %s → URL: %s", filename, url)
