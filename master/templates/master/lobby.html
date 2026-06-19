@@ -16,9 +16,11 @@
             --cream-light: #FFFDF0;        
             --cream-border: #EFE6D5;       
             
+            --btn-yellow-light: #FEF08A;    /* Kuning Muda untuk Tombol Konfirmasi */
+            --btn-yellow-border: #EAB308;   /* Border penegas tombol kuning */
+            
             --charcoal: #000000;           
             --btn-dark: #000000;           
-            --btn-neon-green: #ffea4b;     
             --muted-rose: #555555;         
             --pure-white: #FFFFFF;
             --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.02);
@@ -83,7 +85,7 @@
         .brand-section {
             display: flex;
             flex-direction: column;
-            gap: 16px; /* Ditambahkan spasi tambahan agar tidak terlalu nempel dengan logo */
+            gap: 16px; 
         }
 
         .logo-duo-wrapper {
@@ -119,7 +121,7 @@
             font-size: 24px;
             letter-spacing: -0.04em;
             color: var(--charcoal);
-            margin-top: 4px; /* Spasi mikro pelengkap teks */
+            margin-top: 4px; 
         }
 
         /* Kotak Masuk Undangan */
@@ -243,21 +245,27 @@
             padding: 30px;
         }
 
-        .section-header {
-            margin-bottom: 24px;
+        /* FRAME TOAST NOTIFIKASI */
+        .toast-notifications {
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .section-header h2 {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
+        .toast-item {
+            padding: 18px 24px;
+            background: var(--pure-white);
+            border: 2px solid var(--charcoal);
+            border-left: 8px solid var(--accent-purple);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700; 
             color: var(--charcoal);
-        }
-
-        .section-header p {
-            font-size: 14px;
-            color: var(--muted-rose);
-            margin-top: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         /* Buttons */
@@ -288,18 +296,18 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* KONFIRMASI & BANGUN PROJECT (Neon Green) */
+        /* KONFIRMASI & BANGUN PROJECT (Kuning Muda Cerah) */
         .btn-submit-neon {
-            background: var(--btn-neon-green);
+            background: var(--btn-yellow-light);
             color: var(--charcoal);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--btn-yellow-border);
+            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.15);
         }
 
         .btn-submit-neon:hover {
-            background: #fff243;
+            background: #FDE047;
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgb(251, 255, 0);
+            box-shadow: 0 8px 20px rgba(234, 179, 8, 0.3);
         }
 
         .btn-secondary {
@@ -323,11 +331,27 @@
             background: #FFE2E6;
         }
 
-        /* Forms */
-        .input-group {
+        /* FORM UTAMA HERO AREA */
+        .dashboard-hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 24px; 
+            margin-bottom: 44px;
+            align-items: start;
+        }
+
+        .create-form-box {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .create-form-box .input-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         input, textarea, select {
@@ -348,21 +372,13 @@
             box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
         }
 
-        /* Hero Area Atas */
-        .dashboard-hero {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 30px;
-            margin-top: 24px; 
-            margin-bottom: 44px;
-        }
-
         .welcome-card {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             background: var(--pure-white);
             border: 1px solid rgba(0, 0, 0, 0.08);
+            min-height: 265px; 
         }
 
         .welcome-card h1 {
@@ -384,41 +400,171 @@
             line-height: 1.6;
         }
 
-        .form-header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-        }
-
-        .create-form-box {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .create-form-box h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--charcoal);
-        }
-
-        /* TANDA + HITAM PEKAT & DI-SCALE SEUKURAN TINGGI LOGO 1 (76px) */
-        .plus-indicator {
-            font-size: 76px; /* Diperbesar seukuran tinggi logo 1 */
-            font-weight: 400; /* Dibuat sedikit proporsional agar presisi bulat/kotak simetris */
-            line-height: 1;
-            color: #000000; /* Hitam pekat sesuai request */
-            user-select: none;
-            display: inline-block;
-        }
-
-        /* Project Workspace Area */
+        /* PROJECT WORKSPACE LAYOUT PACKAGING */
         .project-section {
-            margin-top: 64px; 
+            margin-top: 44px; 
             margin-bottom: 44px;
         }
 
+        /* TOTAL PROJECT MINI FRAME (FIX POSISI BARU: PALING ATAS DI AREA WORKSPACE) */
+        .stats-mini-frame {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--pure-white);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            box-shadow: 
+                0 10px 25px -5px rgba(0, 0, 0, 0.05),
+                0 8px 16px -6px rgba(0, 0, 0, 0.05),
+                inset 0 -3px 0px rgba(0, 0, 0, 0.03); 
+            margin-bottom: 24px; /* Memberi ruang longgar ke judul di bawahnya */
+            transform: translateY(-2px);
+        }
+
+        .stats-label {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted-rose);
+        }
+
+        .stats-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--charcoal);
+            line-height: 1;
+        }
+
+        /* JUDUL WORKSPACE SEKARANG TURUN BERADA DI BAWAH STATS MINI FRAME */
+        .section-header {
+            margin-bottom: 24px; 
+        }
+
+        /* SECTION FILTER & SEARCH (SATU BARIS SEJAJAR SISI KANAN) */
+        .filter-search-container {
+            background: var(--pure-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: row;     
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: center;
+            justify-content: space-between; 
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: #F1F5F9;
+            color: var(--muted-rose);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-chip span {
+            background: rgba(0, 0, 0, 0.06);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+        }
+
+        .filter-chip.active {
+            background: var(--charcoal);
+            color: var(--pure-white);
+        }
+
+        .filter-chip.active span {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 420px;        
+            min-width: 260px;
+        }
+
+        .search-wrapper input {
+            padding: 12px 16px 12px 44px; 
+            font-size: 14px;
+            border-radius: 12px;
+            width: 100%;
+            background: #F8FAFC;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #94A3B8; 
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        /* ACCORDION DAFTAR TIM */
+        .team-toggle-btn {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted-rose);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 4px 0;
+            text-align: left;
+            transition: var(--transition);
+        }
+
+        .team-toggle-btn:hover {
+            color: var(--charcoal);
+        }
+
+        .project-team-panel {
+            display: none; 
+            background: #F8FAFC;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 8px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .team-member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+        }
+
+        .team-member-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Project Workspace Grid */
         .projects-layout-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -517,7 +663,8 @@
 
         /* Empty States */
         .empty-illustration-state {
-            padding: 44px;
+            grid-column: span 2;
+            padding: 64px;
             text-align: center;
             background: var(--pure-white);
             border: 2px dashed rgba(0, 0, 0, 0.08);
@@ -531,40 +678,6 @@
             margin-bottom: 4px;
             font-weight: 700;
         }
-
-        /* Responsive Media Queries */
-        @media (max-width: 1150px) {
-            .workspace {
-                grid-template-columns: 1fr;
-            }
-            .sidebar {
-                height: auto;
-                position: relative;
-                padding: 24px;
-                flex-direction: column;
-                border-right: none;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-            }
-            .sidebar-top-group {
-                gap: 20px;
-            }
-            .main-content {
-                padding: 30px 20px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-hero,
-            .projects-layout-grid {
-                grid-template-columns: 1fr;
-            }
-            .inline-invite-form {
-                grid-template-columns: 1fr;
-            }
-            .logo-duo-wrapper {
-                justify-content: center;
-            }
-        }
     </style>
 </head>
 <body>
@@ -573,7 +686,6 @@
         <!-- SIDEBAR KIRI -->
         <aside class="sidebar">
             <div class="sidebar-top-group">
-                <!-- Brand Nav & Logo Resmi Ramadhan's Labeller -->
                 <div class="brand-section">
                     <div class="logo-duo-wrapper">
                         {% load static %}
@@ -625,7 +737,9 @@
             {% if messages %}
                 <div class="toast-notifications">
                     {% for message in messages %}
-                        <div class="toast-item">{{ message }}</div>
+                        <div class="toast-item">
+                            <span>📢</span>  <strong>{{ message|safe }}</strong>
+                        </div>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -642,10 +756,7 @@
                 <div class="glass-panel">
                     <form id="create-project" class="create-form-box" method="post" action="{% url 'master:create_project' %}">
                         {% csrf_token %}
-                        <div class="form-header-row">
-                            <h3>Mulai Project Baru</h3>
-                            <span class="plus-indicator">+</span>
-                        </div>
+                        <h3>Mulai Project Baru</h3>
                         <div class="input-group">
                             <input name="name" placeholder="Nama project baru Anda" required>
                         </div>
@@ -657,17 +768,41 @@
                 </div>
             </section>
 
-            <!-- Project Workspace Grid Area -->
+            <!-- Project Workspace Area -->
             <section class="project-section">
+                
+                <!-- 1. SEKARANG TOTAL PROJECT BERADA PALING ATAS DI AREA KONTEN WORKSPACE -->
+                <div class="stats-mini-frame">
+                    <span class="stats-label">Total Project</span>
+                    <span class="stats-number">{{ memberships|length }}</span>
+                </div>
+
+                <!-- 2. JUDUL DAN DESKRIPSI SEKARANG DI-SWITCH TURUN KE BAWAH TOTAL PROJECT -->
                 <div class="section-header">
                     <h2>Project Workspace</h2>
                     <p>Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
                 </div>
 
-                {% if memberships %}
-                    <div class="projects-layout-grid">
+                <!-- FILTER DAN SEARCH BAR (SEJAJAR SATU BARIS) -->
+                <div class="filter-search-container">
+                    <div class="filter-buttons">
+                        <div class="filter-chip active" onclick="filterRole('all', this)">Semua <span>{{ memberships|length }}</span></div>
+                        <div class="filter-chip" onclick="filterRole('master', this)">Master <span id="count-master">0</span></div>
+                        <div class="filter-chip" onclick="filterRole('reviewer', this)">Reviewer <span id="count-reviewer">0</span></div>
+                        <div class="filter-chip" onclick="filterRole('annotator', this)">Annotator <span id="count-annotator">0</span></div>
+                    </div>
+
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="projectSearch" placeholder="Cari nama project Anda..." onkeyup="searchProjects()">
+                    </div>
+                </div>
+
+                <!-- LIST WORKSPACE GRID -->
+                <div class="projects-layout-grid" id="projectGrid">
+                    {% if memberships %}
                         {% for membership in memberships %}
-                            <article class="elegant-project-card">
+                            <article class="elegant-project-card" data-role="{{ membership.role|lower }}" data-name="{{ membership.project.name|lower }}">
                                 <div>
                                     <div class="card-header-top">
                                         <h3 class="card-title">{{ membership.project.name }}</h3>
@@ -677,12 +812,25 @@
                                 </div>
 
                                 <div class="card-action-drawer">
-                                    <div class="card-bottom-meta">
-                                        <div class="member-count-info">👥 <strong>{{ membership.member_count }}</strong> Anggota Tim</div>
-                                        <div>📅 {{ membership.project.created_at|date:"d M Y" }}</div>
+                                    <div class="card-bottom-meta" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                                        <div><strong>{{ membership.member_count }}</strong> Anggota Kontributor</div>
+                                        
+                                        <button type="button" class="team-toggle-btn" onclick="toggleTeamPanel(this)">Lihat Daftar Tim</button>
+                                        
+                                        <div class="project-team-panel" style="width: 100%;">
+                                            {% for member in membership.project.membership_set.all %}
+                                                <div class="team-member-item">
+                                                    <span>{{ member.user.username }} ({{ member.user.email }})</span>
+                                                    <span style="font-weight: 700; color: var(--accent-purple);">{{ member.role|upper }}</span>
+                                                </div>
+                                            {% empty %}
+                                                <div style="font-size: 11px; color: var(--muted-rose);">Belum ada tim eksternal.</div>
+                                            {% endfor %}
+                                        </div>
+
+                                        <div style="margin-top: 4px; font-size: 12px; color: var(--muted-rose);">📅 {{ membership.project.created_at|date:"d M Y" }}</div>
                                     </div>
 
-                                    <!-- Tombol Akses Dashboard Berwarna Hitam Pekat -->
                                     <a class="btn btn-primary" href="{% url 'master:enter_project' membership.project.unique_id %}">Akses Dashboard</a>
 
                                     {% if membership.role == 'master' %}
@@ -700,15 +848,93 @@
                                 </div>
                             </article>
                         {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-illustration-state">
-                        <h3>Belum Ada Project yang Terintegrasi</h3>
-                        <p>Mulai langkah awal Anda dengan mengisi formulir pembuatan project baru di atas.</p>
-                    </div>
-                {% endif %}
+                    {% else %}
+                        <div class="empty-illustration-state" id="emptyState">
+                            <h3>Belum Ada Project yang Terintegrasi</h3>
+                            <p>Mulai langkah awal Anda dengan mengisi formulir pembuatan project baru di atas.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </section>
         </main>
     </div>
+
+    <!-- JAVASCRIPT REALTIME FILTER, SEARCH & ACCORDION TIM -->
+    <script>
+        let currentRoleFilter = 'all';
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const cards = document.querySelectorAll('.elegant-project-card');
+            let master = 0, reviewer = 0, annotator = 0;
+
+            cards.forEach(card => {
+                const role = card.getAttribute('data-role');
+                if (role === 'master') master++;
+                if (role === 'reviewer') reviewer++;
+                if (role === 'annotator') annotator++;
+            });
+
+            document.getElementById('count-master').innerText = master;
+            document.getElementById('count-reviewer').innerText = reviewer;
+            document.getElementById('count-annotator').innerText = annotator;
+        });
+
+        function toggleTeamPanel(button) {
+            const panel = button.nextElementSibling;
+            if (panel.style.display === "flex") {
+                panel.style.display = "none";
+                button.innerText = "Lihat Daftar Tim";
+            } else {
+                panel.style.display = "flex";
+                button.innerText = "Sembunyikan Daftar Tim";
+            }
+        }
+
+        function filterRole(role, element) {
+            currentRoleFilter = role;
+            document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+            element.classList.add('active');
+            applyFilterAndSearch();
+        }
+
+        // Fungsi Search Realtime
+        function searchProjects() {
+            applyFilterAndSearch();
+        }
+
+        function applyFilterAndSearch() {
+            const searchValue = document.getElementById('projectSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.elegant-project-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const role = card.getAttribute('data-role');
+                const name = card.getAttribute('data-name');
+
+                const matchesRole = (currentRoleFilter === 'all' || role === currentRoleFilter);
+                const matchesSearch = name.includes(searchValue);
+
+                if (matchesRole && matchesSearch) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            let emptyBox = document.getElementById('dynamicEmptyState');
+            if (visibleCount === 0 && cards.length > 0) {
+                if (!emptyBox) {
+                    emptyBox = document.createElement('div');
+                    emptyBox.id = 'dynamicEmptyState';
+                    emptyBox.className = 'empty-illustration-state';
+                    emptyBox.innerHTML = '<h3>Project tidak ditemukan</h3><p>Tidak ada workspace yang cocok dengan filter atau kata kunci pencarian Anda.</p>';
+                    document.getElementById('projectGrid').appendChild(emptyBox);
+                }
+            } else if (emptyBox) {
+                emptyBox.remove();
+            }
+        }
+    </script>
 </body>
 </html>
