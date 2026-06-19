@@ -16,8 +16,8 @@
             --cream-light: #FFFDF0;        
             --cream-border: #EFE6D5;       
             
-            --btn-yellow-light: #FEF08A;    /* Kuning Muda untuk Tombol Konfirmasi */
-            --btn-yellow-border: #EAB308;   /* Border penegas tombol kuning */
+            --btn-yellow-light: #FEF08A;    
+            --btn-yellow-border: #EAB308;   
             
             --charcoal: #000000;           
             --btn-dark: #000000;           
@@ -283,7 +283,7 @@
             transition: var(--transition);
         }
 
-        /* AKSES DASHBOARD (Hitam Pekat) */
+        /* AKSES DASHBOARD */
         .btn-primary {
             background: var(--btn-dark);
             color: var(--pure-white);
@@ -296,7 +296,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* KONFIRMASI & BANGUN PROJECT (Kuning Muda Cerah) */
+        /* KONFIRMASI & BANGUN PROJECT */
         .btn-submit-neon {
             background: var(--btn-yellow-light);
             color: var(--charcoal);
@@ -348,12 +348,6 @@
             width: 100%;
         }
 
-        .create-form-box .input-group {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
         input, textarea, select {
             width: 100%;
             background: var(--pure-white);
@@ -400,31 +394,54 @@
             line-height: 1.6;
         }
 
-        /* PROJECT WORKSPACE LAYOUT PACKAGING */
+        /* --- STYLING GROUP WORKSPACE INLINE BAR --- */
         .project-section {
             margin-top: 44px; 
             margin-bottom: 44px;
         }
 
-        /* TOTAL PROJECT MINI FRAME (FIX POSISI BARU: PALING ATAS DI AREA WORKSPACE) */
+        /* Flexbox Menyamping: Judul Teks (Kiri) & Kotak Total (Kanan) */
+        .section-header-inline-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Mendorong kotak total ke ujung kanan baris */
+            gap: 24px;
+            margin-top: 10px;
+            margin-bottom: 32px; 
+        }
+
+        .section-text-info h2 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--charcoal);
+            line-height: 1.2;
+        }
+
+        .section-text-info p {
+            font-size: 14px;
+            color: var(--muted-rose);
+            margin-top: 2px;
+        }
+
         .stats-mini-frame {
             display: inline-flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             background: var(--pure-white);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: var(--radius-md);
             box-shadow: 
                 0 10px 25px -5px rgba(0, 0, 0, 0.05),
                 0 8px 16px -6px rgba(0, 0, 0, 0.05),
                 inset 0 -3px 0px rgba(0, 0, 0, 0.03); 
-            margin-bottom: 24px; /* Memberi ruang longgar ke judul di bawahnya */
             transform: translateY(-2px);
+            flex-shrink: 0; 
         }
 
         .stats-label {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -432,15 +449,10 @@
         }
 
         .stats-number {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             color: var(--charcoal);
             line-height: 1;
-        }
-
-        /* JUDUL WORKSPACE SEKARANG TURUN BERADA DI BAWAH STATS MINI FRAME */
-        .section-header {
-            margin-bottom: 24px; 
         }
 
         /* SECTION FILTER & SEARCH (SATU BARIS SEJAJAR SISI KANAN) */
@@ -522,7 +534,7 @@
             filter: grayscale(100%);
         }
 
-        /* ACCORDION DAFTAR TIM */
+        /* ACCORDION TIM LIST PANEL */
         .team-toggle-btn {
             font-size: 13px;
             font-weight: 700;
@@ -564,7 +576,7 @@
             border-bottom: none;
         }
 
-        /* Project Workspace Grid */
+        /* Grid Cards Area */
         .projects-layout-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -661,7 +673,6 @@
             border-radius: 10px;
         }
 
-        /* Empty States */
         .empty-illustration-state {
             grid-column: span 2;
             padding: 64px;
@@ -702,7 +713,7 @@
                         {% if pending_invites %}
                             {% for invite in pending_invites %}
                                 <div class="sidebar-invite-card">
-                                    <span class="sidebar-invite-title">{{ invite.project.name }}</span>
+                                    <span class="sidebar-invite-title={{ invite.project.name }}">{{ invite.project.name }}</span>
                                     <span class="sidebar-invite-desc">
                                         Oleh: <strong>{{ invite.invited_by.email }}</strong><br>
                                         Role: <span style="font-weight: 600;">{{ invite.role|title }}</span>
@@ -771,19 +782,20 @@
             <!-- Project Workspace Area -->
             <section class="project-section">
                 
-                <div class="section-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 32px;">
-        
-        <div class="stats-mini-frame" style="margin: 0;">
-            <span class="stats-label" style="font-size: 12px;">Total Project</span>
-            <span class="stats-number" style="font-size: 28px;">{{ memberships|length }}</span>
-        </div>
+                <!-- INLINE BAR: JUDUL (KIRI) & TOTAL PROJECT (KANAN) -->
+                <div class="section-header-inline-group">
+                    <!-- Judul & Deskripsi Teks di sisi kiri -->
+                    <div class="section-text-info">
+                        <h2>Project Workspace</h2>
+                        <p>Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
+                    </div>
 
-        <div>
-            <h2 style="font-size: 24px; font-weight: 800; color: var(--charcoal); line-height: 1.2;">Project Workspace</h2>
-            <p style="font-size: 14px; color: var(--muted-rose); margin-top: 2px;">Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
-        </div>
-        
-    </div>
+                    <!-- Kotak Mini Total Project di sisi kanan -->
+                    <div class="stats-mini-frame">
+                        <span class="stats-label">Total Project</span>
+                        <span class="stats-number">{{ memberships|length }}</span>
+                    </div>
+                </div>
 
                 <!-- FILTER DAN SEARCH BAR (SEJAJAR SATU BARIS) -->
                 <div class="filter-search-container">
@@ -899,7 +911,6 @@
             applyFilterAndSearch();
         }
 
-        // Fungsi Search Realtime
         function searchProjects() {
             applyFilterAndSearch();
         }
