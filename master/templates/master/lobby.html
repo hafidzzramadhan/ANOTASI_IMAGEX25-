@@ -16,8 +16,8 @@
             --cream-light: #FFFDF0;        
             --cream-border: #EFE6D5;       
             
-            --btn-yellow-light: #FEF08A;    
-            --btn-yellow-border: #EAB308;   
+            --btn-yellow-light: #FEF08A;    /* Kuning Muda untuk Tombol Konfirmasi */
+            --btn-yellow-border: #EAB308;   /* Border penegas tombol kuning */
             
             --charcoal: #000000;           
             --btn-dark: #000000;           
@@ -245,7 +245,7 @@
             padding: 30px;
         }
 
-        /* FRAME TOAST NOTIFIKASI */
+        /* FRAME TOAST NOTIFIKASI MODERN & BOLD */
         .toast-notifications {
             margin-bottom: 32px;
             display: flex;
@@ -283,7 +283,7 @@
             transition: var(--transition);
         }
 
-        /* AKSES DASHBOARD */
+        /* AKSES DASHBOARD (Hitam Pekat) */
         .btn-primary {
             background: var(--btn-dark);
             color: var(--pure-white);
@@ -296,7 +296,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* KONFIRMASI & BANGUN PROJECT */
+        /* KONFIRMASI & BANGUN PROJECT (Kuning Muda Cerah) */
         .btn-submit-neon {
             background: var(--btn-yellow-light);
             color: var(--charcoal);
@@ -348,6 +348,12 @@
             width: 100%;
         }
 
+        .create-form-box .input-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
         input, textarea, select {
             width: 100%;
             background: var(--pure-white);
@@ -394,54 +400,36 @@
             line-height: 1.6;
         }
 
-        /* --- STYLING GROUP WORKSPACE INLINE BAR --- */
+        /* PROJECT SECTION HEADER & TOTAL COUNTER */
         .project-section {
             margin-top: 44px; 
             margin-bottom: 44px;
         }
 
-        /* Flexbox Menyamping: Judul Teks (Kiri) & Kotak Total (Kanan) */
-        .section-header-inline-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Mendorong kotak total ke ujung kanan baris */
-            gap: 24px;
-            margin-top: 10px;
-            margin-bottom: 32px; 
+        .section-header {
+            margin-bottom: 16px; 
         }
 
-        .section-text-info h2 {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: var(--charcoal);
-            line-height: 1.2;
-        }
-
-        .section-text-info p {
-            font-size: 14px;
-            color: var(--muted-rose);
-            margin-top: 2px;
-        }
-
+        /* TOTAL PROJECT MINI FRAME (DITARUH DI ATAS WORKSPACE - DI BAWAH JUDUL) */
         .stats-mini-frame {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             background: var(--pure-white);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: var(--radius-md);
             box-shadow: 
                 0 10px 25px -5px rgba(0, 0, 0, 0.05),
                 0 8px 16px -6px rgba(0, 0, 0, 0.05),
                 inset 0 -3px 0px rgba(0, 0, 0, 0.03); 
+            margin-top: 4px;       
+            margin-bottom: 28px; /* Jarak ideal agar tidak terlalu dempet dengan filter di bawahnya */
             transform: translateY(-2px);
-            flex-shrink: 0; 
         }
 
         .stats-label {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -449,7 +437,7 @@
         }
 
         .stats-number {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
             color: var(--charcoal);
             line-height: 1;
@@ -523,6 +511,7 @@
             background: #F8FAFC;
         }
 
+        /* Ikon Kaca Pembesar Abu-Abu Ikonik */
         .search-icon {
             position: absolute;
             left: 16px;
@@ -534,7 +523,7 @@
             filter: grayscale(100%);
         }
 
-        /* ACCORDION TIM LIST PANEL */
+        /* ACCORDION DROPDOWN PANEL DAFTAR TIM */
         .team-toggle-btn {
             font-size: 13px;
             font-weight: 700;
@@ -576,7 +565,7 @@
             border-bottom: none;
         }
 
-        /* Grid Cards Area */
+        /* Project Workspace Grid */
         .projects-layout-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -673,6 +662,7 @@
             border-radius: 10px;
         }
 
+        /* Empty States */
         .empty-illustration-state {
             grid-column: span 2;
             padding: 64px;
@@ -688,6 +678,122 @@
             color: var(--charcoal);
             margin-bottom: 4px;
             font-weight: 700;
+        }
+
+        /* ============================================================
+           RESPONSIVE — TABLET & MOBILE (Android/web mobile)
+           Desktop tetap pakai aturan di atas; breakpoint ini HANYA
+           override layout supaya tidak kepotong di layar kecil.
+           ============================================================ */
+        @media (max-width: 1024px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                top: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            }
+
+            .main-content {
+                padding: 28px 24px;
+                max-width: 100%;
+            }
+
+            .dashboard-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .projects-layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main-content {
+                padding: 20px 16px;
+            }
+
+            .sidebar {
+                padding: 24px 16px;
+            }
+
+            .logo-duo-wrapper {
+                gap: 12px;
+            }
+
+            .app-logo {
+                height: 52px;
+            }
+
+            .logo-framed {
+                width: 52px;
+            }
+
+            .logo-plain {
+                width: 96px;
+                height: 64px;
+            }
+
+            .brand-name {
+                font-size: 20px;
+            }
+
+            .welcome-card h1 {
+                font-size: 26px;
+            }
+
+            .glass-panel {
+                padding: 20px;
+            }
+
+            .filter-search-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+            }
+
+            .filter-chip {
+                flex-shrink: 0;
+            }
+
+            .search-wrapper {
+                max-width: 100%;
+                min-width: 0;
+            }
+
+            .inline-invite-form {
+                grid-template-columns: 1fr;
+            }
+
+            .card-header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .stats-mini-frame {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .empty-illustration-state {
+                grid-column: span 1;
+                padding: 40px 20px;
+            }
+
+            .sidebar-invite-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -713,7 +819,7 @@
                         {% if pending_invites %}
                             {% for invite in pending_invites %}
                                 <div class="sidebar-invite-card">
-                                    <span class="sidebar-invite-title={{ invite.project.name }}">{{ invite.project.name }}</span>
+                                    <span class="sidebar-invite-title">{{ invite.project.name }}</span>
                                     <span class="sidebar-invite-desc">
                                         Oleh: <strong>{{ invite.invited_by.email }}</strong><br>
                                         Role: <span style="font-weight: 600;">{{ invite.role|title }}</span>
@@ -745,6 +851,7 @@
 
         <!-- AREA KONTEN UTAMA WORKSPACE -->
         <main class="main-content">
+            <!-- NOTIFIKASI FRAME, BOLD & ESTETIK -->
             {% if messages %}
                 <div class="toast-notifications">
                     {% for message in messages %}
@@ -781,24 +888,21 @@
 
             <!-- Project Workspace Area -->
             <section class="project-section">
-                
-                <!-- INLINE BAR: JUDUL (KIRI) & TOTAL PROJECT (KANAN) -->
-                <div class="section-header-inline-group">
-                    <!-- Judul & Deskripsi Teks di sisi kiri -->
-                    <div class="section-text-info">
-                        <h2>Project Workspace</h2>
-                        <p>Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
-                    </div>
-
-                    <!-- Kotak Mini Total Project di sisi kanan -->
-                    <div class="stats-mini-frame">
-                        <span class="stats-label">Total Project</span>
-                        <span class="stats-number">{{ memberships|length }}</span>
-                    </div>
+                <!-- POSISI DI-SWITCH: JUDUL DAN DESKRIPSI TETAP DI ATAS -->
+                <div class="section-header">
+                    <h2>Project Workspace</h2>
+                    <p>Daftar seluruh project aktif dimana Anda berkontribusi sebagai Master, Annotator, atau Reviewer.</p>
                 </div>
 
-                <!-- FILTER DAN SEARCH BAR (SEJAJAR SATU BARIS) -->
+                <!-- POSISI DI-SWITCH: KOTAK TOTAL PROJECT BERADA DI BAWAH DESKRIPSI JUDUL -->
+                <div class="stats-mini-frame">
+                    <span class="stats-label">Total Project</span>
+                    <span class="stats-number">{{ memberships|length }}</span>
+                </div>
+
+                <!-- FILTER DAN SEARCH BAR (SEJAJAR SATU BARIS DI BAWAH TOTAL PROJEK) -->
                 <div class="filter-search-container">
+                    <!-- Chip Filter Di Sisi Kiri -->
                     <div class="filter-buttons">
                         <div class="filter-chip active" onclick="filterRole('all', this)">Semua <span>{{ memberships|length }}</span></div>
                         <div class="filter-chip" onclick="filterRole('master', this)">Master <span id="count-master">0</span></div>
@@ -806,6 +910,7 @@
                         <div class="filter-chip" onclick="filterRole('annotator', this)">Annotator <span id="count-annotator">0</span></div>
                     </div>
 
+                    <!-- Search Bar Memanjang Pas Di Samping Kanan Annotator -->
                     <div class="search-wrapper">
                         <span class="search-icon">🔍</span>
                         <input type="text" id="projectSearch" placeholder="Cari nama project Anda..." onkeyup="searchProjects()">
@@ -829,10 +934,12 @@
                                     <div class="card-bottom-meta" style="flex-direction: column; align-items: flex-start; gap: 6px;">
                                         <div><strong>{{ membership.member_count }}</strong> Anggota Kontributor</div>
                                         
+                                        <!-- Tombol Pemicu List Anggota Dropdown -->
                                         <button type="button" class="team-toggle-btn" onclick="toggleTeamPanel(this)">Lihat Daftar Tim</button>
                                         
+                                        <!-- REALTIME LOOPING DAFTAR TIM KONTRIBUTOR -->
                                         <div class="project-team-panel" style="width: 100%;">
-                                            {% for member in membership.project.membership_set.all %}
+                                            {% for member in membership.project.memberships.all %}
                                                 <div class="team-member-item">
                                                     <span>{{ member.user.username }} ({{ member.user.email }})</span>
                                                     <span style="font-weight: 700; color: var(--accent-purple);">{{ member.role|upper }}</span>
@@ -845,6 +952,7 @@
                                         <div style="margin-top: 4px; font-size: 12px; color: var(--muted-rose);">📅 {{ membership.project.created_at|date:"d M Y" }}</div>
                                     </div>
 
+                                    <!-- Tombol Akses Dashboard Berwarna Hitam Pekat -->
                                     <a class="btn btn-primary" href="{% url 'master:enter_project' membership.project.unique_id %}">Akses Dashboard</a>
 
                                     {% if membership.role == 'master' %}
@@ -877,6 +985,7 @@
     <script>
         let currentRoleFilter = 'all';
 
+        // Hitung Counter Role secara Otomatis saat Halaman Load
         document.addEventListener("DOMContentLoaded", function() {
             const cards = document.querySelectorAll('.elegant-project-card');
             let master = 0, reviewer = 0, annotator = 0;
@@ -893,6 +1002,7 @@
             document.getElementById('count-annotator').innerText = annotator;
         });
 
+        // Fungsi Buka Tutup Panel Tim Kontributor
         function toggleTeamPanel(button) {
             const panel = button.nextElementSibling;
             if (panel.style.display === "flex") {
@@ -904,6 +1014,7 @@
             }
         }
 
+        // Fungsi Filter Berdasarkan Chip Role
         function filterRole(role, element) {
             currentRoleFilter = role;
             document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
@@ -911,10 +1022,12 @@
             applyFilterAndSearch();
         }
 
+        // Fungsi Search Realtime
         function searchProjects() {
             applyFilterAndSearch();
         }
 
+        // Sinkronisasi Evaluasi Filter & Search
         function applyFilterAndSearch() {
             const searchValue = document.getElementById('projectSearch').value.toLowerCase();
             const cards = document.querySelectorAll('.elegant-project-card');
@@ -935,6 +1048,7 @@
                 }
             });
 
+            // Handle empty state dinamis jika pencarian kosong
             let emptyBox = document.getElementById('dynamicEmptyState');
             if (visibleCount === 0 && cards.length > 0) {
                 if (!emptyBox) {
