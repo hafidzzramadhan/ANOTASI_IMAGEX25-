@@ -154,6 +154,50 @@ def create_project_view(request):
 
 @login_required
 @require_http_methods(["POST"])
+def delete_project_view(request, unique_id):
+    """
+    Hapus project secara permanen (hard delete).
+    Hanya boleh dilakukan oleh user dengan role 'master' di project tersebut.
+
+    Dataset & JobProfile menggunakan on_delete=SET_NULL ke Project (supaya
+    data lama tidak ikut hilang kalau project di-archive biasa), JADI untuk
+    hard delete di sini job & dataset milik project dihapus manual dulu,
+    SEBELUM project itu sendiri dihapus (yang otomatis CASCADE ke
+    ProjectMember & ProjectInvite).
+    """
+    try:
+        project, role = get_project_or_403(request, unique_id)
+    except PermissionDenied:
+        messages.error(request, 'Anda bukan member project tersebut.')
+        return redirect('master:lobby')
+
+    if role != 'master':
+        messages.error(request, 'Hanya master project yang bisa menghapus project ini.')
+        return redirect('master:lobby')
+
+    project_name = project.name
+
+    with transaction.atomic():
+        # Hapus job & dataset manual dulu karena FK-nya SET_NULL, bukan CASCADE.
+        # JobImage, Annotation, Issue dll yang berelasi ke JobProfile akan ikut
+        # terhapus otomatis lewat CASCADE bawaan masing-masing model.
+        project.jobs.all().delete()
+        project.datasets.all().delete()
+
+        # ProjectMember & ProjectInvite sudah CASCADE, jadi cukup hapus project.
+        project.delete()
+
+        # Kalau project yang dihapus adalah project aktif di session, bersihkan.
+        if request.session.get('current_project_uuid') == str(unique_id):
+            request.session.pop('current_project_uuid', None)
+            request.session.pop('current_project_role', None)
+
+    messages.success(request, f'Project "{project_name}" berhasil dihapus secara permanen.')
+    return redirect('master:lobby')
+
+
+@login_required
+@require_http_methods(["POST"])
 def invite_member_view(request, unique_id):
     try:
         project, role = get_project_or_403(request, unique_id)

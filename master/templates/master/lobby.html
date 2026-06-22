@@ -966,6 +966,15 @@
                                             </select>
                                             <button class="btn btn-secondary" type="submit">Undang</button>
                                         </form>
+
+                                        <!-- Hapus Project (permanen) — hanya master -->
+                                        <form method="post"
+                                              action="{% url 'master:delete_project' membership.project.unique_id %}"
+                                              style="margin-top: 8px;"
+                                              onsubmit="return confirm('Hapus project &quot;{{ membership.project.name|escapejs }}&quot; secara PERMANEN? Semua job, dataset, dan data anotasi di dalamnya akan ikut terhapus dan TIDAK BISA dikembalikan.');">
+                                            {% csrf_token %}
+                                            <button class="btn btn-danger" type="submit" style="width: 100%;">🗑️ Hapus Project</button>
+                                        </form>
                                     {% endif %}
                                 </div>
                             </article>

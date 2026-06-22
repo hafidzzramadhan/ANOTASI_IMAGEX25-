@@ -11,6 +11,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('lobby/', views.lobby_view, name='lobby'),
     path('project/create/', views.create_project_view, name='create_project'),
+    path('project/<uuid:unique_id>/delete/', views.delete_project_view, name='delete_project'),
     path('project/<uuid:unique_id>/enter/', views.enter_project_view, name='enter_project'),
     path('project/<uuid:unique_id>/invite/', views.invite_member_view, name='invite_member'),
     path('invite/<uuid:token>/accept/', views.accept_invite_view, name='accept_invite'),
