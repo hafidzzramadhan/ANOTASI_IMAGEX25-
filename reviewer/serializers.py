@@ -22,8 +22,18 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('Email atau password salah.')
         if not user.is_active:
             raise serializers.ValidationError('Akun tidak aktif.')
-        if user.role not in ('reviewer', 'master'):
+
+        # Role global (legacy) ATAU punya role reviewer/master di SALAH
+        # SATU project (multi-tenant) — saat login belum tentu user sudah
+        # pilih project aktif, jadi cek lintas semua project miliknya.
+        has_global_role = user.role in ('reviewer', 'master')
+        has_project_role = user.project_memberships.filter(
+            role__in=('reviewer', 'master')
+        ).exists()
+
+        if not (has_global_role or has_project_role):
             raise serializers.ValidationError('Akun ini bukan reviewer.')
+
         data['user'] = user
         return data
 

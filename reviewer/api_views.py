@@ -1,5 +1,3 @@
-
-
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import datetime, time as dt_time
@@ -35,13 +33,32 @@ from .serializers import (
 # ─────────────────────────────────────────────────────────
 
 def reviewer_only(request):
-    """Return error Response jika user bukan reviewer/master, else None."""
-    if request.user.role not in ('reviewer', 'master'):
-        return Response(
-            {'error': 'Akses hanya untuk reviewer.'},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-    return None
+    """
+    Return error Response jika user bukan reviewer/master, else None.
+
+    Cek role GLOBAL dulu (legacy). Kalau bukan, cek role PER-PROJECT
+    (ProjectMember) di project yang sedang aktif — dari query param
+    ?project_id=<uuid> (mobile) atau session current_project_uuid (web).
+    """
+    user = request.user
+    if user.role in ('reviewer', 'master'):
+        return None
+
+    project_uuid = request.query_params.get('project_id') or request.session.get('current_project_uuid')
+    if project_uuid:
+        from master.models import ProjectMember
+        is_member_ok = ProjectMember.objects.filter(
+            project__unique_id=project_uuid,
+            user=user,
+            role__in=('reviewer', 'master'),
+        ).exists()
+        if is_member_ok:
+            return None
+
+    return Response(
+        {'error': 'Akses hanya untuk reviewer.'},
+        status=status.HTTP_403_FORBIDDEN,
+    )
 
 
 def _time_remaining(end_date):

@@ -28,16 +28,42 @@ from master.api_master_serializers import (
 
 class IsMaster(permissions.BasePermission):
     """
-    Cuma user dengan role='master' yang boleh akses.
+    Boleh akses jika SALAH SATU dari ini benar:
+    1. role='master' GLOBAL di CustomUser (legacy, dipertahankan untuk
+       backward compatibility / akun lama).
+    2. role='master' di PROJECT yang sedang aktif (konsep multi-tenant),
+       sumber project ditentukan dari (urutan prioritas):
+       a. Query param ?project_id=<uuid> (dipakai mobile/API client)
+       b. request.session['current_project_uuid'] (dipakai web app,
+          di-set saat user masuk project lewat halaman Lobby)
+
+    Endpoint yang dipasangi permission ini dipakai BERSAMA oleh web app
+    (lewat <a href> / fetch() di template, pakai session) dan mobile app
+    (lewat JWT token, pakai query param project_id) — jadi keduanya harus
+    didukung di sini.
     """
     message = "Cuma user dengan role 'master' yang boleh akses endpoint ini."
 
     def has_permission(self, request, view):
-        return (
-            request.user
-            and request.user.is_authenticated
-            and getattr(request.user, 'role', None) == 'master'
-        )
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+
+        # 1. Role global (legacy)
+        if getattr(user, 'role', None) == 'master':
+            return True
+
+        # 2. Role per-project (multi-tenant)
+        project_uuid = request.query_params.get('project_id') or request.session.get('current_project_uuid')
+        if not project_uuid:
+            return False
+
+        from master.models import ProjectMember
+        return ProjectMember.objects.filter(
+            project__unique_id=project_uuid,
+            user=user,
+            role='master',
+        ).exists()
 
 
 # ============================================================
