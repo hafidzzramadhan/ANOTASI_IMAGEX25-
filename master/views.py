@@ -534,51 +534,41 @@ def home_view(request):
 
 @master_required
 def assign_roles_view(request):
+    """
+    Kelola role member DI DALAM project yang sedang aktif saja.
+    Role yang diubah di sini adalah ProjectMember.role (per-project),
+    BUKAN CustomUser.role (global) — sesuai konsep multi-tenant.
+    """
     current_project, current_role, redirect_response = get_current_project_or_redirect(request)
     if redirect_response:
         return redirect_response
 
-    # Get new members (guests)
-    new_members = CustomUser.objects.filter(role='guest')
-    new_members_data = []
+    memberships = (
+        ProjectMember.objects
+        .filter(project=current_project)
+        .select_related('user')
+        .order_by('role', 'user__email')
+    )
 
-    for user in new_members:
-        annotator_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
-        reviewer_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
-        total_projects = annotator_jobs + reviewer_jobs
-
-        new_members_data.append({
-            'id': user.id,
-            'username': user.username,           # ← TAMBAH
-            'email': user.email,
-            'phone_number': user.phone_number or '',
-            'role': user.role,
-            'is_active': user.is_active,         # ← TAMBAH
-            'project_count': total_projects,
-        })
-
-    # Get existing members (non-guests)
-    members = CustomUser.objects.exclude(role='guest')
     members_data = []
-
-    for user in members:
+    for membership in memberships:
+        user = membership.user
         annotator_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
         reviewer_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
-        total_projects = annotator_jobs + reviewer_jobs
 
         members_data.append({
-            'id': user.id,
-            'username': user.username,           # ← TAMBAH
+            'membership_id': membership.id,
+            'user_id': user.id,
+            'username': user.username,
             'email': user.email,
             'phone_number': user.phone_number or '',
-            'role': user.role,
-            'is_active': user.is_active,         # ← TAMBAH
-            'project_count': total_projects,
+            'role': membership.role,           # role DI PROJECT INI, bukan global
+            'is_active': user.is_active,
+            'project_count': annotator_jobs + reviewer_jobs,
         })
 
     return render(request, "master/assign_roles.html", {
         'current_project': current_project,
-        'new_members': new_members_data,
         'members': members_data,
     })
 
@@ -1649,44 +1639,65 @@ def finish_job(request):
 @require_http_methods(["POST"])
 def update_user_roles(request):
     """
-    AJAX endpoint to update user roles
+    AJAX endpoint untuk update role member DI PROJECT YANG SEDANG AKTIF.
+
+    Mengubah ProjectMember.role (per-project), BUKAN CustomUser.role (global).
+    Hanya boleh mengubah member yang memang sudah tergabung di project ini
+    (dicek lewat get_current_project_or_redirect, dan setiap update divalidasi
+    membership-nya benar-benar milik project ini).
     """
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Project aktif tidak ditemukan. Silakan masuk ke project dari Lobby.',
+        }, status=400)
+
+    valid_roles = {choice[0] for choice in ProjectMember.ROLE_CHOICES}
+
     try:
-        # Parse JSON data from the request
         data = json.loads(request.body)
         updates = data.get('updates', [])
-        
+
         if not updates:
             return JsonResponse({
                 'status': 'error',
                 'message': 'No updates provided'
             }, status=400)
-        
+
         success_count = 0
         errors = []
-        
+
         for update in updates:
             user_id = update.get('userId')
             new_role = update.get('newRole')
-            
+
             if not user_id or not new_role:
                 errors.append(f'Invalid data for update: {update}')
                 continue
-                
+
+            if new_role not in valid_roles:
+                errors.append(f'Role "{new_role}" tidak valid untuk project (pilihan: {", ".join(sorted(valid_roles))})')
+                continue
+
             try:
-                user = CustomUser.objects.get(id=user_id)
-                old_role = user.role
-                user.role = new_role
-                user.save()
-                
+                # WAJIB filter by project=current_project — supaya master
+                # project A tidak bisa ubah role member di project lain.
+                membership = ProjectMember.objects.select_related('user').get(
+                    project=current_project, user_id=user_id
+                )
+                old_role = membership.role
+                membership.role = new_role
+                membership.save(update_fields=['role'])
+
                 success_count += 1
-                print(f"Updated user {user.email} from {old_role} to {new_role}")
-                
-            except CustomUser.DoesNotExist:
-                errors.append(f'User with ID {user_id} not found')
+                print(f"Updated {membership.user.email} di project '{current_project.name}' dari {old_role} ke {new_role}")
+
+            except ProjectMember.DoesNotExist:
+                errors.append(f'User {user_id} bukan member project ini')
             except Exception as e:
                 errors.append(f'Error updating user {user_id}: {str(e)}')
-        
+
         if errors:
             return JsonResponse({
                 'status': 'partial_success',
@@ -1697,10 +1708,10 @@ def update_user_roles(request):
         else:
             return JsonResponse({
                 'status': 'success',
-                'message': f'Successfully updated {success_count} user roles',
+                'message': f'Successfully updated {success_count} role member di project "{current_project.name}"',
                 'success_count': success_count
             })
-            
+
     except json.JSONDecodeError:
         return JsonResponse({
             'status': 'error',

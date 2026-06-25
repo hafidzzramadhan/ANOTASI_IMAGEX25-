@@ -9,20 +9,19 @@
          ==================================================== -->
     <div>
         <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Roles Management</h1>
-        <p class="text-sm text-gray-500 mt-1">Kelola role semua user dalam satu halaman</p>
+        <p class="text-sm text-gray-500 mt-1">
+            Kelola role member di project <strong>"{{ current_project.name }}"</strong> saja.
+            Perubahan di sini TIDAK memengaruhi role member di project lain.
+        </p>
     </div>
 
     <!-- ====================================================
          STATS CARDS — biar user langsung tau yang perlu attention
          ==================================================== -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="grid grid-cols-3 gap-3">
         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-            <div class="text-xs text-gray-500 uppercase">Total User</div>
-            <div class="text-2xl font-bold mt-1" id="statTotal">{{ new_members|length|add:members|length }}</div>
-        </div>
-        <div class="bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200">
-            <div class="text-xs text-yellow-700 uppercase">Guest (Perlu Assign)</div>
-            <div class="text-2xl font-bold mt-1 text-yellow-700" id="statGuest">{{ new_members|length }}</div>
+            <div class="text-xs text-gray-500 uppercase">Total Member</div>
+            <div class="text-2xl font-bold mt-1" id="statTotal">{{ members|length }}</div>
         </div>
         <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
             <div class="text-xs text-blue-700 uppercase">Annotator</div>
@@ -50,11 +49,9 @@
         <!-- Role filter chips -->
         <div class="flex flex-wrap gap-2">
             <button class="role-chip active px-3 py-1 rounded-full text-sm border" data-role="all">Semua</button>
-            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="guest">Guest</button>
             <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="annotator">Annotator</button>
             <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="reviewer">Reviewer</button>
             <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="master">Master</button>
-            <button class="role-chip px-3 py-1 rounded-full text-sm border" data-role="member">Member</button>
         </div>
     </div>
 
@@ -66,11 +63,9 @@
         <div class="flex items-center gap-2 flex-1">
             <select id="bulkRoleSelect" class="text-gray-800 p-2 rounded-lg text-sm">
                 <option value="">Ganti role ke...</option>
-                <option value="guest">Guest</option>
                 <option value="annotator">Annotator</option>
                 <option value="reviewer">Reviewer</option>
                 <option value="master">Master</option>
-                <option value="member">Member</option>
             </select>
             <button onclick="applyBulkRole()" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Apply</button>
             <button onclick="clearBulkSelection()" class="text-white/80 hover:text-white text-sm ml-auto">Clear</button>
@@ -101,109 +96,48 @@
                             <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
                         </th>
                         <th class="py-3 px-4 text-left font-semibold">Email / Phone</th>
-                        <th class="py-3 px-4 text-left font-semibold">Role</th>
-                        <th class="py-3 px-4 text-left font-semibold">Projects</th>
-                        <th class="py-3 px-4 text-left font-semibold">Status</th>
+                        <th class="py-3 px-4 text-left font-semibold">Role di Project Ini</th>
+                        <th class="py-3 px-4 text-left font-semibold">Job Dikerjakan</th>
                         <th class="py-3 px-4 text-center font-semibold w-32">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody" class="text-gray-700 text-sm">
-                    {# Merge new_members + members jadi satu loop #}
-                    {% for user in new_members %}
-                    <tr class="user-row hover:bg-gray-50 border-b"
-                        data-user-id="{{ user.id }}"
-                        data-original-role="{{ user.role }}"
-                        data-email="{{ user.email|lower }}"
-                        data-phone="{{ user.phone_number }}"
-                        data-role="{{ user.role }}">
-                        <td class="py-3 px-4">
-                            <input type="checkbox" class="row-check" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
-                        </td>
-
-                        <td class="py-3 px-4">
-                            <div class="font-medium flex items-center gap-2">
-                                {{ user.email }}
-                                <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full">NEW</span>
-                            </div>
-                            <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
-                        </td>
-                        <td class="py-3 px-4">
-                            <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 text-sm focus:ring-2 focus:ring-[#4527A0]"
-                                    data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
-                                <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
-                                <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
-                                <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
-                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
-                            </select>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="font-medium">{{ user.project_count }}</span>
-                            <span class="text-gray-400 text-xs">proj</span>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Perlu Di-assign</span>
-                        </td>
-
-                        <td class="py-3 px-4 text-center">
-    {% if user.is_active %}
-        <button onclick="softDeleteUser({{ user.id }}, '{{ user.username|escapejs }}')"
-                class="px-2.5 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold hover:bg-red-200"
-                title="Soft delete (deactivate)">
-            🗑 Delete
-        </button>
-    {% else %}
-        <button onclick="activateUser({{ user.id }}, '{{ user.username|escapejs }}')"
-                class="px-2.5 py-1 bg-green-100 text-green-700 rounded-md text-xs font-semibold hover:bg-green-200"
-                title="Re-activate user">
-            ✓ Activate
-        </button>
-        <div class="text-xs text-gray-400 mt-1">Inactive</div>
-    {% endif %}
-</td>
-                    </tr>
-                    {% endfor %}
-
                     {% for user in members %}
                     <tr class="user-row hover:bg-gray-50 border-b"
-                        data-user-id="{{ user.id }}"
+                        data-user-id="{{ user.user_id }}"
                         data-original-role="{{ user.role }}"
                         data-email="{{ user.email|lower }}"
                         data-phone="{{ user.phone_number }}"
                         data-role="{{ user.role }}">
                         <td class="py-3 px-4">
-                            <input type="checkbox" class="row-check" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                            <input type="checkbox" class="row-check" data-user-id="{{ user.user_id }}" onclick="updateBulkBar()">
                         </td>
+
                         <td class="py-3 px-4">
                             <div class="font-medium">{{ user.email }}</div>
                             <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
                         </td>
                         <td class="py-3 px-4">
                             <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 text-sm focus:ring-2 focus:ring-[#4527A0]"
-                                    data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
-                                <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                                    data-user-id="{{ user.user_id }}" onchange="onRoleChange(this)">
                                 <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                                 <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
                                 <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
-                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
                             </select>
                         </td>
                         <td class="py-3 px-4">
                             <span class="font-medium">{{ user.project_count }}</span>
-                            <span class="text-gray-400 text-xs">proj</span>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Assigned</span>
+                            <span class="text-gray-400 text-xs">job</span>
                         </td>
                         <td class="py-3 px-4 text-center">
     {% if user.is_active %}
-        <button onclick="softDeleteUser({{ user.id }}, '{{ user.username|escapejs }}')"
+        <button onclick="softDeleteUser({{ user.user_id }}, '{{ user.username|escapejs }}')"
                 class="px-2.5 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold hover:bg-red-200"
-                title="Soft delete (deactivate)">
+                title="Soft delete (deactivate akun secara global)">
             🗑 Delete
         </button>
     {% else %}
-        <button onclick="activateUser({{ user.id }}, '{{ user.username|escapejs }}')"
+        <button onclick="activateUser({{ user.user_id }}, '{{ user.username|escapejs }}')"
                 class="px-2.5 py-1 bg-green-100 text-green-700 rounded-md text-xs font-semibold hover:bg-green-200"
                 title="Re-activate user">
             ✓ Activate
@@ -219,60 +153,9 @@
 
         <!-- Mobile Cards -->
         <div class="lg:hidden divide-y">
-            {% for user in new_members %}
-            <div class="user-card p-4"
-                 data-user-id="{{ user.id }}"
-                 data-original-role="{{ user.role }}"
-                 data-email="{{ user.email|lower }}"
-                 data-phone="{{ user.phone_number }}"
-                 data-role="{{ user.role }}">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1 min-w-0">
-                        <div class="font-medium flex items-center gap-2">
-                            <span class="truncate">{{ user.email }}</span>
-                            <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full flex-shrink-0">NEW</span>
-                        </div>
-                        <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
-                    </div>
-                    <input type="checkbox" class="row-check flex-shrink-0 ml-2" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Role</label>
-                        <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 w-full text-sm"
-                                data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
-                            <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
-                            <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
-                            <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                            <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
-                            <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">Projects</label>
-                        <div class="text-sm font-medium py-1.5">{{ user.project_count }} proj</div>
-                    </div>
-                </div>
-
-                <div class="mt-3 pt-3 border-t">
-    {% if user.is_active %}
-        <button onclick="softDeleteUser({{ user.id }}, '{{ user.username|escapejs }}')"
-                class="w-full py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold">
-            🗑 Soft Delete User
-        </button>
-    {% else %}
-        <button onclick="activateUser({{ user.id }}, '{{ user.username|escapejs }}')"
-                class="w-full py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold">
-            ✓ Activate User
-        </button>
-    {% endif %}
-</div>
-            </div>
-            {% endfor %}
-
             {% for user in members %}
             <div class="user-card p-4"
-                 data-user-id="{{ user.id }}"
+                 data-user-id="{{ user.user_id }}"
                  data-original-role="{{ user.role }}"
                  data-email="{{ user.email|lower }}"
                  data-phone="{{ user.phone_number }}"
@@ -282,33 +165,31 @@
                         <div class="font-medium truncate">{{ user.email }}</div>
                         <div class="text-gray-500 text-xs mt-0.5">{{ user.phone_number|default:"-" }}</div>
                     </div>
-                    <input type="checkbox" class="row-check flex-shrink-0 ml-2" data-user-id="{{ user.id }}" onclick="updateBulkBar()">
+                    <input type="checkbox" class="row-check flex-shrink-0 ml-2" data-user-id="{{ user.user_id }}" onclick="updateBulkBar()">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Role</label>
+                        <label class="block text-xs text-gray-500 mb-1">Role di Project Ini</label>
                         <select class="role-select bg-gray-100 border rounded-lg py-1.5 px-2 w-full text-sm"
-                                data-user-id="{{ user.id }}" onchange="onRoleChange(this)">
-                            <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                                data-user-id="{{ user.user_id }}" onchange="onRoleChange(this)">
                             <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                             <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
                             <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
-                            <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Projects</label>
-                        <div class="text-sm font-medium py-1.5">{{ user.project_count }} proj</div>
+                        <label class="block text-xs text-gray-500 mb-1">Job Dikerjakan</label>
+                        <div class="text-sm font-medium py-1.5">{{ user.project_count }} job</div>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-t">
     {% if user.is_active %}
-        <button onclick="softDeleteUser({{ user.id }}, '{{ user.username|escapejs }}')"
+        <button onclick="softDeleteUser({{ user.user_id }}, '{{ user.username|escapejs }}')"
                 class="w-full py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold">
             🗑 Soft Delete User
         </button>
     {% else %}
-        <button onclick="activateUser({{ user.id }}, '{{ user.username|escapejs }}')"
+        <button onclick="activateUser({{ user.user_id }}, '{{ user.username|escapejs }}')"
                 class="w-full py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold">
             ✓ Activate User
         </button>
@@ -368,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function updateStats() {
     // Hitung semua row (desktop + mobile duplikat, jadi pake Set by user-id)
     const seen = new Set();
-    const counts = { guest: 0, annotator: 0, reviewer: 0, master: 0, member: 0 };
+    const counts = { annotator: 0, reviewer: 0, master: 0 };
     document.querySelectorAll('[data-user-id][data-role]').forEach(el => {
         const uid = el.dataset.userId;
         if (seen.has(uid)) return;
@@ -377,7 +258,6 @@ function updateStats() {
         if (counts[role] !== undefined) counts[role]++;
     });
     document.getElementById('statTotal').textContent = seen.size;
-    document.getElementById('statGuest').textContent = counts.guest;
     document.getElementById('statAnnotator').textContent = counts.annotator;
     document.getElementById('statReviewer').textContent = counts.reviewer;
     document.getElementById('statMaster').textContent = counts.master;
