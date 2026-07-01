@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up — Anotasi Image</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* Mengikuti gaya background radial gradient dari forgot_password.html */
         body {
             background:
                 radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
@@ -20,7 +20,6 @@
             min-height: 100vh;
         }
         
-        /* Dekorasi blob dari forgot_password.html */
         .pa-blob {
             position: absolute;
             border-radius: 50%;
@@ -29,7 +28,6 @@
             pointer-events: none;
         }
         
-        /* Input styling disesuaikan dengan skema warna */
         .pa-input {
             background: #FFFFFF;
             border: 1.5px solid #E9D5FF;
@@ -42,7 +40,6 @@
             outline: none;
         }
         
-        /* Tombol utama dengan efek gradient ungu/violet */
         .pa-btn {
             background: linear-gradient(135deg, #A78BFA, #7C3AED);
             transition: all 0.18s;
@@ -55,7 +52,6 @@
         }
         .pa-btn:active { transform: translateY(1px); }
 
-        /* Sisi ilustrasi kiri bermotif grid titik */
         .pa-illustration {
             background:
                 linear-gradient(160deg,
@@ -72,34 +68,27 @@
             background-size: 22px 22px;
         }
 
-        /* Custom scrollbar untuk form panel sisi kanan */
-        .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #E9D5FF;
-            border-radius: 10px;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #E9D5FF; border-radius: 10px; }
+
+        /* Custom Delay Utilitas */
+        .animation-delay-200 { animation-delay: 200ms; }
+        .animation-delay-400 { animation-delay: 400ms; }
+        .animation-delay-600 { animation-delay: 600ms; }
     </style>
 </head>
 <body class="flex items-center justify-center p-3 sm:p-6 relative overflow-hidden min-h-screen">
 
-    <!-- Latar Belakang Blob -->
-    <div class="pa-blob bg-purple-300 w-72 h-72 sm:w-96 sm:h-96 -top-24 -left-24 sm:-top-32 sm:-left-32"></div>
-    <div class="pa-blob bg-pink-200 w-72 h-72 sm:w-96 sm:h-96 -bottom-24 -right-24 sm:-bottom-32 sm:-right-32"></div>
+    <div class="pa-blob bg-purple-300 w-72 h-72 sm:w-96 sm:h-96 -top-24 -left-24 sm:-top-32 sm:-left-32 animate__animated animate__zoomIn"></div>
+    <div class="pa-blob bg-pink-200 w-72 h-72 sm:w-96 sm:h-96 -bottom-24 -right-24 sm:-bottom-32 sm:-right-32 animate__animated animate__zoomIn"></div>
 
-    <!-- Container Utama Menggunakan Gaya Glassmorphic -->
-    <div class="relative w-full max-w-5xl bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden flex flex-col md:flex-row max-h-[calc(100vh-2rem)] md:max-h-none">
+    <div class="relative w-full max-w-5xl bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden flex flex-col md:flex-row max-h-[calc(100vh-2rem)] md:max-h-none animate__animated animate__fadeInUp">
 
-        <!-- PANEL KIRI: Ilustrasi & Identitas Brand (Hidden on Mobile) -->
         <div class="pa-illustration relative hidden md:flex flex-col justify-between p-8 lg:p-10 w-[40%] shrink-0">
-            <div>
-                <!-- Penyelarasan Logo Baru di Sisi Kiri -->
+            <div class="animate__animated animate__fadeInDown animation-delay-200">
                 <div class="flex flex-col items-center gap-4 px-4 py-6 border-b border-white/20 bg-white/10 rounded-2xl backdrop-blur-sm">
-                    <svg width="130" height="130" viewBox="0 0 240 240" class="drop-shadow-md">
+                    <svg width="130" height="130" viewBox="0 0 240 240" class="drop-shadow-md transition-transform duration-500 hover:rotate-3">
                         <path d="M40 50s-10-7-13-12C25 32 28 27 33 27c2 0 4 1 5 3 1-2 3-3 5-3 5 0 8 5 6 11-3 5-13 12-13 12z" fill="#ff0000" opacity="0.8"/>
                         <path d="M115 30c-5 7-10 13-10 20a6 6 0 0 0 9 5l-1 8h6l-1-8a6 6 0 0 0 9-5c0-7-5-13-12-20z" fill="#000000" opacity="0.85"/>
                         <path d="M195 50l-15-18 15-18 15 18z" transform="rotate(180 195 50)" fill="#ff0000" opacity="0.8"/>
@@ -123,8 +112,7 @@
                 </div>
             </div>
 
-            <!-- Teks Poin Informasi Sisi Kiri -->
-            <div class="relative mt-4">
+            <div class="relative mt-4 animate__animated animate__fadeInUp animation-delay-400">
                 <h2 class="text-xl font-bold text-white leading-tight">
                     Mulai journey lu<br>
                     <span class="text-white">di Anotasi Image.</span>
@@ -154,12 +142,10 @@
             </div>
         </div>
 
-        <!-- PANEL KANAN: Form Registrasi (Scrollable Aman untuk Mobile) -->
         <div class="flex-1 p-5 sm:p-8 md:p-10 overflow-y-auto custom-scroll">
-            <div class="max-w-md mx-auto">
+            <div class="max-w-md mx-auto animate__animated animate__fadeInRight animation-delay-200">
                 
-                <!-- Mini Header Tampilan Mobile (Only Visible on Mobile) -->
-                <div class="md:hidden mb-4 text-center flex flex-col items-center">
+                <div class="md:hidden mb-4 text-center flex flex-col items-center animate__animated animate__fadeInDown">
                     <svg width="60" height="60" viewBox="0 0 240 240" class="mx-auto mb-1 drop-shadow-sm">
                         <path d="M120 70 L90 80 L90 130 Q90 155 120 165 Q150 155 150 130 L150 80 Z" fill="white" stroke="#000000" stroke-width="2"/>
                         <g font-family="Plus Jakarta Sans" font-size="14" font-weight="700" fill="#000000">
@@ -176,9 +162,8 @@
                     Daftar sekarang untuk mulai mengelola project Anda.
                 </p>
 
-                <!-- Django Messages Flash Alerts -->
                 {% if messages %}
-                <div class="mb-4 space-y-1.5">
+                <div class="mb-4 space-y-1.5 animate__animated animate__headShake">
                     {% for message in messages %}
                     <div class="p-3 text-xs rounded-xl border flex items-center gap-2
                         {% if message.tags == 'success' %}bg-emerald-50 border-emerald-100 text-emerald-700
@@ -191,18 +176,16 @@
                 </div>
                 {% endif %}
 
-                <!-- Form Inputs -->
                 <form method="POST" class="space-y-3">
                     {% csrf_token %}
 
-                    <div>
+                    <div class="animate__animated animate__fadeInUp animation-delay-200">
                         <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Username</label>
                         <input type="text" name="username" required placeholder="username..."
                                class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
                     </div>
 
-                    <!-- Input Grid untuk Nama (Responsif: 1 Kolom di Mobile, 2 Kolom di Desktop) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 animate__animated animate__fadeInUp animation-delay-400">
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Nama Depan</label>
                             <input type="text" name="first_name" required placeholder="Nama"
@@ -215,19 +198,19 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="animate__animated animate__fadeInUp animation-delay-400">
                         <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Email</label>
                         <input type="email" name="email" required placeholder="email@example.com"
                                class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
                     </div>
 
-                    <div>
+                    <div class="animate__animated animate__fadeInUp animation-delay-400">
                         <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">No. HP</label>
                         <input type="tel" name="phone_number" required placeholder="08xxxxxxxxxx"
                                class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
                     </div>
 
-                    <div>
+                    <div class="animate__animated animate__fadeInUp animation-delay-600">
                         <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Password</label>
                         <div class="relative">
                             <input type="password" name="password1" id="pw1" required placeholder="Min. 8 karakter"
@@ -238,7 +221,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="animate__animated animate__fadeInUp animation-delay-600">
                         <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Konfirmasi Password</label>
                         <div class="relative">
                             <input type="password" name="password2" id="pw2" required placeholder="Ulangi password"
@@ -250,13 +233,13 @@
                     </div>
 
                     <button type="submit"
-                            class="pa-btn w-full py-2.5 mt-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2">
+                            class="pa-btn w-full py-2.5 mt-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 animate__animated animate__fadeInUp animation-delay-600">
                         <span>Daftar Akun</span>
                         <i class="fas fa-user-plus text-xs"></i>
                     </button>
                 </form>
 
-                <div class="text-center mt-4 text-sm text-[#6D28D9]/70">
+                <div class="text-center mt-4 text-sm text-[#6D28D9]/70 animate__animated animate__fadeIn animation-delay-600">
                     Udah punya akun?
                     <a href="{% url 'master:login' %}" class="text-[#7C3AED] font-semibold hover:underline">Login disini</a>
                 </div>
@@ -264,7 +247,6 @@
         </div>
     </div>
 
-    <!-- Script Pengendali Visibilitas Password -->
     <script>
         function togglePw(inputId, iconId) {
             const input = document.getElementById(inputId);
