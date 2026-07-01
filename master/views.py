@@ -103,6 +103,15 @@ def get_current_project_or_redirect(request):
         return None, None, redirect('master:lobby')
 
 
+def landing_view(request):
+    """
+    Public landing page shown at the root URL. Accessible to everyone,
+    logged in or not — think of it as the "lobby of the cinema" before
+    entering a specific theater (project lobby / app).
+    """
+    return render(request, 'master/landing.html')
+
+
 @login_required
 def lobby_view(request):
     memberships = (
