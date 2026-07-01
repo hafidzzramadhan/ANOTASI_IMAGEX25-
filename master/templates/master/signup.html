@@ -6,197 +6,275 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up — Anotasi Image</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        html, body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-
-        .bg-pastel {
-            background: linear-gradient(135deg, #E5DBF5 0%, #F5D5E8 50%, #C5DCEF 100%);
+        * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* Mengikuti gaya background radial gradient dari forgot_password.html */
+        body {
+            background:
+                radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, #FBCFE8 0%, transparent 50%),
+                #FFFFFF;
+            min-height: 100vh;
         }
-        .input-pastel {
+        
+        /* Dekorasi blob dari forgot_password.html */
+        .pa-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        
+        /* Input styling disesuaikan dengan skema warna */
+        .pa-input {
             background: #FFFFFF;
-            border: 1.5px solid #E5DBF5;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            border: 1.5px solid #E9D5FF;
+            transition: all 0.18s;
         }
-        .input-pastel:focus {
+        .pa-input:focus {
+            background: white;
+            border-color: #A78BFA;
+            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
             outline: none;
-            border-color: #9B7EBD;
-            box-shadow: 0 0 0 3px rgba(155,126,189,0.12);
         }
-        .btn-pastel {
-            background: linear-gradient(135deg, #9B7EBD 0%, #E8A5C8 100%);
-            transition: opacity 0.2s, transform 0.1s;
+        
+        /* Tombol utama dengan efek gradient ungu/violet */
+        .pa-btn {
+            background: linear-gradient(135deg, #A78BFA, #7C3AED);
+            transition: all 0.18s;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
         }
-        .btn-pastel:hover { opacity: 0.92; }
-        .btn-pastel:active { transform: scale(0.98); }
+        .pa-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        .pa-btn:active { transform: translateY(1px); }
+
+        /* Sisi ilustrasi kiri bermotif grid titik */
+        .pa-illustration {
+            background:
+                linear-gradient(160deg,
+                    #C4B5FD  0%,
+                    #DDD6FE 35%,
+                    #FBCFE8 100%);
+        }
+        .pa-illustration::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.35) 1px, transparent 0);
+            background-size: 22px 22px;
+        }
+
+        /* Custom scrollbar untuk form panel sisi kanan */
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #E9D5FF;
+            border-radius: 10px;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-pastel">
+<body class="flex items-center justify-center p-3 sm:p-6 relative overflow-hidden min-h-screen">
 
-    <div class="min-h-screen flex flex-col md:flex-row">
+    <!-- Latar Belakang Blob -->
+    <div class="pa-blob bg-purple-300 w-72 h-72 sm:w-96 sm:h-96 -top-24 -left-24 sm:-top-32 sm:-left-32"></div>
+    <div class="pa-blob bg-pink-200 w-72 h-72 sm:w-96 sm:h-96 -bottom-24 -right-24 sm:-bottom-32 sm:-right-32"></div>
 
-        <!-- LEFT — Branding (md+ only) -->
-        <aside class="hidden md:flex md:w-1/2 lg:w-3/5 flex-col items-center justify-center p-10">
+    <!-- Container Utama Menggunakan Gaya Glassmorphic -->
+    <div class="relative w-full max-w-5xl bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden flex flex-col md:flex-row max-h-[calc(100vh-2rem)] md:max-h-none">
 
-            <svg width="280" height="280" viewBox="0 0 240 240" class="drop-shadow-lg">
-                <path d="M40 50s-10-7-13-12C25 32 28 27 33 27c2 0 4 1 5 3 1-2 3-3 5-3 5 0 8 5 6 11-3 5-13 12-13 12z" fill="#E8A5C8" opacity="0.8"/>
-                <path d="M115 30c-5 7-10 13-10 20a6 6 0 0 0 9 5l-1 8h6l-1-8a6 6 0 0 0 9-5c0-7-5-13-12-20z" fill="#9B7EBD" opacity="0.85"/>
-                <path d="M195 50l-15-18 15-18 15 18z" transform="rotate(180 195 50)" fill="#E8A5C8" opacity="0.8"/>
-                <text x="20" y="135" font-family="Plus Jakarta Sans" font-size="44" font-weight="800" fill="#5C4A7D" opacity="0.85">II</text>
-                <text x="195" y="135" font-family="Plus Jakarta Sans" font-size="44" font-weight="800" fill="#5C4A7D" opacity="0.85">A</text>
-                <path d="M120 70 L90 80 L90 130 Q90 155 120 165 Q150 155 150 130 L150 80 Z" fill="white" stroke="#9B7EBD" stroke-width="2"/>
-                <g font-family="Plus Jakarta Sans" font-size="14" font-weight="700" fill="#5C4A7D">
-                    <text x="103" y="100">1</text><text x="130" y="100">2</text>
-                    <text x="103" y="123">3</text><text x="130" y="123">5</text>
-                    <text x="116" y="146">7</text>
-                </g>
-                <g stroke="#5C4A7D" stroke-width="2" fill="#5C4A7D" opacity="0.7" stroke-linecap="round">
-                    <line x1="65" y1="180" x2="120" y2="160"/>
-                    <line x1="175" y1="180" x2="120" y2="160"/>
-                    <polygon points="65,180 70,176 70,184"/>
-                    <polygon points="175,180 170,176 170,184"/>
-                </g>
-                <path d="M120 200a5 5 0 0 0-5 5 5 5 0 0 0 1.5 3.5A5 5 0 1 0 120 218a5 5 0 1 0 3.5-9.5A5 5 0 0 0 125 205a5 5 0 0 0-5-5zM117 218h6l-1.5 12h-3z" fill="#9B7EBD" opacity="0.85"/>
-            </svg>
-
-            <h1 class="mt-8 text-3xl lg:text-4xl font-bold text-[#5C4A7D] text-center leading-tight">
-                Mulai journey lu<br>
-                <span class="bg-gradient-to-r from-[#9B7EBD] to-[#E8A5C8] bg-clip-text text-transparent">
-                    di Anotasi Image.
-                </span>
-            </h1>
-            <p class="mt-3 text-sm text-[#8B7BA8] text-center max-w-sm">
-                Bikin akun, bikin job anotasi, kelola dataset.
-            </p>
-        </aside>
-
-        <!-- RIGHT — Form -->
-        <main class="flex-1 flex items-center justify-center p-5 sm:p-8">
-            <div class="w-full max-w-md">
-
-                <!-- Mobile mini header -->
-                <div class="md:hidden mb-5 text-center">
-                    <svg width="70" height="70" viewBox="0 0 240 240" class="mx-auto mb-2">
-                        <path d="M120 70 L90 80 L90 130 Q90 155 120 165 Q150 155 150 130 L150 80 Z" fill="white" stroke="#9B7EBD" stroke-width="2.5"/>
-                        <text x="105" y="105" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#5C4A7D">1</text>
-                        <text x="128" y="105" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#5C4A7D">2</text>
-                        <text x="105" y="125" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#5C4A7D">3</text>
-                        <text x="128" y="125" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#5C4A7D">5</text>
-                        <text x="116" y="148" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#5C4A7D">7</text>
+        <!-- PANEL KIRI: Ilustrasi & Identitas Brand (Hidden on Mobile) -->
+        <div class="pa-illustration relative hidden md:flex flex-col justify-between p-8 lg:p-10 w-[40%] shrink-0">
+            <div>
+                <!-- Penyelarasan Logo Baru di Sisi Kiri -->
+                <div class="flex flex-col items-center gap-4 px-4 py-6 border-b border-white/20 bg-white/10 rounded-2xl backdrop-blur-sm">
+                    <svg width="130" height="130" viewBox="0 0 240 240" class="drop-shadow-md">
+                        <path d="M40 50s-10-7-13-12C25 32 28 27 33 27c2 0 4 1 5 3 1-2 3-3 5-3 5 0 8 5 6 11-3 5-13 12-13 12z" fill="#ff0000" opacity="0.8"/>
+                        <path d="M115 30c-5 7-10 13-10 20a6 6 0 0 0 9 5l-1 8h6l-1-8a6 6 0 0 0 9-5c0-7-5-13-12-20z" fill="#000000" opacity="0.85"/>
+                        <path d="M195 50l-15-18 15-18 15 18z" transform="rotate(180 195 50)" fill="#ff0000" opacity="0.8"/>
+                        <text x="20" y="135" font-family="Plus Jakarta Sans" font-size="44" font-weight="800" fill="#ffffff" opacity="0.85">II</text>
+                        <text x="195" y="135" font-family="Plus Jakarta Sans" font-size="44" font-weight="800" fill="#ffffff" opacity="0.85">A</text>
+                        <path d="M120 70 L90 80 L90 130 Q90 155 120 165 Q150 155 150 130 L150 80 Z" fill="white" stroke="#ffffff" stroke-width="2"/>
+                        <g font-family="Plus Jakarta Sans" font-size="14" font-weight="700" fill="#000000">
+                            <text x="103" y="100">1</text><text x="130" y="100">2</text>
+                            <text x="103" y="123">3</text><text x="130" y="123">5</text>
+                            <text x="116" y="146">7</text>
+                        </g>
+                        <g stroke="#000000" stroke-width="2" fill="#5C4A7D" opacity="0.7" stroke-linecap="round">
+                            <line x1="65" y1="180" x2="120" y2="160"/>
+                            <line x1="175" y1="180" x2="120" y2="160"/>
+                            <polygon points="65,180 70,176 70,184"/>
+                            <polygon points="175,180 170,176 170,184"/>
+                        </g>
+                        <path d="M120 200a5 5 0 0 0-5 5 5 5 0 0 0 1.5 3.5A5 5 0 1 0 120 218a5 5 0 1 0 3.5-9.5A5 5 0 0 0 125 205a5 5 0 0 0-5-5zM117 218h6l-1.5 12h-3z" fill="#000000" opacity="0.85"/>
                     </svg>
-                    <div class="font-bold text-[#5C4A7D] text-sm">ANOTASI IMAGE</div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl">
-
-                    <div class="mb-5">
-                        <h2 class="text-2xl sm:text-3xl font-bold text-[#5C4A7D]">Bikin Akun</h2>
-                        <p class="text-sm text-[#8B7BA8] mt-1">Daftar buat mulai anotasi.</p>
-                    </div>
-
-                    {% if messages %}
-                    <div class="mb-4 space-y-2">
-                        {% for message in messages %}
-                        <div class="p-3 text-sm rounded-xl border
-                            {% if message.tags == 'success' %}bg-[#C5E5DC] border-[#C5E5DC] text-[#2D6A4F]
-                            {% elif message.tags == 'error' %}bg-[#F5D5E8] border-[#E8A5C8]/40 text-[#5C4A7D]
-                            {% else %}bg-[#C5DCEF] border-[#B5CCE5] text-[#3F567F]{% endif %}">
-                            {{ message }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <form method="POST" class="space-y-3.5">
-                        {% csrf_token %}
-
-                        <div>
-                            <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Username</label>
-                            <input type="text" name="username" required placeholder="username..."
-                                class="input-pastel w-full px-4 py-3 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Nama Depan</label>
-                                <input type="text" name="first_name" required placeholder="Nama"
-                                    class="input-pastel w-full px-4 py-3 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Nama Belakang</label>
-                                <input type="text" name="last_name" required placeholder="Lengkap"
-                                    class="input-pastel w-full px-4 py-3 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Email</label>
-                            <input type="email" name="email" required placeholder="email@example.com"
-                                class="input-pastel w-full px-4 py-3 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">No. HP</label>
-                            <input type="tel" name="phone_number" required placeholder="08xxxxxxxxxx"
-                                class="input-pastel w-full px-4 py-3 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Password</label>
-                            <div class="relative">
-                                <input type="password" name="password1" id="pw1" required placeholder="Min. 8 karakter"
-                                    class="input-pastel w-full px-4 py-3 pr-11 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                                <button type="button" onclick="togglePw('pw1','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#9B7EBD]">
-                                    <svg id="eye1" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.5 12C3.7 7.9 7.5 5 12 5s8.3 2.9 9.5 7c-1.2 4.1-5 7-9.5 7s-8.3-2.9-9.5-7z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-[#8B7BA8] mb-1.5 uppercase tracking-wide">Konfirmasi Password</label>
-                            <div class="relative">
-                                <input type="password" name="password2" id="pw2" required placeholder="Ulangi password"
-                                    class="input-pastel w-full px-4 py-3 pr-11 rounded-xl text-[#5C4A7D] placeholder-[#B5A8C8] text-base">
-                                <button type="button" onclick="togglePw('pw2','eye2')" class="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#9B7EBD]">
-                                    <svg id="eye2" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.5 12C3.7 7.9 7.5 5 12 5s8.3 2.9 9.5 7c-1.2 4.1-5 7-9.5 7s-8.3-2.9-9.5-7z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-pastel w-full py-3.5 text-white font-bold rounded-xl mt-3 flex items-center justify-center gap-2">
-                            <span>Daftar</span>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                            </svg>
-                        </button>
-                    </form>
-
-                    <p class="text-center text-sm text-[#8B7BA8] mt-5">
-                        Udah punya akun?
-                        <a href="{% url 'master:login' %}" class="text-[#9B7EBD] font-bold">Login disini</a>
-                    </p>
+                    <span class="text-white font-extrabold text-lg tracking-wide uppercase">Anotasi Image</span>
                 </div>
             </div>
-        </main>
+
+            <!-- Teks Poin Informasi Sisi Kiri -->
+            <div class="relative mt-4">
+                <h2 class="text-xl font-bold text-white leading-tight">
+                    Mulai journey lu<br>
+                    <span class="text-white">di Anotasi Image.</span>
+                </h2>
+                <p class="text-white/85 mt-2 text-xs leading-relaxed">
+                    Bikin akun untuk mulai membuat job anotasi, kelola dataset, dan kembangkan model dengan antarmuka modern.
+                </p>
+
+                <div class="mt-5 space-y-2.5">
+                    <div class="flex items-center gap-3 text-white/90 text-xs">
+                        <div class="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center shrink-0">
+                            <i class="fas fa-user-plus text-[10px]"></i>
+                        </div>
+                        Registrasi instan dan mudah
+                    </div>
+                    <div class="flex items-center gap-3 text-white/90 text-xs">
+                        <div class="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center shrink-0">
+                            <i class="fas fa-images text-[10px]"></i>
+                        </div>
+                        Kelola ratusan dataset gambar
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-white/70 text-[10px] relative mt-4">
+                © Ramadhan Inc
+            </div>
+        </div>
+
+        <!-- PANEL KANAN: Form Registrasi (Scrollable Aman untuk Mobile) -->
+        <div class="flex-1 p-5 sm:p-8 md:p-10 overflow-y-auto custom-scroll">
+            <div class="max-w-md mx-auto">
+                
+                <!-- Mini Header Tampilan Mobile (Only Visible on Mobile) -->
+                <div class="md:hidden mb-4 text-center flex flex-col items-center">
+                    <svg width="60" height="60" viewBox="0 0 240 240" class="mx-auto mb-1 drop-shadow-sm">
+                        <path d="M120 70 L90 80 L90 130 Q90 155 120 165 Q150 155 150 130 L150 80 Z" fill="white" stroke="#000000" stroke-width="2"/>
+                        <g font-family="Plus Jakarta Sans" font-size="14" font-weight="700" fill="#000000">
+                            <text x="103" y="100">1</text><text x="130" y="100">2</text>
+                            <text x="103" y="123">3</text><text x="130" y="123">5</text>
+                            <text x="116" y="146">7</text>
+                        </g>
+                    </svg>
+                    <div class="font-extrabold text-slate-900 text-[11px] tracking-wider uppercase">ANOTASI IMAGE</div>
+                </div>
+
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Bikin Akun</h2>
+                <p class="text-xs sm:text-sm text-[#6D28D9]/70 mt-0.5 mb-4">
+                    Daftar sekarang untuk mulai mengelola project Anda.
+                </p>
+
+                <!-- Django Messages Flash Alerts -->
+                {% if messages %}
+                <div class="mb-4 space-y-1.5">
+                    {% for message in messages %}
+                    <div class="p-3 text-xs rounded-xl border flex items-center gap-2
+                        {% if message.tags == 'success' %}bg-emerald-50 border-emerald-100 text-emerald-700
+                        {% elif message.tags == 'error' %}bg-rose-50 border-rose-100 text-rose-700
+                        {% else %}bg-blue-50 border-blue-100 text-blue-700{% endif %}">
+                        <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} text-xs"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Form Inputs -->
+                <form method="POST" class="space-y-3">
+                    {% csrf_token %}
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Username</label>
+                        <input type="text" name="username" required placeholder="username..."
+                               class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                    </div>
+
+                    <!-- Input Grid untuk Nama (Responsif: 1 Kolom di Mobile, 2 Kolom di Desktop) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Nama Depan</label>
+                            <input type="text" name="first_name" required placeholder="Nama"
+                                   class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Nama Belakang</label>
+                            <input type="text" name="last_name" required placeholder="Lengkap"
+                                   class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Email</label>
+                        <input type="email" name="email" required placeholder="email@example.com"
+                               class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">No. HP</label>
+                        <input type="tel" name="phone_number" required placeholder="08xxxxxxxxxx"
+                               class="pa-input w-full px-3.5 py-2 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" name="password1" id="pw1" required placeholder="Min. 8 karakter"
+                                   class="pa-input w-full px-3.5 py-2 pr-10 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                            <button type="button" onclick="togglePw('pw1','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#A78BFA] hover:text-[#7C3AED] transition-colors">
+                                <i id="eye1" class="fas fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-900 uppercase tracking-wide mb-1">Konfirmasi Password</label>
+                        <div class="relative">
+                            <input type="password" name="password2" id="pw2" required placeholder="Ulangi password"
+                                   class="pa-input w-full px-3.5 py-2 pr-10 rounded-xl text-sm text-slate-900 placeholder-[#C4B5FD]">
+                            <button type="button" onclick="togglePw('pw2','eye2')" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#A78BFA] hover:text-[#7C3AED] transition-colors">
+                                <i id="eye2" class="fas fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="pa-btn w-full py-2.5 mt-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2">
+                        <span>Daftar Akun</span>
+                        <i class="fas fa-user-plus text-xs"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 text-sm text-[#6D28D9]/70">
+                    Udah punya akun?
+                    <a href="{% url 'master:login' %}" class="text-[#7C3AED] font-semibold hover:underline">Login disini</a>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Script Pengendali Visibilitas Password -->
     <script>
         function togglePw(inputId, iconId) {
-            const i = document.getElementById(inputId);
-            const ic = document.getElementById(iconId);
-            if (i.type === 'password') {
-                i.type = 'text';
-                ic.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.5 10.5a3 3 0 004 4M9 5.5A10 10 0 0121.5 12a10 10 0 01-3 4M6.5 6.5A10 10 0 002.5 12c1.2 4.1 5 7 9.5 7 1.5 0 2.9-.3 4.2-.9"/>';
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash text-xs';
             } else {
-                i.type = 'password';
-                ic.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.5 12C3.7 7.9 7.5 5 12 5s8.3 2.9 9.5 7c-1.2 4.1-5 7-9.5 7s-8.3-2.9-9.5-7z"/>';
+                input.type = 'password';
+                icon.className = 'fas fa-eye text-xs';
             }
         }
     </script>
