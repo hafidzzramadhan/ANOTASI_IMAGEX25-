@@ -23,10 +23,6 @@ document.addEventListener('click', (e) => {
 });
 </script>
 
-
-    <!-- ====================================================
-         HEADER — judul + tombol Add Profile
-         ==================================================== -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
             <h1 class="text-xl md:text-2xl lg:text-4xl font-bold">Job Settings</h1>
@@ -41,9 +37,6 @@ document.addEventListener('click', (e) => {
         </button>
     </div>
 
-    <!-- ====================================================
-         FILTER BAR — search + status filter + counter
-         ==================================================== -->
     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3 md:items-center">
         <div class="flex-1">
             <input type="text" id="jobSearchInput"
@@ -66,9 +59,6 @@ document.addEventListener('click', (e) => {
         </div>
     </div>
 
-    <!-- ====================================================
-         JOB LIST — single list, action buttons per card
-         ==================================================== -->
     <div id="jobListContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {% for job in jobs %}
         <div class="job-card relative bg-white p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
@@ -76,7 +66,6 @@ document.addEventListener('click', (e) => {
              data-job-title="{{ job.title|lower }}"
              data-job-status="{{ job.status }}">
 
-            <!-- ===== Export Dropdown — pojok kanan atas card ===== -->
             <div class="absolute top-3 right-3 z-10" onclick="event.stopPropagation();">
                 <button type="button"
                         onclick="toggleExportMenu({{ job.id }})"
@@ -125,7 +114,6 @@ document.addEventListener('click', (e) => {
                 </div>
             </div>
 
-            <!-- Atas: image + info utama -->
             <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0 mb-4">
                 <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                     {% if job.get_first_image_url %}
@@ -167,7 +155,6 @@ document.addEventListener('click', (e) => {
                 </div>
             </div>
 
-            <!-- Worker Info -->
             <div class="worker-info space-y-1 text-sm text-gray-500 border-t pt-3 mb-4">
                 <p class="flex justify-between">
                     <span>Annotator:</span>
@@ -179,9 +166,7 @@ document.addEventListener('click', (e) => {
                 </p>
             </div>
 
-            <!-- ACTION BUTTONS — ini yang bikin UX nya jelas -->
             <div class="space-y-2 border-t pt-3">
-                <!-- Row 1: primary actions -->
                 <div class="flex flex-wrap gap-2">
                     <button onclick="showJobDetail({{ job.id }})"
                             class="flex-1 min-w-[80px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
@@ -206,7 +191,6 @@ document.addEventListener('click', (e) => {
                         Add Image
                     </button>
                 </div>
-                <!-- Row 2: secondary actions -->
                 <div class="flex flex-wrap gap-2">
                     <button onclick="showEditJobProfile({{ job.id }})"
                             class="flex-1 min-w-[80px] bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 transition">
@@ -223,6 +207,15 @@ document.addEventListener('click', (e) => {
                         Delete
                     </button>
                 </div>
+                
+                {% if job.status == 'finish' %}
+                <div class="mt-2 border-t border-dashed pt-2">
+                    <button onclick="showAjukanPublikasi({{ job.id }}, '{{ job.title|escapejs }}')"
+                            class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-3 py-2.5 rounded-lg text-xs md:text-sm flex items-center justify-center gap-2 transition shadow-md font-bold">
+                        🚀 Ajukan Publikasi ke Komisi
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -236,19 +229,14 @@ document.addEventListener('click', (e) => {
         {% endfor %}
     </div>
 
-    <!-- Empty state kalau filter gak nemu -->
     <div id="noResultsMessage" class="hidden bg-white p-8 rounded-lg shadow-md text-center text-gray-500">
         <p class="font-medium">Tidak ada job yang cocok dengan filter</p>
     </div>
 </div>
 
-<!-- ========================================================
-     MODAL: Job Detail (view-only)
-     ======================================================== -->
 <div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
         <div class="p-6 md:p-8">
-            <!-- Close button -->
             <button type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
                     onclick="closeModal('jobDetailModal')">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +244,6 @@ document.addEventListener('click', (e) => {
                 </svg>
             </button>
             
-            <!-- Labeling Progress -->
             <div class="mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold">Labeling Progress</h3>
@@ -292,7 +279,6 @@ document.addEventListener('click', (e) => {
                 </div>
             </div>
 
-            <!-- Detail Info -->
             <div class="flex flex-col md:flex-row md:space-x-8">
                 <div class="w-full md:w-1/3 mb-6 md:mb-0">
                     <div id="detailImageContainer" class="bg-gray-200 w-full aspect-square rounded-lg overflow-hidden">
@@ -335,7 +321,6 @@ document.addEventListener('click', (e) => {
                     </div>
                     
 
-                    <!-- Quick action di modal detail: shortcut ke Assign -->
                     <div class="mt-6 flex justify-end gap-2 border-t pt-4">
                         <button onclick="closeModal('jobDetailModal')"
                                 class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
@@ -352,9 +337,6 @@ document.addEventListener('click', (e) => {
     </div>
 </div>
 
-<!-- ========================================================
-     MODAL: Worker Selection (pilih annotator → reviewer)
-     ======================================================== -->
 <div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto relative">
         <div class="p-4 md:p-6">
@@ -399,12 +381,8 @@ document.addEventListener('click', (e) => {
     </div>
 </div>
 
-<!-- ========================================================
-     MODAL: Add Profile (create new job)
-     ======================================================== -->
 <div id="addProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <!-- Header with gradient -->
         <div class="sticky top-0 z-10 bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 flex items-center justify-between">
             <div>
                 <h2 class="text-xl md:text-2xl font-bold text-white">Create Job Profile</h2>
@@ -421,7 +399,6 @@ document.addEventListener('click', (e) => {
             <form id="jobProfileForm" class="space-y-6">
                 {% csrf_token %}
 
-                <!-- ==== SECTION: BASIC INFO ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,7 +420,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: ANNOTATION TYPE ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,7 +428,6 @@ document.addEventListener('click', (e) => {
                         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Annotation Type</h3>
                     </div>
 
-                    <!-- Segmentation: card-style radio -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Segmentation <span class="text-red-500">*</span></label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -501,7 +476,6 @@ document.addEventListener('click', (e) => {
                         </div>
                     </div>
 
-                    <!-- Shape: card-style radio -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Shape <span class="text-red-500">*</span></label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -534,7 +508,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: SETTINGS ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -567,7 +540,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: TIMELINE ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -589,7 +561,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== FOOTER ==== -->
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100 pt-5">
                     <button type="button" id="cancelProfileBtn"
                             class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition">
@@ -608,12 +579,8 @@ document.addEventListener('click', (e) => {
     </div>
 </div>
 
-<!-- ========================================================
-     MODAL: Edit Job Profile (reuse form struktur Add Profile)
-     ======================================================== -->
 <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <!-- Header with gradient (amber/orange buat edit) -->
         <div class="sticky top-0 z-10 bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
@@ -639,7 +606,6 @@ document.addEventListener('click', (e) => {
                 {% csrf_token %}
                 <input type="hidden" name="job_id" id="editJobId">
 
-                <!-- ==== SECTION: BASIC INFO ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -661,7 +627,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: ANNOTATION TYPE ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -670,7 +635,6 @@ document.addEventListener('click', (e) => {
                         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Annotation Type</h3>
                     </div>
 
-                    <!-- Segmentation: card-style radio -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Segmentation <span class="text-red-500">*</span></label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -719,7 +683,6 @@ document.addEventListener('click', (e) => {
                         </div>
                     </div>
 
-                    <!-- Shape: card-style radio -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Shape <span class="text-red-500">*</span></label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -752,7 +715,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: SETTINGS ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -785,7 +747,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== SECTION: TIMELINE ==== -->
                 <div>
                     <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                         <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -807,7 +768,6 @@ document.addEventListener('click', (e) => {
                     </div>
                 </div>
 
-                <!-- ==== FOOTER ==== -->
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100 pt-5">
                     <button type="button"
                             class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition"
@@ -827,13 +787,65 @@ document.addEventListener('click', (e) => {
     </div>
 </div>
 
+<div id="ajukanPublikasiModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div class="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                    🚀 Ajukan Publikasi Publik
+                </h2>
+                <p class="text-xs text-indigo-100 mt-0.5">Kirim dataset ke Komisi untuk Quality Control.</p>
+            </div>
+            <button type="button" class="text-white/80 hover:text-white rounded-lg p-1" onclick="closeModal('ajukanPublikasiModal')">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="p-6 md:p-8">
+            <div class="bg-blue-50 border border-blue-100 text-blue-800 text-xs md:text-sm p-4 rounded-lg mb-6">
+                <strong>💡 Panduan:</strong> Unduh file ZIP dari menu <strong>Export</strong> terlebih dahulu, lalu unggah file ZIP tersebut pada formulir di bawah ini.
+            </div>
+
+            <form id="ajukanPublikasiForm" class="space-y-5">
+                {% csrf_token %}
+                <input type="hidden" name="job_id" id="pubJobId">
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Nama Dataset Publik <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" id="pubName" required
+                           class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Deskripsi Lengkap</label>
+                    <textarea name="description" id="pubDescription" rows="4" placeholder="Tuliskan tujuan dataset, kualitas, dll..."
+                              class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1.5">Unggah File Dataset (.ZIP) <span class="text-red-500">*</span></label>
+                    <input type="file" name="dataset_file" accept=".zip,.rar,.tar" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeModal('ajukanPublikasiModal')" class="px-5 py-2.5 border rounded-lg text-gray-600 font-medium">Batal</button>
+                    <button type="submit" id="pubSubmitBtn" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-md transition">
+                        Kirim ke Komisi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .filter-chip { background: white; border-color: #d1d5db; color: #374151; transition: all 0.15s; }
     .filter-chip:hover { background: #f3f4f6; }
     .filter-chip.active { background: #4527A0; color: white; border-color: #4527A0; }
 
     /* Fix modal display saat di-show */
-    #jobDetailModal.flex, #workerSelectionModal.flex, #addProfileModal.flex, #editProfileModal.flex { display: flex !important; }
+    #jobDetailModal.flex, #workerSelectionModal.flex, #addProfileModal.flex, #editProfileModal.flex, #ajukanPublikasiModal.flex { display: flex !important; }
 
     /* ======================================================= */
     /* RADIO-CARD: Visual feedback saat dipilih                 */
@@ -1282,8 +1294,8 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
                 const workerInfo = card.querySelector('.worker-info');
                 if (workerInfo) {
                     workerInfo.innerHTML = `
-                        <p class="flex justify-between"><span>Annotator:</span><span>${data.annotator_name}</span></p>
-                        <p class="flex justify-between"><span>Reviewer:</span><span>${data.reviewer_name}</span></p>
+                        <p class="flex justify-between"><span>Annotator:</span><span class="truncate max-w-48">${data.annotator_name}</span></p>
+                        <p class="flex justify-between"><span>Reviewer:</span><span class="truncate max-w-48">${data.reviewer_name}</span></p>
                     `;
                 }
                 if (data.new_status) {
@@ -1502,6 +1514,58 @@ function uploadImages(files, jobId) {
         saveButton.textContent = 'Save Changes';
     });
 }
+
+// =========================================================
+// AJUKAN PUBLIKASI KE KOMISI
+// =========================================================
+function showAjukanPublikasi(jobId, jobTitle) {
+    document.getElementById('pubJobId').value = jobId;
+    document.getElementById('pubName').value = jobTitle + " (Dataset Validasi)";
+    document.getElementById('pubDescription').value = "";
+    
+    // Buka modal
+    openModal('ajukanPublikasiModal');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const pubForm = document.getElementById('ajukanPublikasiForm');
+    
+    if (pubForm) {
+        pubForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('pubSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(this);
+
+            fetch("{% url 'master:ajukan_publikasi' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF() },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeModal('ajukanPublikasiModal');
+                    alert(data.message);
+                    window.location.reload(); // Refresh halaman
+                } else {
+                    alert('Gagal: ' + data.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Kirim ke Komisi';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan jaringan.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim ke Komisi';
+            });
+        });
+    }
+});
 
 </script>
 

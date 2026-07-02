@@ -33,6 +33,8 @@ urlpatterns = [
     # Reviewer
     path('reviewer/', include('reviewer.urls')),
     
+    path('komisi/', include('komisi.urls')),
+    
     #API
     path('api/', include('master.api_urls')), 
 

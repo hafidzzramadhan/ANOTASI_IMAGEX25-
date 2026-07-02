@@ -6,6 +6,7 @@ from django.conf import settings
 import os
 import uuid
 
+
 class User(models.Model):
     ROLE_CHOICES = [
         ('annotator', 'Annotator'),
@@ -60,6 +61,7 @@ class CustomUser(AbstractUser):
         ('annotator', 'Annotator'),
         ('reviewer', 'Reviewer'),
         ('member', 'Member'),
+        ('komisi', 'Komisi'),
     ]
     
     username = models.CharField(max_length=150, unique=True)
@@ -93,8 +95,27 @@ class Dataset(models.Model):
     file_path = models.FileField(upload_to='datasets/')
     count = models.IntegerField(default=0)
 
+    # ========================================================
+    # TAMBAHAN UNTUK FITUR PUBLIKASI EXPLORE & KOMISI
+    # ========================================================
+    status_publikasi = models.CharField(max_length=20, default='published') # Set default published untuk testing
+    description = models.TextField(blank=True, null=True, help_text="Deskripsi detail dataset")
+    annotation_type = models.CharField(max_length=50, default='Bounding Box')
+    rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0, null=True, blank=True)
+    komisi_feedback = models.TextField(blank=True, null=True)
+
     def __str__(self):
         return self.name
+
+class DatasetComment(models.Model):
+    # Ubah target ForeignKey menjadi 'Dataset'
+    dataset = models.ForeignKey('Dataset', on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Komentar dari {self.user.username} di {self.dataset.name}"
 
 
 class Project(models.Model):
@@ -659,3 +680,5 @@ class ImageAnnotationIssue(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
