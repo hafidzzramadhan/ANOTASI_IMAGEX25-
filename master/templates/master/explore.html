@@ -1,0 +1,303 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eksplor Dataset — Platform Anotasi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    
+    /* ── Warna brand konsisten dengan landing ── */
+    :root {
+      --violet-100: #DDD6FE;
+      --violet-400: #A78BFA;
+      --violet-500: #8B5CF6;
+      --violet-600: #7C3AED;
+      --bg: #FFFFFF;
+      --surface: rgba(255, 255, 255, 0.8);
+      --text: #374151;
+      --heading: #0F172A;
+      --border: rgba(255, 255, 255, 0.6);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0B0A14;
+      --surface: #13111F;
+      --text: #E4E0F0;
+      --heading: #FFFFFF;
+      --border: #1E1B2E;
+    }
+
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background: radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
+                  radial-gradient(circle at 100% 0%, #FBCFE8 0%, transparent 50%),
+                  var(--bg);
+      color: var(--text); 
+      margin: 0; 
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    [data-theme="dark"] body {
+      background: radial-gradient(ellipse 60% 50% at 70% 50%, rgba(124,58,237,0.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,92,246,0.10) 0%, transparent 60%),
+                  #0B0A14;
+    }
+
+    .pa-blob {
+      position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.45; pointer-events: none; z-index: -1;
+    }
+
+    /* ── Komponen UI ── */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.6); border-bottom: 1px solid var(--border);
+    }
+    [data-theme="dark"] .navbar { background: rgba(19, 17, 31, 0.75); }
+    
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 88px;
+    }
+    
+    .nav-links { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
+    .nav-links a { color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none; transition: 0.2s; opacity: 0.8; }
+    .nav-links a:hover, .nav-links a.active { color: var(--violet-600); opacity: 1; }
+    
+    .btn-ghost {
+      background: transparent; border: 1.5px solid #E9D5FF; color: var(--heading); padding: 8px 20px; 
+      border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+    }
+    [data-theme="dark"] .btn-ghost { border-color: #374151; }
+    .btn-ghost:hover { border-color: var(--violet-400); box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15); }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #A78BFA, #7C3AED); color: #fff !important; padding: 9px 22px; 
+      border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s; border: none;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3); text-align: center;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: 24px; transition: all 0.25s ease;
+    }
+    [data-theme="dark"] .glass-panel { background: rgba(19, 17, 31, 0.8); }
+
+    .dataset-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(139, 92, 246, 0.12); border-color: var(--violet-400); }
+
+    .search-input {
+      background: rgba(255,255,255,0.5); border: 1px solid var(--border); color: var(--text); outline: none;
+    }
+    [data-theme="dark"] .search-input { background: rgba(0,0,0,0.2); }
+    .search-input:focus { border-color: var(--violet-500); }
+
+    .chip {
+      padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
+      border: 1px solid var(--border); color: var(--text); background: transparent;
+    }
+    .chip:hover { background: rgba(139,92,246,0.1); border-color: var(--violet-400); }
+    .chip.active { background: var(--violet-600); color: white; border-color: var(--violet-600); }
+  </style>
+</head>
+<body>
+
+<!-- Dekorasi Background Latar Belakang -->
+<div class="pa-blob bg-purple-200 w-[500px] h-[500px] top-0 -left-40"></div>
+<div class="pa-blob bg-pink-100 w-[400px] h-[400px] top-40 right-0"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="flex items-center gap-2 sm:gap-3 md:gap-5">
+        <a href="/" class="flex items-center gap-2">
+            <img src="{% static 'images/logo1.png' %}" alt="Logo 1" class="h-8 sm:h-10 md:h-14 lg:h-16 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            <img src="{% static 'images/logo2.png' %}" alt="Logo 2" class="h-8 sm:h-10 md:h-14 lg:h-15 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            <img src="{% static 'images/logo3.png' %}" alt="Logo 3" class="h-12 sm:h-14 md:h-20 lg:h-24 drop-shadow-md hover:scale-105 transition-transform duration-300"> 
+            </a>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="/">Beranda</a></li>
+      <li><a href="#" class="active">🌐 Eksplor Dataset</a></li>
+      <li><a href="/#cara-kerja">Cara Kerja</a></li>
+    </ul>
+
+    <div class="nav-actions flex items-center gap-3">
+      <button id="themeToggle" class="btn-ghost flex items-center justify-center !p-2" type="button">🌙</button>
+      <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Content Area -->
+<main class="max-w-[1250px] mx-auto px-6 pt-36 pb-20 relative z-10 min-h-screen">
+    
+    <!-- Bagian Header Hub -->
+    <header class="mb-12 text-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-bold uppercase tracking-widest mb-4">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            Terverifikasi Komisi
+        </div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-[var(--heading)] mb-4 leading-tight">
+            Eksplor Dataset <span class="bg-gradient-to-r from-violet-400 to-violet-600 bg-clip-text text-transparent">Publik.</span>
+        </h1>
+        <p class="text-[var(--text)] opacity-80 text-base md:text-lg max-w-2xl mx-auto">
+            Kumpulan dataset Computer Vision berkualitas tinggi (YOLO format) yang dianotasi oleh tim profesional dan telah melewati validasi ketat.
+        </p>
+    </header>
+
+    <!-- Bar Pencarian & Filter (Glassmorphism) -->
+    <div class="glass-panel p-4 mb-10 flex flex-col md:flex-row gap-4 justify-between items-center shadow-lg shadow-violet-500/5">
+        
+        <!-- Filter Categories -->
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button class="chip active">Semua Dataset</button>
+            <button class="chip flex items-center gap-1">🔳 Bounding Box</button>
+            <button class="chip flex items-center gap-1">⬟ Polygon</button>
+        </div>
+
+        <!-- Search Bar -->
+        <form method="GET" class="relative w-full md:max-w-[320px]">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" name="q" value="{{ search_query }}" 
+                   class="search-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium transition-all" 
+                   placeholder="Cari nama project atau kategori...">
+        </form>
+    </div>
+
+    <!-- Grid Etalase Dataset -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        
+        {% if datasets %}
+            {% for dataset in datasets %}
+            <!-- Card Dataset -->
+            <article class="dataset-card glass-panel overflow-hidden flex flex-col justify-between">
+                <div>
+                    <!-- Thumbnail Placeholder (Desain Abstrak Keren) -->
+                    <div class="w-full h-44 bg-[#0E0D1A] relative overflow-hidden flex items-center justify-center">
+                        <!-- Dekorasi Background Image Card -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-violet-900/40 to-transparent"></div>
+                        <div class="w-full h-full opacity-30" style="background-image: radial-gradient(#4c1d95 1px, transparent 1px); background-size: 16px 16px;"></div>
+                        
+                        <!-- Badge Tipe Anotasi -->
+                        <div class="absolute top-3 left-3 flex gap-2">
+                            {% if dataset.annotation_type == 'Polygon' %}
+                                <span class="text-[10px] font-bold px-2.5 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded backdrop-blur-md">
+                                    ⬟ POLYGON
+                                </span>
+                            {% else %}
+                                <span class="text-[10px] font-bold px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded backdrop-blur-md">
+                                    🔳 BOUNDING BOX
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ikon Utama Tengah -->
+                        <i class="fas fa-images text-4xl text-white/20 relative z-10"></i>
+                    </div>
+                    
+                    <!-- Konten Teks -->
+                    <div class="p-6">
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <!-- Arahkan link ke dataset_detail dengan membawa parameter ID dataset tersebut -->
+<a href="{% url 'master:dataset_detail' dataset.id %}" class="...">
+    <h3 class="text-lg font-extrabold text-[var(--heading)] ...">{{ dataset.name }}</h3>
+</a>
+                            <!-- Rating -->
+                            <div class="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md border border-amber-100 dark:border-amber-500/20 shrink-0">
+                                <i class="fas fa-star text-amber-500 text-[10px]"></i>
+                                <span class="text-xs font-bold text-amber-600 dark:text-amber-400">{{ dataset.rating }}</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-[var(--text)] opacity-75 line-clamp-2 mb-4 leading-relaxed">
+                            {{ dataset.description }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer Card & Action -->
+                <div class="px-6 pb-6">
+                    <div class="flex justify-between items-center py-3 border-t border-black/5 dark:border-white/5 mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-[var(--text)] opacity-50 uppercase tracking-wider">Total Gambar</span>
+                            <span class="text-sm font-bold text-[var(--heading)] flex items-center gap-1">
+                                <i class="fas fa-image text-violet-500 text-xs"></i> {{ dataset.count }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col text-right">
+                            <span class="text-[10px] font-bold text-[var(--text)] opacity-50 uppercase tracking-wider">Master</span>
+                            <span class="text-sm font-bold text-[var(--heading)]">
+                                @{{ dataset.labeler.username }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn-primary w-full flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        Unduh Dataset
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <!-- State Kosong jika tidak ada data -->
+            <div class="col-span-full py-20 text-center glass-panel">
+                <i class="fas fa-box-open text-4xl text-violet-300 mb-4"></i>
+                <h3 class="text-xl font-bold text-[var(--heading)] mb-2">Belum Ada Dataset</h3>
+                <p class="text-[var(--text)] opacity-70">Komisi sedang meninjau project. Silakan kembali lagi nanti.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</main>
+
+<!-- Footer (Sesuai Landing) -->
+<footer class="border-t border-black/5 dark:border-white/5 py-8 bg-white/60 dark:bg-[#13111F] backdrop-blur-md relative z-10">
+  <div class="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-2 sm:gap-3 opacity-80">
+        <img src="{% static 'images/logo1.png' %}" alt="Logo 1" class="h-6 sm:h-8 drop-shadow-sm">
+        <img src="{% static 'images/logo2.png' %}" alt="Logo 2" class="h-6 sm:h-8 drop-shadow-sm">
+        <img src="{% static 'images/logo3.png' %}" alt="Logo 3" class="h-9 sm:h-12 drop-shadow-sm"> 
+    </div>
+    <div class="flex gap-6">
+      <a href="{% url 'master:login' %}" class="text-sm text-[var(--text)] font-semibold hover:text-violet-600 transition-colors">Masuk Dashboard</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Script Tema -->
+<script>
+  const t = document.getElementById('themeToggle');
+  const currentTheme = localStorage.getItem('theme') || 'dark';
+  
+  if(currentTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    t.textContent = '☀️';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    t.textContent = '🌙';
+  }
+
+  t.onclick = () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if(isLight) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      t.textContent = '🌙';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+      t.textContent = '☀️';
+    }
+  }
+</script>
+</body>
+</html>

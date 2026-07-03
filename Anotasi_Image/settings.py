@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'master.apps.MasterConfig',
     'annotator.apps.AnnotatorConfig',
     'reviewer.apps.ReviewerConfig',
+    'komisi.apps.KomisiConfig',
     
 ]
 
