@@ -46,6 +46,7 @@ def create_job_notification(job, recipient, sender):
         status='unread'
     )
     return notification
+
 import os
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings  # Add this at the top with other imports
@@ -357,17 +358,22 @@ def login_view(request):
         username_or_email = request.POST.get("username")
         password = request.POST.get("password")
 
-        # First try to authenticate with email
         user = authenticate(request, email=username_or_email, password=password)
         if user is None:
-            # If email auth fails, try with username
             user = authenticate(request, username=username_or_email, password=password)
 
         if user is not None:
             if user.is_active:
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                return redirect("master:lobby")
+                
+                # --- LOGIKA ROLE BARU ---
+                # Cek role user, jika komisi arahkan ke lobi komisi
+                if hasattr(user, 'role') and user.role == 'komisi':
+                    return redirect("komisi:lobby")
+                else:
+                    return redirect("master:lobby")
+                # -----------------------
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -1942,3 +1948,107 @@ def reset_password_view(request, uidb64, token):
         'uid': uidb64,
         'token': token,
     })
+    
+    
+from django.shortcuts import render
+
+def explore_datasets(request):
+    """
+    Menarik data ASLI dari model Dataset yang statusnya sudah 'published'.
+    """
+    # Ambil dataset dari database
+    datasets = Dataset.objects.filter(status_publikasi='published').order_by('-date_created')
+    
+    # Fitur Pencarian (Search Bar)
+    search_query = request.GET.get('q', '')
+    if search_query:
+        datasets = datasets.filter(name__icontains=search_query)
+        
+    context = {
+        'datasets': datasets,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'master/explore.html', context)
+
+def dataset_detail(request, dataset_id):
+    """
+    View untuk menampilkan detail lengkap sebuah dataset,
+    termasuk kolom komentar dan fitur tambah komentar.
+    """
+    # 1. Ambil dataset berdasarkan ID.
+    # Jika dataset tidak ditemukan (atau mungkin ID salah), akan otomatis ke halaman 404 (Not Found).
+    dataset = get_object_or_404(Dataset, id=dataset_id)
+    
+    # 2. Logika untuk menangani form komentar (saat user klik "Kirim Komentar")
+    if request.method == 'POST':
+        # Pastikan hanya user yang sudah login yang bisa komentar
+        if request.user.is_authenticated:
+            komentar_teks = request.POST.get('text')
+            
+            # Validasi agar komentar tidak kosong
+            if komentar_teks and komentar_teks.strip():
+                # Simpan komentar ke database
+                DatasetComment.objects.create(
+                    dataset=dataset,
+                    user=request.user,
+                    text=komentar_teks
+                )
+                messages.success(request, "Komentar Anda berhasil ditambahkan!")
+                # Refresh halaman (Redirect) agar komentar baru langsung muncul
+                return redirect('master:dataset_detail', dataset_id=dataset.id)
+            else:
+                messages.error(request, "Komentar tidak boleh kosong.")
+        else:
+            messages.error(request, "Anda harus login untuk memberikan komentar.")
+            return redirect('master:login') # Arahkan ke halaman login
+
+    # 3. Ambil semua komentar yang terkait dengan dataset ini,
+    # urutkan dari yang terbaru (tanda minus '-' pada '-created_at')
+    comments = dataset.comments.all().order_by('-created_at')
+
+    context = {
+        'dataset': dataset,
+        'comments': comments,
+    }
+    
+    return render(request, 'master/dataset_detail.html', context)
+
+@login_required
+@require_http_methods(["POST"])
+def ajukan_publikasi_view(request):
+    try:
+        current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+        if redirect_response:
+            return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        job_id = request.POST.get('job_id')
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        dataset_file = request.FILES.get('dataset_file')
+
+        if not all([job_id, name, dataset_file]):
+            return JsonResponse({'status': 'error', 'message': 'Nama dan file dataset wajib diisi!'}, status=400)
+
+        # Ambil data job terkait
+        job = get_object_or_404(JobProfile, id=job_id, project=current_project)
+
+        # Buat dataset baru dengan status pending
+        Dataset.objects.create(
+            project=current_project,
+            name=name,
+            description=description,
+            labeler=request.user,  # Master yang mengajukan
+            file_path=dataset_file,
+            status_publikasi='pending',  # <--- Ini kuncinya agar dinilai komisi
+            annotation_type=job.get_shape_type_display(), 
+            count=JobImage.objects.filter(job=job).count()
+        )
+
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Dataset berhasil dikirim! Menunggu ulasan dari Komisi.'
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

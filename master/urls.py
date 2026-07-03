@@ -4,6 +4,11 @@ from . import views
 app_name = 'master'
 
 urlpatterns = [
+    # URL untuk Ajukan Publikasi ke Komisi
+    path('ajukan-publikasi/', views.ajukan_publikasi_view, name='ajukan_publikasi'),
+    path('explore/', views.explore_datasets, name='explore'),
+    path('explore/dataset/<int:dataset_id>/', views.dataset_detail, name='dataset_detail'),
+    
     path('', views.landing_view, name='index'),  # Root URL - public landing page
     path('signup/', views.signup_view, name='signup'),
     path("activate/<uidb64>/<token>/", views.activate, name="activate"),  
