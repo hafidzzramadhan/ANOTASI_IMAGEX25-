@@ -72,6 +72,20 @@ class CustomUser(AbstractUser):
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # Changed to True
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='guest')
+
+    KOMISI_APPROVAL_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    komisi_approval_status = models.CharField(
+        max_length=20,
+        choices=KOMISI_APPROVAL_CHOICES,
+        default='pending',
+        blank=True,
+        null=True,
+        help_text="Status persetujuan admin untuk akun komisi. Hanya relevan jika role=komisi.",
+    )
     
     objects = CustomUserManager()
 
@@ -98,11 +112,40 @@ class Dataset(models.Model):
     # ========================================================
     # TAMBAHAN UNTUK FITUR PUBLIKASI EXPLORE & KOMISI
     # ========================================================
-    status_publikasi = models.CharField(max_length=20, default='published') # Set default published untuk testing
+    STATUS_PUBLIKASI_CHOICES = [
+        ('private', 'Private'),
+        ('draft', 'Draft'),
+        ('pending', 'Pending'),
+        ('published', 'Published'),
+        ('rejected', 'Rejected'),
+        ('taken_down', 'Taken Down'),
+    ]
+    status_publikasi = models.CharField(
+        max_length=20,
+        choices=STATUS_PUBLIKASI_CHOICES,
+        default='private',
+    )
     description = models.TextField(blank=True, null=True, help_text="Deskripsi detail dataset")
     annotation_type = models.CharField(max_length=50, default='Bounding Box')
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0, null=True, blank=True)
     komisi_feedback = models.TextField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_datasets',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    taken_down_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='taken_down_datasets',
+    )
+    taken_down_at = models.DateTimeField(null=True, blank=True)
+    takedown_reason = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name

@@ -217,7 +217,7 @@
                 <div class="glass-panel p-6 shadow-xl shadow-violet-500/5">
                     <!-- Jika ada file, tampilkan link ke file_path.url -->
                     {% if dataset.file_path %}
-                        <a href="{{ dataset.file_path.url }}" class="btn-primary w-full py-3.5 text-base rounded-xl mb-3 shadow-lg shadow-violet-500/20" download>
+                        <a href="{% url 'master:download_dataset' dataset.id %}" class="btn-primary w-full py-3.5 text-base rounded-xl mb-3 shadow-lg shadow-violet-500/20" download>
                             <i class="fas fa-cloud-download-alt text-lg"></i> Unduh File ZIP
                         </a>
                     {% else %}

@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth import get_backends
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Q, F
 from django.db.models.functions import Coalesce
@@ -364,16 +364,13 @@ def login_view(request):
 
         if user is not None:
             if user.is_active:
+                if hasattr(user, 'role') and user.role == 'komisi':
+                    messages.error(request, 'Akun Komisi harus masuk melalui portal Komisi.')
+                    return redirect("komisi:login")
+
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                
-                # --- LOGIKA ROLE BARU ---
-                # Cek role user, jika komisi arahkan ke lobi komisi
-                if hasattr(user, 'role') and user.role == 'komisi':
-                    return redirect("komisi:lobby")
-                else:
-                    return redirect("master:lobby")
-                # -----------------------
+                return redirect("master:lobby")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -1975,12 +1972,11 @@ def dataset_detail(request, dataset_id):
     """
     View untuk menampilkan detail lengkap sebuah dataset,
     termasuk kolom komentar dan fitur tambah komentar.
+    Hanya dataset berstatus published yang bisa diakses publik.
     """
-    # 1. Ambil dataset berdasarkan ID.
-    # Jika dataset tidak ditemukan (atau mungkin ID salah), akan otomatis ke halaman 404 (Not Found).
-    dataset = get_object_or_404(Dataset, id=dataset_id)
+    dataset = get_object_or_404(Dataset, id=dataset_id, status_publikasi='published')
     
-    # 2. Logika untuk menangani form komentar (saat user klik "Kirim Komentar")
+    # Logika untuk menangani form komentar (saat user klik "Kirim Komentar")
     if request.method == 'POST':
         # Pastikan hanya user yang sudah login yang bisa komentar
         if request.user.is_authenticated:
@@ -2014,6 +2010,19 @@ def dataset_detail(request, dataset_id):
     
     return render(request, 'master/dataset_detail.html', context)
 
+
+@login_required
+def download_dataset(request, dataset_id):
+    """Serve file dataset hanya untuk user yang sudah login."""
+    dataset = get_object_or_404(Dataset, id=dataset_id, status_publikasi='published')
+    if not dataset.file_path:
+        raise Http404("File dataset tidak tersedia.")
+
+    response = FileResponse(dataset.file_path.open('rb'), as_attachment=True)
+    response['Content-Disposition'] = f'attachment; filename="{dataset.file_path.name.split("/")[-1]}"'
+    return response
+
+
 @login_required
 @require_http_methods(["POST"])
 def ajukan_publikasi_view(request):
@@ -2021,6 +2030,9 @@ def ajukan_publikasi_view(request):
         current_project, current_role, redirect_response = get_current_project_or_redirect(request)
         if redirect_response:
             return JsonResponse({'status': 'error', 'message': 'Pilih project dari lobby terlebih dahulu.'}, status=403)
+
+        if current_role != 'master':
+            return JsonResponse({'status': 'error', 'message': 'Hanya Master yang dapat mengajukan publikasi dataset.'}, status=403)
 
         job_id = request.POST.get('job_id')
         name = request.POST.get('name')

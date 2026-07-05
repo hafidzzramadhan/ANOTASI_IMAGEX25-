@@ -116,6 +116,15 @@
                         <p class="text-sm text-[#8B7BA8] mt-1">Login buat lanjutin anotasi dataset anda.</p>
                     </div>
 
+                    <div class="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-[#F6F0FF] p-1.5 border border-[#E9D5FF] animate__animated animate__fadeIn animation-delay-200">
+                        <button type="button" class="rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-[#5C4A7D] shadow-sm">
+                            Masuk sebagai User
+                        </button>
+                        <a href="{% url 'komisi:login' %}" class="rounded-xl px-3 py-2.5 text-center text-sm font-bold text-[#9B7EBD] hover:bg-white/70 transition-colors">
+                            Masuk sebagai Komisi
+                        </a>
+                    </div>
+
                     {% if error_message %}
                     <div class="mb-4 p-3 bg-[#F5D5E8] text-[#5C4A7D] text-sm rounded-xl border border-[#E8A5C8]/40 animate__animated animate__headShake">
                         {{ error_message }}
