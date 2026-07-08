@@ -4,8 +4,9 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
+from django.db.models import Prefetch
 from master.forms import SignUpForm
-from master.models import Dataset, JobImage
+from master.models import Dataset, DatasetComment, JobImage
 from functools import wraps
 import zipfile
 
@@ -106,7 +107,33 @@ def signup_komisi_view(request):
 @komisi_required
 def lobby_komisi_view(request):
     pending_datasets = Dataset.objects.filter(status_publikasi='pending').order_by('-date_created')
-    return render(request, 'komisi/lobby_komisi.html', {'pending_datasets': pending_datasets})
+    published_datasets = Dataset.objects.filter(status_publikasi='published').select_related('labeler').prefetch_related(
+        Prefetch('comments', queryset=DatasetComment.objects.select_related('user').order_by('-created_at'))
+    ).order_by('-date_created')
+    review_history = Dataset.objects.filter(reviewed_by__isnull=False).select_related('reviewed_by', 'taken_down_by').order_by('-reviewed_at')
+    return render(request, 'komisi/lobby_komisi.html', {
+        'pending_datasets': pending_datasets,
+        'published_datasets': published_datasets,
+        'review_history': review_history,
+    })
+
+
+@login_required
+@komisi_required
+def takedown_dataset_view(request, dataset_id):
+    dataset = get_object_or_404(Dataset, id=dataset_id, status_publikasi='published')
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        if not reason:
+            messages.error(request, 'Alasan take-down wajib diisi.')
+            return redirect('komisi:dashboard')
+        dataset.status_publikasi = 'taken_down'
+        dataset.taken_down_by = request.user
+        dataset.taken_down_at = timezone.now()
+        dataset.takedown_reason = reason
+        dataset.save()
+        messages.success(request, f"Dataset '{dataset.name}' berhasil ditarik dari publik.")
+    return redirect('komisi:dashboard')
 
 
 @login_required

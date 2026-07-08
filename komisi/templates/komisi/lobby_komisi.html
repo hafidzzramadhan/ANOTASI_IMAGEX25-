@@ -3,52 +3,661 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Komisi | Evaluasi Dataset</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; }
-        .glass-card { background: white; border: 1px solid rgba(0,0,0,0.05); border-radius: 20px; transition: 0.3s; }
-        .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        :root {
+            /* Palette Dasar */
+            --cream-light: #FFFDF0;
+            --pure-white: #FFFFFF;
+            --charcoal: #0F172A;
+            --slate-text: #475569;
+            --slate-border: #E2E8F0;
+            --slate-bg: #F8FAFC;
+            
+            /* Aksen Status */
+            --accent-purple: #9B7EBD;
+            --status-pending: #F59E0B;
+            --status-published: #10B981;
+            --status-rejected: #EF4444;
+            --status-takedown: #334155;
+
+            --shadow-float: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --radius-xl: 20px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--charcoal);
+            /* Gradasi Cream ke Putih */
+            background: linear-gradient(135deg, var(--cream-light) 0%, var(--pure-white) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        /* ================= TOP NAVIGATION BAR ================= */
+        .topbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-duo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-framed {
+            width: 48px; height: 48px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .logo-plain { width: 90px; object-fit: contain; }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 20px;
+            color: var(--charcoal);
+            border-left: 2px solid var(--slate-border);
+            padding-left: 20px;
+            margin-left: 8px;
+        }
+
+        .user-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .user-info {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name { font-weight: 700; font-size: 14px; }
+        .user-role { font-size: 11px; color: var(--slate-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .btn-logout {
+            background: var(--pure-white);
+            border: 1px solid var(--slate-border);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--status-rejected);
+            transition: var(--transition);
+        }
+        .btn-logout:hover { background: #FEF2F2; border-color: #FECACA; }
+
+        /* ================= MAIN LAYOUT ================= */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 40px 80px 40px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header-section h1 {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+        }
+        
+        .header-section p {
+            color: var(--slate-text);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Notifications (Toasts) */
+        .toast-container {
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .toast {
+            background: var(--pure-white);
+            border: 1px solid var(--slate-border);
+            padding: 14px 24px;
+            border-radius: 99px; /* Pill shape */
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.success { color: var(--status-published); border-color: #A7F3D0; background: #ECFDF5; }
+        .toast.error { color: var(--status-rejected); border-color: #FECACA; background: #FEF2F2; }
+
+        /* ================= TAB NAVIGATION ================= */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            background: rgba(255,255,255,0.6);
+            padding: 8px;
+            border-radius: 99px;
+            border: 1px solid var(--slate-border);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--slate-text);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover { color: var(--charcoal); }
+        .tab-btn.active {
+            background: var(--charcoal);
+            color: var(--pure-white);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* ================= GRID & CARDS ================= */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        /* Card Style Umum */
+        .task-card {
+            background: var(--pure-white);
+            border: 1px solid var(--slate-border);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-float);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        /* Pita Indikator Warna di Atas Kartu */
+        .card-ribbon {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+        .ribbon-pending { background: var(--status-pending); }
+        .ribbon-published { background: var(--status-published); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--charcoal);
+            line-height: 1.3;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-pending { background: #FEF3C7; color: #B45309; }
+        .badge-published { background: #D1FAE5; color: #047857; }
+        .badge-rejected { background: #FEE2E2; color: #B91C1C; }
+        .badge-takedown { background: var(--slate-bg); color: var(--status-takedown); border: 1px solid var(--slate-border); }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--slate-text);
+            line-height: 1.6;
+            flex-grow: 1;
+            margin-bottom: 24px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-text);
+            background: var(--slate-bg);
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        /* Tombol Aksi dalam Kartu */
+        .btn-action {
+            width: 100%;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+        }
+        .btn-primary { background: var(--charcoal); color: var(--pure-white); }
+        .btn-primary:hover { background: #1E293B; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
+        .btn-danger { background: var(--pure-white); color: var(--status-rejected); border: 2px solid #FECACA; }
+        .btn-danger:hover { background: var(--status-rejected); color: var(--pure-white); border-color: var(--status-rejected); }
+
+        /* Comments Minimalist Box */
+        .comment-section {
+            border-top: 1px dashed var(--slate-border);
+            padding-top: 16px;
+            margin-bottom: 24px;
+        }
+        .comment-text { font-size: 13px; color: var(--slate-text); font-style: italic; margin-bottom: 4px; }
+        .comment-author { font-size: 11px; font-weight: 700; color: var(--charcoal); }
+        .comment-block { margin-bottom: 12px; }
+        .comment-block:last-child { margin-bottom: 0; }
+
+        /* ================= HISTORY LIST (LIST VIEW) ================= */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .history-item {
+            background: var(--pure-white);
+            border: 1px solid var(--slate-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+        .history-item:hover { box-shadow: var(--shadow-card); border-color: #CBD5E1; }
+
+        .history-info h4 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+        .history-reason { font-size: 13px; color: var(--slate-text); background: var(--slate-bg); padding: 10px 16px; border-radius: 8px; margin-top: 12px; display: inline-block;}
+        
+        .history-meta { text-align: right; }
+        .history-meta .reviewer { font-size: 13px; font-weight: 700; color: var(--charcoal); }
+        .history-meta .date { font-size: 12px; color: var(--slate-text); margin-top: 4px; }
+
+        /* Empty States */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state i { font-size: 48px; color: #CBD5E1; margin-bottom: 20px; }
+        .empty-state h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+        .empty-state p { color: var(--slate-text); }
+
+        /* ================= MODAL ================= */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(6px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; padding: 20px;
+        }
+
+        .modal-box {
+            background: var(--pure-white);
+            border-radius: var(--radius-xl);
+            width: 100%; max-width: 480px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            animation: modalFadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .modal-title { font-size: 22px; font-weight: 800; }
+        
+        .btn-close {
+            background: var(--slate-bg); border: none;
+            width: 36px; height: 36px; border-radius: 50%;
+            cursor: pointer; color: var(--slate-text); transition: var(--transition);
+        }
+        .btn-close:hover { background: #E2E8F0; color: var(--charcoal); }
+
+        .modal-input {
+            width: 100%; padding: 16px; border-radius: var(--radius-md);
+            border: 2px solid var(--slate-border); font-family: inherit;
+            font-size: 14px; min-height: 120px; resize: vertical;
+            margin-bottom: 24px; outline: none; transition: var(--transition);
+        }
+        .modal-input:focus { border-color: var(--charcoal); }
+
+        .modal-actions { display: flex; gap: 12px; }
+        .modal-actions button { flex: 1; }
+        .btn-cancel { background: var(--slate-bg); color: var(--charcoal); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .topbar { padding: 16px 20px; }
+            .brand-title { display: none; } /* Sembunyikan teks di mobile agar logo muat */
+            .container { padding: 30px 20px; }
+            .tab-nav { flex-direction: column; width: 100%; border-radius: 16px; }
+            .tab-btn { border-radius: 8px; }
+            .history-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .history-meta { text-align: left; }
+        }
     </style>
 </head>
-<body class="p-8 md:p-12">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-end mb-12">
-            <div>
-                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Antrean Evaluasi</h1>
-                <p class="text-slate-500 mt-2 font-medium">QC datasets sebelum tayang di publik.</p>
-            </div>
-            <a href="{% url 'master:logout' %}" class="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold text-sm hover:bg-red-100 transition">Keluar</a>
-        </div>
+<body>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for dataset in pending_datasets %}
-            <div class="glass-card p-7 border-l-4 border-amber-500">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full">Pending</span>
-                </div>
-                <h3 class="font-extrabold text-xl text-slate-900 mb-2">{{ dataset.name }}</h3>
-                <p class="text-sm text-slate-500 mb-6 line-clamp-2 h-10">{{ dataset.description|default:"Tidak ada deskripsi." }}</p>
-                
-                <div class="flex items-center gap-3 text-xs font-bold text-slate-400 mb-6 uppercase tracking-wider">
-                    <i class="fas fa-user-circle"></i> {{ dataset.labeler.email }}
-                </div>
-                
-                <a href="{% url 'komisi:review_komisi' dataset.id %}" 
-                   class="block w-full py-3.5 bg-slate-900 text-white text-center font-bold rounded-xl hover:bg-amber-600 transition duration-300">
-                    Mulai Review
-                </a>
+    <!-- TOP NAVIGATION -->
+    <nav class="topbar">
+        <div class="brand-section">
+            <div class="logo-duo">
+                <img class="logo-framed" src="{% static 'images/logo.png' %}" alt="Logo 1">
+                <img class="logo-plain" src="{% static 'images/logo3.png' %}" alt="Logo 2">
             </div>
-            {% empty %}
-            <div class="col-span-full py-20 text-center glass-card">
-                <div class="text-slate-300 text-5xl mb-4"><i class="fas fa-check-circle"></i></div>
-                <h3 class="text-xl font-extrabold text-slate-700">Semua Beres!</h3>
-                <p class="text-slate-400 mt-2">Tidak ada dataset baru yang menunggu review.</p>
+            <div class="brand-title">Panel Komisi</div>
+        </div>
+        <div class="user-nav">
+            <div class="user-info">
+                <span class="user-name">{{ request.user.first_name|default:request.user.email }}</span>
+                <span class="user-role">Reviewer Komisi</span>
+            </div>
+            <a href="{% url 'master:logout' %}" class="btn-logout"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
+    </nav>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="container">
+        
+        <!-- Header & Deskripsi -->
+        <header class="header-section">
+            <h1>Evaluasi & Quality Control</h1>
+            <p>Ruang kerja sentral komisi untuk meninjau dataset yang menunggu rilis, serta mengevaluasi tanggapan publik untuk tindakan take-down.</p>
+        </header>
+
+        <!-- Toasts Notification -->
+        {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+            <div class="toast {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
+                {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>{% else %}<i class="fas fa-exclamation-circle"></i>{% endif %}
+                {{ message }}
             </div>
             {% endfor %}
         </div>
+        {% endif %}
+
+        <!-- Tab Navigasi -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="tab-pending">Menunggu Review</button>
+            <button class="tab-btn" data-tab="tab-takedown">Evaluasi Take-Down</button>
+            <button class="tab-btn" data-tab="tab-history">Riwayat Keputusan</button>
+        </nav>
+
+        <!-- TAB 1: PENDING -->
+        <section id="tab-pending" class="tab-content">
+            <div class="grid-layout">
+                {% for dataset in pending_datasets %}
+                <article class="task-card">
+                    <div class="card-ribbon ribbon-pending"></div>
+                    
+                    <div class="card-header">
+                        <h3 class="card-title">{{ dataset.name }}</h3>
+                        <span class="badge badge-pending">Pending</span>
+                    </div>
+                    
+                    <p class="card-desc">{{ dataset.description|default:"Dataset ini belum memiliki deskripsi yang dilampirkan oleh kontributor." }}</p>
+                    
+                    <div class="card-meta">
+                        <i class="fas fa-user-edit"></i>
+                        <span>Disubmit oleh: {{ dataset.labeler.email }}</span>
+                    </div>
+
+                    <a href="{% url 'komisi:review_komisi' dataset.id %}" class="btn-action btn-primary">
+                        Mulai Review Dataset
+                    </a>
+                </article>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>Antrean Bersih</h3>
+                    <p>Tidak ada dataset baru yang perlu direview saat ini.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- TAB 2: TAKEDOWN -->
+        <section id="tab-takedown" class="tab-content" style="display: none;">
+            <div class="grid-layout">
+                {% for dataset in published_datasets %}
+                <article class="task-card">
+                    <div class="card-ribbon ribbon-published"></div>
+                    
+                    <div class="card-header">
+                        <h3 class="card-title">{{ dataset.name }}</h3>
+                        <span class="badge badge-published">Published</span>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 20px; font-weight: 700;">
+                        <span style="color: #D97706;"><i class="fas fa-star"></i> {% if dataset.rating %}{{ dataset.rating }}{% else %}-{% endif %}</span>
+                        <span style="color: var(--slate-text);"><i class="fas fa-comment"></i> {{ dataset.comments.count }} Ulasan</span>
+                    </div>
+
+                    <div class="comment-section">
+                        {% for comment in dataset.comments.all|slice:":2" %}
+                        <div class="comment-block">
+                            <p class="comment-text">"{{ comment.text|truncatechars:60 }}"</p>
+                            <p class="comment-author">— {{ comment.user.email }}</p>
+                        </div>
+                        {% empty %}
+                        <p class="comment-text">Belum ada komentar dari publik.</p>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" class="btn-action btn-danger" 
+                            data-modal-open 
+                            data-action="{% url 'komisi:takedown_dataset' dataset.id %}" 
+                            data-name="{{ dataset.name }}">
+                        Tarik dari Publik (Take Down)
+                    </button>
+                </article>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-globe"></i>
+                    <h3>Belum Ada Data Tayang</h3>
+                    <p>Dataset yang telah diterbitkan akan muncul di sini untuk evaluasi publik.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- TAB 3: HISTORY (LIST VIEW) -->
+        <section id="tab-history" class="tab-content" style="display: none;">
+            <div class="history-list">
+                {% for dataset in review_history %}
+                <div class="history-item">
+                    <div class="history-info">
+                        <h4>{{ dataset.name }}</h4>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            {% if dataset.status_publikasi == 'published' %}
+                                <span class="badge badge-published">Published</span>
+                            {% elif dataset.status_publikasi == 'rejected' %}
+                                <span class="badge badge-rejected">Rejected</span>
+                            {% elif dataset.status_publikasi == 'taken_down' %}
+                                <span class="badge badge-takedown">Taken Down</span>
+                            {% else %}
+                                <span class="badge badge-pending">{{ dataset.status_publikasi }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if dataset.status_publikasi == 'taken_down' %}
+                        <div class="history-reason">
+                            <strong>Alasan Take Down:</strong> {{ dataset.takedown_reason|default:"Tidak ada catatan." }}
+                            <div style="margin-top: 4px; font-size: 11px; opacity: 0.7;">
+                                Dieksekusi oleh: {{ dataset.taken_down_by.email }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="history-meta">
+                        <div class="reviewer">Reviewer: {{ dataset.reviewed_by.email }}</div>
+                        <div class="date">{{ dataset.reviewed_at|date:"d M Y, H:i" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <h3>Riwayat Kosong</h3>
+                    <p>Anda belum merekam aktivitas review apapun.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL TAKE-DOWN -->
+    <div id="takedown-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title">Konfirmasi Take Down</h2>
+                    <p style="font-size: 14px; color: var(--slate-text); margin-top: 4px;" id="modal-dataset-name"></p>
+                </div>
+                <button type="button" data-modal-close class="btn-close"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form id="takedown-form" method="POST">
+                {% csrf_token %}
+                <textarea id="takedown-reason" name="reason" class="modal-input" required placeholder="Tuliskan alasan evaluasi mengapa dataset ini harus segera diturunkan dari publik..."></textarea>
+                
+                <div class="modal-actions">
+                    <button type="button" data-modal-close class="btn-action btn-cancel">Batal</button>
+                    <button type="submit" class="btn-action" style="background: var(--status-rejected); color: white; border: none;">Take Down</button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Logika Tab
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Hapus aktif dari semua tombol
+                tabBtns.forEach(b => b.classList.remove('active'));
+                // Tambahkan aktif ke tombol yang diklik
+                btn.classList.add('active');
+
+                // Sembunyikan semua konten
+                tabContents.forEach(content => content.style.display = 'none');
+                
+                // Tampilkan konten target
+                const targetId = btn.getAttribute('data-tab');
+                document.getElementById(targetId).style.display = 'block';
+            });
+        });
+
+        // Logika Modal
+        const modal = document.getElementById('takedown-modal');
+        const modalTitle = document.getElementById('modal-dataset-name');
+        const takedownForm = document.getElementById('takedown-form');
+        const reasonInput = document.getElementById('takedown-reason');
+
+        document.querySelectorAll('[data-modal-open]').forEach(button => {
+            button.addEventListener('click', () => {
+                takedownForm.action = button.getAttribute('data-action');
+                modalTitle.textContent = "Dataset Target: " + button.getAttribute('data-name');
+                reasonInput.value = '';
+                modal.style.display = 'flex';
+                reasonInput.focus();
+            });
+        });
+
+        document.querySelectorAll('[data-modal-close]').forEach(button => {
+            button.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        });
+
+        // Tutup modal jika klik background gelap
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    </script>
 </body>
 </html>

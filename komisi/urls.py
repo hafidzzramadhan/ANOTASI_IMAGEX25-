@@ -9,6 +9,7 @@ urlpatterns = [
     path('signup/', views.signup_komisi_view, name='signup'),
     path('lobby/', views.lobby_komisi_view, name='lobby'),
     path('review/<int:dataset_id>/', views.review_komisi_view, name='review_komisi'),
+    path('takedown/<int:dataset_id>/', views.takedown_dataset_view, name='takedown_dataset'),
     
     #get data
     path('get-dataset-content/<int:dataset_id>/', views.get_dataset_content, name='get_dataset_content'),
