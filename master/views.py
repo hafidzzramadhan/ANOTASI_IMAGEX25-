@@ -370,7 +370,7 @@ def login_view(request):
 
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                return redirect("master:lobby")
+                return redirect("master:index")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:

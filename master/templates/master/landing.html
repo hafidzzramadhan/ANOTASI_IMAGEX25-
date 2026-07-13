@@ -15,6 +15,55 @@
       overflow-x: hidden;
       }
     
+    
+    .profile-dropdown { position: relative; }
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--violet-600, #7c3aed);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.profile-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 160px;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.profile-dropdown-menu.show { display: block; }
+
+.profile-dropdown-menu a {
+  display: block;
+  padding: 12px 16px;
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.profile-dropdown-menu a:hover { background: #f4f4f5; }
+
+[data-theme="dark"] .profile-dropdown-menu {
+  background: #1f1f23;
+}
+[data-theme="dark"] .profile-dropdown-menu a { color: #eee; }
+[data-theme="dark"] .profile-dropdown-menu a:hover { background: #2a2a2e; }
+
     /* ── Warna brand ── */
     :root {
       --violet-100: #DDD6FE;
@@ -255,6 +304,20 @@
     .reveal.visible { opacity: 1; transform: none; }
   </style>
 </head>
+<script>
+function toggleProfileDropdown() {
+  document.getElementById('profileDropdownMenu').classList.toggle('show');
+}
+
+// Tutup dropdown kalau klik di luar area-nya
+document.addEventListener('click', function(event) {
+  const dropdown = document.querySelector('.profile-dropdown');
+  const menu = document.getElementById('profileDropdownMenu');
+  if (dropdown && menu && !dropdown.contains(event.target)) {
+    menu.classList.remove('show');
+  }
+});
+</script>
 <body>
 
 <div class="pa-blob bg-purple-200 w-96 h-96 top-20 -left-20"></div>
@@ -276,10 +339,22 @@
     </ul>
 
     <div class="nav-actions">
-      <button id="themeToggle" class="btn-ghost flex items-center justify-center !p-2" type="button">🌙</button>
-      <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
-      <a href="{% url 'master:signup' %}" class="btn-primary">Daftar Gratis →</a>
+  
+  {% if user.is_authenticated %}
+  <div class="profile-dropdown">
+    <div class="profile-icon" onclick="toggleProfileDropdown()">
+      {{ user.username|slice:":1"|upper }}
     </div>
+    <div class="profile-dropdown-menu" id="profileDropdownMenu">
+      <a href="{% url 'master:lobby' %}">Workspace Saya</a>
+      <a href="{% url 'master:logout' %}">Logout</a>
+    </div>
+  </div>
+{% else %}
+  <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
+  <a href="{% url 'master:signup' %}" class="btn-primary">Daftar Gratis →</a>
+{% endif %}
+</div>
   </div>
 </nav>
 
