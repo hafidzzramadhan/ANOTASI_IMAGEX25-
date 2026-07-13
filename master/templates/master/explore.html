@@ -25,14 +25,6 @@
       --border: rgba(255, 255, 255, 0.6);
     }
 
-    [data-theme="dark"] {
-      --bg: #0B0A14;
-      --surface: #13111F;
-      --text: #E4E0F0;
-      --heading: #FFFFFF;
-      --border: #1E1B2E;
-    }
-
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
       background: radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
@@ -42,12 +34,6 @@
       margin: 0; 
       min-height: 100vh;
       transition: background 0.3s, color 0.3s;
-    }
-
-    [data-theme="dark"] body {
-      background: radial-gradient(ellipse 60% 50% at 70% 50%, rgba(124,58,237,0.18) 0%, transparent 70%),
-                  radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,92,246,0.10) 0%, transparent 60%),
-                  #0B0A14;
     }
 
     .pa-blob {
@@ -60,7 +46,6 @@
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       background: rgba(255, 255, 255, 0.6); border-bottom: 1px solid var(--border);
     }
-    [data-theme="dark"] .navbar { background: rgba(19, 17, 31, 0.75); }
     
     .nav-inner {
       max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;
@@ -70,33 +55,68 @@
     .nav-links { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
     .nav-links a { color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none; transition: 0.2s; opacity: 0.8; }
     .nav-links a:hover, .nav-links a.active { color: var(--violet-600); opacity: 1; }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
     
     .btn-ghost {
-      background: transparent; border: 1.5px solid #E9D5FF; color: var(--heading); padding: 8px 20px; 
+      background: #FFFFFF; border: 1.5px solid #E9D5FF; color: var(--heading); padding: 8px 20px; 
       border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+      text-decoration: none;
     }
-    [data-theme="dark"] .btn-ghost { border-color: #374151; }
     .btn-ghost:hover { border-color: var(--violet-400); box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15); }
     
     .btn-primary {
       background: linear-gradient(135deg, #A78BFA, #7C3AED); color: #fff !important; padding: 9px 22px; 
       border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s; border: none;
-      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3); text-align: center;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3); text-align: center; text-decoration: none;
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #7C3AED, #6D28D9);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* ── Profile icon (navbar, sudah login) ── */
+    .profile-menu { position: relative; }
+    .profile-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #A78BFA, #7C3AED);
+      color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+      transition: all 0.18s;
+    }
+    .profile-btn:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); transform: translateY(-1px); }
+    .profile-dropdown {
+      position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px;
+      background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.6); border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      padding: 8px; display: none; flex-direction: column; gap: 2px; z-index: 200;
+    }
+    .profile-menu.open .profile-dropdown { display: flex; }
+    .profile-dropdown-name {
+      padding: 8px 10px 6px; font-size: 13px; font-weight: 700; color: var(--heading);
+      border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 4px;
+    }
+    .profile-dropdown a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; opacity: 0.85;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .profile-dropdown a:hover { background: rgba(167, 139, 250, 0.12); opacity: 1; }
+    .profile-dropdown a.logout-link { color: #DC2626; }
 
     .glass-panel {
       background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border); border-radius: 24px; transition: all 0.25s ease;
     }
-    [data-theme="dark"] .glass-panel { background: rgba(19, 17, 31, 0.8); }
 
     .dataset-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(139, 92, 246, 0.12); border-color: var(--violet-400); }
 
     .search-input {
       background: rgba(255,255,255,0.5); border: 1px solid var(--border); color: var(--text); outline: none;
     }
-    [data-theme="dark"] .search-input { background: rgba(0,0,0,0.2); }
     .search-input:focus { border-color: var(--violet-500); }
 
     .chip {
@@ -130,9 +150,18 @@
       <li><a href="/#cara-kerja">Cara Kerja</a></li>
     </ul>
 
-    <div class="nav-actions flex items-center gap-3">
-      <button id="themeToggle" class="btn-ghost flex items-center justify-center !p-2" type="button">🌙</button>
+    <div class="nav-actions">
+      {% if user.is_authenticated %}
+      <div class="profile-menu" id="profileMenu">
+        <button type="button" class="profile-btn" id="profileBtn">{{ user.username|slice:":1"|upper }}</button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name">{{ user.username }}</div>
+          <a href="{% url 'master:logout' %}" class="logout-link">Logout</a>
+        </div>
+      </div>
+      {% else %}
       <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
+      {% endif %}
     </div>
   </div>
 </nav>
@@ -208,9 +237,9 @@
                     <div class="p-6">
                         <div class="flex items-start justify-between gap-2 mb-3">
                             <!-- Arahkan link ke dataset_detail dengan membawa parameter ID dataset tersebut -->
-<a href="{% url 'master:dataset_detail' dataset.id %}" class="...">
-    <h3 class="text-lg font-extrabold text-[var(--heading)] ...">{{ dataset.name }}</h3>
-</a>
+                            <a href="{% url 'master:dataset_detail' dataset.id %}" class="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                                <h3 class="text-lg font-extrabold text-[var(--heading)] truncate">{{ dataset.name }}</h3>
+                            </a>
                             <!-- Rating -->
                             <div class="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md border border-amber-100 dark:border-amber-500/20 shrink-0">
                                 <i class="fas fa-star text-amber-500 text-[10px]"></i>
@@ -268,35 +297,26 @@
         <img src="{% static 'images/logo3.png' %}" alt="Logo 3" class="h-9 sm:h-12 drop-shadow-sm"> 
     </div>
     <div class="flex gap-6">
+      {% if user.is_authenticated %}
+      <a href="{% url 'master:lobby' %}" class="text-sm text-[var(--text)] font-semibold hover:text-violet-600 transition-colors">Buka Dashboard</a>
+      {% else %}
       <a href="{% url 'master:login' %}" class="text-sm text-[var(--text)] font-semibold hover:text-violet-600 transition-colors">Masuk Dashboard</a>
+      {% endif %}
     </div>
   </div>
 </footer>
 
-<!-- Script Tema -->
 <script>
-  const t = document.getElementById('themeToggle');
-  const currentTheme = localStorage.getItem('theme') || 'dark';
-  
-  if(currentTheme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
-    t.textContent = '☀️';
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    t.textContent = '🌙';
-  }
-
-  t.onclick = () => {
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    if(isLight) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-      t.textContent = '🌙';
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('theme', 'light');
-      t.textContent = '☀️';
-    }
+  const profileBtn = document.getElementById('profileBtn');
+  if (profileBtn) {
+    const profileMenu = document.getElementById('profileMenu');
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileMenu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!profileMenu.contains(e.target)) profileMenu.classList.remove('open');
+    });
   }
 </script>
 </body>
