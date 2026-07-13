@@ -339,7 +339,7 @@ def signup_view(request):
             if user:
                 # login(request, user)
                 messages.success(request, "Akun berhasil dibuat! Selamat datang!")
-                return redirect("master:login")
+                return redirect("master:landing")
             else:
                 messages.error(request, "Gagal melakukan autentikasi")
         else:
