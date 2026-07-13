@@ -15,55 +15,6 @@
       overflow-x: hidden;
       }
     
-    
-    .profile-dropdown { position: relative; }
-
-.profile-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--violet-600, #7c3aed);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.profile-dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 48px;
-  right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  min-width: 160px;
-  overflow: hidden;
-  z-index: 50;
-}
-
-.profile-dropdown-menu.show { display: block; }
-
-.profile-dropdown-menu a {
-  display: block;
-  padding: 12px 16px;
-  color: #333;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.profile-dropdown-menu a:hover { background: #f4f4f5; }
-
-[data-theme="dark"] .profile-dropdown-menu {
-  background: #1f1f23;
-}
-[data-theme="dark"] .profile-dropdown-menu a { color: #eee; }
-[data-theme="dark"] .profile-dropdown-menu a:hover { background: #2a2a2e; }
-
     /* ── Warna brand ── */
     :root {
       --violet-100: #DDD6FE;
@@ -80,15 +31,6 @@
       --muted: #6D28D9;
     }
 
-    [data-theme="dark"] {
-      --bg: #0B0A14;
-      --surface: #13111F;
-      --text: #E4E0F0;
-      --heading: #FFFFFF;
-      --border: #1E1B2E;
-      --muted: #8B83A8;
-    }
-
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
       background: radial-gradient(circle at 0% 100%, #DDD6FE 0%, transparent 50%),
@@ -100,12 +42,6 @@
       overflow-x: hidden; /* Tambahkan baris ini juga */
       width: 100%;
       transition: background 0.3s, color 0.3s;
-    }
-
-    [data-theme="dark"] body {
-      background: radial-gradient(ellipse 60% 50% at 70% 50%, rgba(124,58,237,0.18) 0%, transparent 70%),
-                  radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,92,246,0.10) 0%, transparent 60%),
-                  #0B0A14;
     }
 
     .pa-blob {
@@ -124,10 +60,6 @@
       -webkit-backdrop-filter: blur(16px);
       background: rgba(255, 255, 255, 0.6);
       border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-    }
-    [data-theme="dark"] .navbar {
-      background: rgba(19, 17, 31, 0.75);
-      border-bottom: 1px solid #1E1B2E;
     }
     .nav-inner {
       max-width: 1200px; margin: 0 auto;
@@ -165,6 +97,38 @@
       transform: translateY(-1px);
     }
 
+    /* ── Profile icon (navbar, sudah login) ── */
+    .profile-menu { position: relative; }
+    .profile-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #A78BFA, #7C3AED);
+      color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+      transition: all 0.18s;
+    }
+    .profile-btn:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); transform: translateY(-1px); }
+    .profile-dropdown {
+      position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px;
+      background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.6); border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      padding: 8px; display: none; flex-direction: column; gap: 2px; z-index: 200;
+    }
+    .profile-menu.open .profile-dropdown { display: flex; }
+    .profile-dropdown-name {
+      padding: 8px 10px 6px; font-size: 13px; font-weight: 700; color: var(--heading);
+      border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 4px;
+    }
+    .profile-dropdown a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; opacity: 0.85;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .profile-dropdown a:hover { background: rgba(167, 139, 250, 0.12); opacity: 1; }
+    .profile-dropdown a.logout-link { color: #DC2626; }
+
     .hero { min-height: 100vh; display: flex; align-items: center; padding: 140px 24px 80px; position: relative; }
     .hero-inner {
       max-width: 1200px; margin: 0 auto; width: 100%;
@@ -176,7 +140,6 @@
       color: var(--violet-600); padding: 6px 14px 6px 8px; border-radius: 999px;
       font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 24px;
     }
-    [data-theme="dark"] .hero-eyebrow { color: var(--violet-300); }
     .eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--violet-500); }
     
     .hero-headline { font-size: clamp(36px, 5vw, 56px); font-weight: 800; line-height: 1.15; color: var(--heading); margin: 0 0 20px; }
@@ -188,13 +151,9 @@
       background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 24px; transition: all 0.25s ease;
     }
-    [data-theme="dark"] .glass-panel {
-      background: rgba(19, 17, 31, 0.8); border: 1px solid #1E1B2E;
-    }
 
     .annotation-demo { comends: glass-panel; overflow: hidden; box-shadow: 0 20px 50px rgba(139, 92, 246, 0.15); }
     .demo-header { display: flex; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-    [data-theme="dark"] .demo-header { border-bottom-color: #1E1B2E; }
     .demo-dot { width: 10px; height: 10px; border-radius: 50%; }
     .demo-title { margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--text); opacity: 0.7; }
     .demo-canvas { position: relative; background: #0E0D1A; aspect-ratio: 16/10; overflow: hidden; }
@@ -219,11 +178,9 @@
     .cursor-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--violet-400); box-shadow: 0 0 12px var(--violet-500); animation: cursor-move 6s ease-in-out infinite; pointer-events: none; z-index: 10; }
     @keyframes cursor-move { 0%, 100% { top: 30%; left: 20%; } 20% { top: 45%; left: 65%; } 45% { top: 70%; left: 38%; } 70% { top: 62%; left: 78%; } 90% { top: 20%; left: 50%; } }
     .demo-footer { padding: 10px 16px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px; }
-    [data-theme="dark"] .demo-footer { border-top-color: #1E1B2E; }
     .demo-status { font-size: 11px; color: var(--text); opacity: 0.6; margin-left: auto; }
 
     .stats-bar { border-top: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05); padding: 40px 24px; background: rgba(255,255,255,0.4); backdrop-filter: blur(8px); }
-    [data-theme="dark"] .stats-bar { background: #13111F; border-color: #1E1B2E; }
     .stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
     .stat { text-align: center; }
     .stat-num { font-size: 34px; font-weight: 800; background: linear-gradient(135deg, #A78BFA, #7C3AED); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -232,7 +189,6 @@
     .section { padding: 100px 24px; position: relative; }
     .section-inner { max-width: 1200px; margin: 0 auto; }
     .section-eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--violet-600); margin-bottom: 14px; }
-    [data-theme="dark"] .section-eyebrow { color: var(--violet-400); }
     .section-title { font-size: clamp(28px, 4vw, 40px); font-weight: 800; color: var(--heading); line-height: 1.2; margin: 0 0 16px; }
     .section-sub { font-size: 15px; color: var(--text); opacity: 0.8; line-height: 1.7; max-width: 540px; }
 
@@ -261,16 +217,11 @@
     .role-card h3 { font-size: 18px; font-weight: 700; color: var(--heading); margin: 0 0 8px; }
     .role-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 16px; letter-spacing: 0.05em; }
     .badge-master   { background: rgba(167,139,250,0.15); color: var(--violet-700); }
-    [data-theme="dark"] .badge-master { color: var(--violet-300); }
     .badge-annotator{ background: rgba(52,211,153,0.15);  color: #059669; }
-    [data-theme="dark"] .badge-annotator { color: #6EE7B7; }
     .badge-reviewer { background: rgba(244,114,182,0.15); color: #DB2777; }
-    [data-theme="dark"] .badge-reviewer { color: #FBCFE8; }
     .badge-komisi   { background: rgba(251,191,36,0.15);  color: #D97706; }
-    [data-theme="dark"] .badge-komisi { color: #FDE68A; }
     .role-card ul { list-style: none; padding: 0; margin: 0; }
     .role-card li { font-size: 13px; color: var(--text); opacity: 0.85; padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: 8px; }
-    [data-theme="dark"] .role-card li { border-bottom-color: #1E1B2E; }
     .role-card li:last-child { border-bottom: none; }
     .role-card li::before { content: '→'; color: var(--violet-500); font-size: 12px; font-weight: bold; }
 
@@ -281,7 +232,6 @@
     .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
     footer { border-top: 1px solid rgba(0,0,0,0.05); padding: 40px 24px; background: rgba(255,255,255,0.6); backdrop-filter: blur(8px); }
-    [data-theme="dark"] footer { background: #13111F; border-color: #1E1B2E; }
     .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
     .footer-copy { font-size: 13px; color: var(--text); opacity: 0.7; }
     .footer-links { display: flex; gap: 24px; }
@@ -304,20 +254,6 @@
     .reveal.visible { opacity: 1; transform: none; }
   </style>
 </head>
-<script>
-function toggleProfileDropdown() {
-  document.getElementById('profileDropdownMenu').classList.toggle('show');
-}
-
-// Tutup dropdown kalau klik di luar area-nya
-document.addEventListener('click', function(event) {
-  const dropdown = document.querySelector('.profile-dropdown');
-  const menu = document.getElementById('profileDropdownMenu');
-  if (dropdown && menu && !dropdown.contains(event.target)) {
-    menu.classList.remove('show');
-  }
-});
-</script>
 <body>
 
 <div class="pa-blob bg-purple-200 w-96 h-96 top-20 -left-20"></div>
@@ -339,22 +275,19 @@ document.addEventListener('click', function(event) {
     </ul>
 
     <div class="nav-actions">
-  
-  {% if user.is_authenticated %}
-  <div class="profile-dropdown">
-    <div class="profile-icon" onclick="toggleProfileDropdown()">
-      {{ user.username|slice:":1"|upper }}
+      {% if user.is_authenticated %}
+      <div class="profile-menu" id="profileMenu">
+        <button type="button" class="profile-btn" id="profileBtn">{{ user.username|slice:":1"|upper }}</button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name">{{ user.username }}</div>
+          <a href="{% url 'master:logout' %}" class="logout-link">Logout</a>
+        </div>
+      </div>
+      {% else %}
+      <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
+      <a href="{% url 'master:signup' %}" class="btn-primary">Daftar Gratis →</a>
+      {% endif %}
     </div>
-    <div class="profile-dropdown-menu" id="profileDropdownMenu">
-      <a href="{% url 'master:lobby' %}">Workspace Saya</a>
-      <a href="{% url 'master:logout' %}">Logout</a>
-    </div>
-  </div>
-{% else %}
-  <a href="{% url 'master:login' %}" class="btn-ghost">Masuk</a>
-  <a href="{% url 'master:signup' %}" class="btn-primary">Daftar Gratis →</a>
-{% endif %}
-</div>
   </div>
 </nav>
 
@@ -378,11 +311,18 @@ document.addEventListener('click', function(event) {
       </p>
 
       <div class="hero-cta">
+        {% if user.is_authenticated %}
+        <a href="{% url 'master:lobby' %}" class="btn-primary flex items-center gap-2 py-3.5 px-6 font-bold">
+          Workspaces
+          <i class="fas fa-arrow-right text-xs"></i>
+        </a>
+        {% else %}
         <a href="{% url 'master:signup' %}" class="btn-primary flex items-center gap-2 py-3.5 px-6 font-bold">
           Mulai Gratis
           <i class="fas fa-arrow-right text-xs"></i>
         </a>
         <a href="{% url 'master:login' %}" class="btn-ghost py-3.5 px-6 font-bold">Sudah punya akun</a>
+        {% endif %}
       </div>
     </div>
 
@@ -567,6 +507,7 @@ document.addEventListener('click', function(event) {
   </div>
 </section>
 
+{% if not user.is_authenticated %}
 <section class="cta-section">
   <div class="cta-card glass-panel reveal">
     <h2>Siap mulai anotasi<br>dataset kamu?</h2>
@@ -580,6 +521,7 @@ document.addEventListener('click', function(event) {
     </div>
   </div>
 </section>
+{% endif %}
 
 <footer>
   <div class="footer-inner">
@@ -589,8 +531,13 @@ document.addEventListener('click', function(event) {
         <img src="{% static 'images/logo3.png' %}" alt="Logo 3" class="h-9 sm:h-12 drop-shadow-sm"> 
     </div>
     <div class="footer-links">
+      {% if user.is_authenticated %}
+      <a href="{% url 'master:lobby' %}">Dashboard</a>
+      <a href="{% url 'master:logout' %}">Logout</a>
+      {% else %}
       <a href="{% url 'master:login' %}">Masuk</a>
       <a href="{% url 'master:signup' %}">Daftar</a>
+      {% endif %}
       <a href="/admin/">Admin</a>
     </div>
   </div>
@@ -615,29 +562,18 @@ document.addEventListener('click', function(event) {
   }
   setInterval(restartAnim, 8000);
 
-  const t = document.getElementById('themeToggle');
-  const currentTheme = localStorage.getItem('theme') || 'dark';
-  
-  if(currentTheme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
-    t.textContent = '☀️';
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    t.textContent = '🌙';
+  const profileBtn = document.getElementById('profileBtn');
+  if (profileBtn) {
+    const profileMenu = document.getElementById('profileMenu');
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileMenu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!profileMenu.contains(e.target)) profileMenu.classList.remove('open');
+    });
   }
 
-  t.onclick = () => {
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    if(isLight) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-      t.textContent = '🌙';
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('theme', 'light');
-      t.textContent = '☀️';
-    }
-  }
 </script>
 </body>
 </html>
