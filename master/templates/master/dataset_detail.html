@@ -50,25 +50,31 @@
     /* Profile Menu (sama seperti explore.html) */
     .profile-menu { position: relative; }
     .profile-btn {
-      width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
-      background: linear-gradient(135deg, #A78BFA, #7C3AED); color: #fff; font-weight: 700; font-size: 16px;
-      display: flex; align-items: center; justify-content: center; transition: all 0.18s;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #A78BFA, #7C3AED);
+      color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; text-decoration: none;
       box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+      transition: all 0.18s;
     }
     .profile-btn:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); transform: translateY(-1px); }
     .profile-dropdown {
-      display: none; position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
-      background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 14px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.12); padding: 8px; flex-direction: column; gap: 2px; z-index: 200;
+      position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px;
+      background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.6); border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      padding: 8px; display: none; flex-direction: column; gap: 2px; z-index: 200;
     }
     .profile-menu.open .profile-dropdown { display: flex; }
     .profile-dropdown-name {
-      padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--heading);
-      border-bottom: 1px solid var(--border); margin-bottom: 4px;
+      padding: 8px 10px 6px; font-size: 13px; font-weight: 700; color: var(--heading);
+      border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 4px;
     }
     .profile-dropdown a {
-      padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text);
-      text-decoration: none; opacity: 0.85; transition: 0.15s;
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; opacity: 0.85;
+      transition: background 0.15s, opacity 0.15s;
     }
     .profile-dropdown a:hover { background: rgba(167, 139, 250, 0.12); opacity: 1; }
     .profile-dropdown a.logout-link { color: #DC2626; }
@@ -81,10 +87,12 @@
 <!-- Navbar -->
 <nav class="navbar">
   <div class="nav-inner">
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 sm:gap-3 md:gap-5">
         <a href="/" class="flex items-center gap-2">
-            <img src="{% static 'images/logo1.png' %}" alt="Logo" class="h-10 md:h-14 hover:scale-105 transition-transform">
-        </a>
+            <img src="{% static 'images/logo1.png' %}" alt="Logo 1" class="h-8 sm:h-10 md:h-14 lg:h-16 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            <img src="{% static 'images/logo2.png' %}" alt="Logo 2" class="h-8 sm:h-10 md:h-14 lg:h-15 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            <img src="{% static 'images/logo3.png' %}" alt="Logo 3" class="h-12 sm:h-14 md:h-20 lg:h-24 drop-shadow-md hover:scale-105 transition-transform duration-300">
+            </a>
     </div>
     <ul class="nav-links hidden md:flex">
       <li><a href="/">Beranda</a></li>
