@@ -1,3 +1,5 @@
+from urllib import request
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
@@ -823,16 +825,22 @@ def performance_view(request):
     # Hitung jumlah project (job) yang pernah diassign ke user (sebagai annotator/reviewer)
     member_data = []
     for user in members:
+        # Ambil role user KHUSUS di project ini (bukan role global akun)
+        membership = ProjectMember.objects.filter(
+            project=current_project, user=user, role__in=["annotator", "reviewer"]
+        ).first()
+        project_role = membership.role if membership else user.role
+
         # Hitung jumlah job sebagai annotator
         project_count = JobProfile.objects.filter(project=current_project, worker_annotator=user).count()
         # Hitung jumlah job sebagai reviewer
-        if user.role == 'reviewer':
+        if project_role == 'reviewer':
             project_count = JobProfile.objects.filter(project=current_project, worker_reviewer=user).count()
         member_data.append({
             'id': user.id,
             'email': user.email,
             'phone_number': user.phone_number or '-',
-            'role': user.get_role_display(),
+            'role': dict(ProjectMember.ROLE_CHOICES).get(project_role, project_role),
             'project_count': project_count,
             'group': '-',
         })
@@ -1860,13 +1868,25 @@ def performance_individual_view(request, user_id):
     if redirect_response:
         return redirect_response
 
-    user = get_object_or_404(CustomUser, id=user_id, role__in=["annotator", "reviewer"])
-    if not ProjectMember.objects.filter(project=current_project, user=user).exists():
-        messages.error(request, 'User tersebut bukan member project ini.')
-        return redirect('master:performance')
+    user = get_object_or_404(CustomUser, id=user_id)
+
+    membership = ProjectMember.objects.filter(
+        project=current_project,
+        user=user,
+        role__in=["annotator", "reviewer"],
+    ).first()
+
+    if not membership:
+        messages.error(
+            request,
+            "User tersebut bukan annotator/reviewer di project ini.",
+        )
+        return redirect("master:performance")
+
+    project_role = membership.role
 
     # Jobs sesuai role
-    if user.role == 'annotator':
+    if project_role == 'annotator':
         user_jobs = JobProfile.objects.filter(project=current_project, worker_annotator=user)
     else:
         user_jobs = JobProfile.objects.filter(project=current_project, worker_reviewer=user)
@@ -1903,7 +1923,7 @@ def performance_individual_view(request, user_id):
     user_profile = {
         'email': user.email,
         'name': f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username,
-        'role': user.role,
+        'role': project_role,
         'status': 'Active' if user.is_active else 'Inactive',
         'status_class': 'bg-green-500' if user.is_active else 'bg-gray-400',
     }
