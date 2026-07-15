@@ -22,6 +22,7 @@ from .tokens import account_activation_token
 from .models import (
     CustomUser,
     Dataset,
+    DatasetComment,
     Issue,
     JobProfile,
     JobImage,
