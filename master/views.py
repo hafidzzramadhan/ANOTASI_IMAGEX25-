@@ -2034,14 +2034,12 @@ def dataset_detail(request, dataset_id):
 
 @login_required
 def download_dataset(request, dataset_id):
-    """Serve file dataset hanya untuk user yang sudah login."""
     dataset = get_object_or_404(Dataset, id=dataset_id, status_publikasi='published')
+
     if not dataset.file_path:
         raise Http404("File dataset tidak tersedia.")
 
-    response = FileResponse(dataset.file_path.open('rb'), as_attachment=True)
-    response['Content-Disposition'] = f'attachment; filename="{dataset.file_path.name.split("/")[-1]}"'
-    return response
+    return redirect(dataset.file_path.url)
 
 
 @login_required

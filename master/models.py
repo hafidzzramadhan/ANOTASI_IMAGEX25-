@@ -5,6 +5,8 @@ from django.db.models.functions import Cast
 from django.conf import settings
 import os
 import uuid
+from cloudinary_storage.storage import RawMediaCloudinaryStorage
+
 
 
 class User(models.Model):
@@ -106,7 +108,7 @@ class Dataset(models.Model):
     name = models.CharField(max_length=255)
     labeler = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date_created = models.DateTimeField(default=timezone.now)
-    file_path = models.FileField(upload_to='datasets/')
+    file_path = models.FileField(upload_to='datasets/', storage=RawMediaCloudinaryStorage())
     count = models.IntegerField(default=0)
 
     # ========================================================
