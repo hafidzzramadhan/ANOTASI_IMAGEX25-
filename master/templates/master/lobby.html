@@ -30,6 +30,18 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        .btn-back-landing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+.btn-back-landing:hover { color: #7C3AED; }
+
         * { 
             box-sizing: border-box; 
             margin: 0; 
@@ -804,6 +816,9 @@
         <aside class="sidebar">
             <div class="sidebar-top-group">
                 <div class="brand-section">
+                    <a href="{% url 'master:index' %}" class="btn-back-landing">
+  ← Kembali ke Landing
+</a>
                     <div class="logo-duo-wrapper">
                         {% load static %}
                         <img class="app-logo logo-framed" src="{% static 'images/logo.png' %}" alt="Logo 1">
