@@ -37,7 +37,8 @@ class SignUpForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         user.phone_number = self.cleaned_data['phone_number']
         user.role = 'guest'
-        user.is_active = True
+        # Akun baru non-aktif dulu sampai email diverifikasi (lihat signup_view + activate view)
+        user.is_active = False
         if commit:
             user.save()
         return user

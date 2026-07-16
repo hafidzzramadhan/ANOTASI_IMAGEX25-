@@ -34,6 +34,11 @@ from .models import (
     ProjectMember,
 )
 from .forms import SignUpForm
+from django.utils import timezone
+from django.urls import reverse
+from .tokens import account_activation_token
+from .email_utils import site_url_for_request as _site_url_for_request, email_logo_url as _email_logo_url
+
 
 def create_job_notification(job, recipient, sender):
     """
@@ -313,10 +318,41 @@ def enter_project_view(request, unique_id):
         return redirect('/reviewer/')
     return redirect('master:lobby')
 
+def send_activation_email(request, user):
+    """Kirim email berisi link aktivasi akun (dipakai signup manual)."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = account_activation_token.make_token(user)
+    activation_path = reverse('master:activate', kwargs={'uidb64': uid, 'token': token})
+    site_url = _site_url_for_request(request)
+    activation_url = f"{site_url}{activation_path}"
+
+    html_body = render_to_string('master/emails/activation_email.html', {
+        'user': user,
+        'activation_url': activation_url,
+        'site_name': 'Anotasi Image',
+        'logo1_url': _email_logo_url(site_url, 'logo1.png', 'EMAIL_LOGO1_URL', 'EMAIL_LOGO_URL'),
+        'logo3_url': _email_logo_url(site_url, 'logo3.png', 'EMAIL_LOGO3_URL'),
+    })
+
+    send_mail(
+        subject='Verifikasi Email — Anotasi Image',
+        message=(
+            f"Halo {user.first_name or user.username},\n\n"
+            f"Terima kasih sudah mendaftar di Anotasi Image. "
+            f"Klik link berikut untuk verifikasi email dan mengaktifkan akun Anda:\n\n"
+            f"{activation_url}\n\n"
+            f"Jika Anda tidak merasa mendaftar, abaikan email ini.\n\n"
+            f"— Tim Anotasi Image"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=html_body,
+        fail_silently=False,
+    )
+
+
 def signup_view(request):
     if request.method == "POST":
-        print("POST data:", request.POST)  # Debug print
-        # Create a form instance with the POST data
         data = {
             'username': request.POST.get('username'),
             'first_name': request.POST.get('first_name'),
@@ -326,27 +362,32 @@ def signup_view(request):
             'password1': request.POST.get('password1'),
             'password2': request.POST.get('password2'),
         }
-        print("Form data:", data)
         form = SignUpForm(data)
 
         if form.is_valid():
-            print("Form is valid")
-            user = form.save()
-            print("User saved:", user)
-            # Authenticate user
-            user = authenticate(
-                request,
-                username=form.cleaned_data['email'],
-                password=form.cleaned_data['password1']
-            )
-            if user:
-                # login(request, user)
-                messages.success(request, "Akun berhasil dibuat! Selamat datang!")
-                return redirect("master:landing")
+            user = form.save()  # is_active=False sampai email diverifikasi
+
+            if getattr(settings, "EMAIL_CONFIGURED", False):
+                try:
+                    send_activation_email(request, user)
+                    messages.success(
+                        request,
+                        "Akun berhasil dibuat! Cek email Anda untuk verifikasi & aktivasi akun."
+                    )
+                except Exception:
+                    logger.exception("Gagal kirim email aktivasi ke %s", user.email)
+                    messages.warning(
+                        request,
+                        "Akun dibuat, tapi email verifikasi gagal terkirim. Hubungi admin atau coba lagi nanti."
+                    )
             else:
-                messages.error(request, "Gagal melakukan autentikasi")
+                # Email belum dikonfigurasi di server (mis. dev lokal) — aktifkan langsung
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+                messages.success(request, "Akun berhasil dibuat! Silakan login.")
+
+            return redirect("master:login")
         else:
-            # Add form errors to messages
             for field in form.errors:
                 for error in form.errors[field]:
                     messages.error(request, f"{field}: {error}")
@@ -403,10 +444,14 @@ def activate(request, uidb64, token):
 
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
-        user.save()
-        login(request, user)
-        messages.success(request, "Akun berhasil diaktifkan! Silakan login.")
+        user.save(update_fields=['is_active'])
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(request, "Email berhasil diverifikasi & akun aktif! Selamat datang.")
         return redirect("master:home")
+    elif user is not None and user.is_active:
+        # Link sudah pernah dipakai sebelumnya (token expired setelah is_active berubah)
+        messages.info(request, "Akun ini sudah aktif. Silakan login.")
+        return redirect("master:login")
     else:
         messages.error(request, "Link aktivasi tidak valid atau sudah kedaluwarsa.")
         return redirect("master:login")
