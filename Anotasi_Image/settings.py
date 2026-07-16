@@ -185,7 +185,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = 'master:login'
-LOGIN_REDIRECT_URL = 'master:home'
+LOGIN_REDIRECT_URL = 'master:lobby'
 LOGOUT_REDIRECT_URL = 'master:login'
 ANNOTATOR_LOGIN_URL = 'annotator:signin'
 
@@ -205,6 +205,7 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'staff', 'superuser']
+ACCOUNT_ADAPTER = 'master.adapters.CustomAccountAdapter'
 # Email verification — 'none' utk dev biar gampang, 'mandatory' utk production
 ACCOUNT_EMAIL_VERIFICATION = os.getenv(
     "ACCOUNT_EMAIL_VERIFICATION",
@@ -228,6 +229,8 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_ADAPTER = 'master.adapters.CustomSocialAccountAdapter'
 
 # ============================================================================

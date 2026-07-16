@@ -1,8 +1,24 @@
 import re
 
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.models import EmailAddress
+from django.shortcuts import resolve_url
 from .models import CustomUser
+
+
+class CustomAccountAdapter(DefaultAccountAdapter):
+    """
+    Satu pintu redirect setelah login normal maupun Google.
+    `master:home` butuh role/akses master, jadi lobby adalah halaman aman
+    untuk user baru, guest, annotator, reviewer, dan master.
+    """
+
+    def get_login_redirect_url(self, request):
+        return resolve_url('master:lobby')
+
+    def get_signup_redirect_url(self, request):
+        return resolve_url('master:lobby')
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -57,7 +73,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         if not user.role:
             user.role = 'guest'
         user.is_active = True
-        user.save()
+        user.save(update_fields=['email', 'first_name', 'last_name', 'role', 'is_active'])
 
         if user.email:
             EmailAddress.objects.update_or_create(

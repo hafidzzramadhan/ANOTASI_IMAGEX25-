@@ -95,9 +95,9 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ["username"]
     
     def save(self, *args, **kwargs):
-        # Cuma paksa aktif pas BIKIN user baru, bukan tiap save
-        if self._state.adding:
-            self.is_active = True
+        # Hormati nilai is_active dari form/view.
+        # Signup manual mengatur False sampai email diverifikasi, sedangkan
+        # Google signup dan akun komisi mengatur True secara eksplisit.
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -725,5 +725,4 @@ class ImageAnnotationIssue(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-
 

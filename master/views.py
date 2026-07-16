@@ -414,7 +414,7 @@ def login_view(request):
 
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                return redirect("master:index")
+                return redirect("master:lobby")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -447,7 +447,7 @@ def activate(request, uidb64, token):
         user.save(update_fields=['is_active'])
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, "Email berhasil diverifikasi & akun aktif! Selamat datang.")
-        return redirect("master:home")
+        return redirect("master:lobby")
     elif user is not None and user.is_active:
         # Link sudah pernah dipakai sebelumnya (token expired setelah is_active berubah)
         messages.info(request, "Akun ini sudah aktif. Silakan login.")
