@@ -14,17 +14,21 @@ from django.db.models import Count, Q
 import json
 from django.http import HttpResponse
 import requests
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import random
+from master.auth_utils import ensure_unverified_email_address, is_email_verified
+from master.email_utils import send_activation_email
 
 # --- [CATATAN: TAMBAHAN BARU 2] - Import Serializer untuk API Dropdown ---
 # Pastikan file serializers.py sudah ada dan MasterLabelSerializer sudah dibuat di dalamnya
 from .serializers import MasterLabelSerializer
 
 AI_API_URL = getattr(settings, 'AI_API_URL', 'https://hazards-root-taking-res.trycloudflare.com/api/proses-gambar/')
+logger = logging.getLogger(__name__)
 YOLO_TRANSLATIONS = {
     'person': 'orang', 'bicycle': 'sepeda', 'car': 'mobil', 'motorcycle': 'motor',
     'airplane': 'pesawat', 'bus': 'bus', 'train': 'kereta', 'truck': 'truk',
@@ -118,13 +122,26 @@ def signup_view(request):
                 username=username,
                 email=email,
                 password=password,
+                is_active=False,
                 first_name=nama_depan,
                 last_name=nama_belakang
             )
             new_user.role = 'annotator'
             new_user.save()
+            ensure_unverified_email_address(new_user)
 
-            messages.success(request, f'Akun untuk {username} berhasil dibuat! Silakan masuk untuk melanjutkan.')
+            try:
+                send_activation_email(request, new_user)
+                messages.success(
+                    request,
+                    f'Akun untuk {username} berhasil dibuat! Silakan cek email untuk aktivasi.'
+                )
+            except Exception:
+                logger.exception("Gagal kirim email aktivasi annotator ke %s", new_user.email)
+                messages.warning(
+                    request,
+                    'Akun berhasil dibuat, tapi email verifikasi gagal dikirim. Hubungi admin.'
+                )
             return redirect('annotator:signin')
 
         except Exception as e:
@@ -152,6 +169,12 @@ def signin_view(request):
 
         if user is not None:
             if user.role == 'annotator':
+                if not user.is_active:
+                    messages.error(request, 'Akun belum aktif.')
+                    return render(request, 'annotator/signin.html')
+                if not is_email_verified(user):
+                    messages.error(request, 'Email belum diverifikasi. Silakan cek email verifikasi Anda.')
+                    return render(request, 'annotator/signin.html')
                 login(request, user)
                 messages.success(request, f'See you again, {user.username}!')
                 next_url = request.GET.get('next', '/annotator/annotate/')

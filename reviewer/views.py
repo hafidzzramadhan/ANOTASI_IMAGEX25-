@@ -15,6 +15,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
 from functools import wraps
 from master.models import CustomUser, JobProfile, JobImage, Annotation, Segmentation, Issue, Notification, ProjectMember
+from master.auth_utils import is_email_verified
 from .forms import LoginForm
 import re
 import json
@@ -280,6 +281,9 @@ def login(request):
             if user is not None and user.is_active:
                 print(f"User authenticated: {user.username}, role: {user.role}")
                 if user.role in ['reviewer', 'master']:
+                    if not is_email_verified(user):
+                        form.add_error(None, 'Email belum diverifikasi. Silakan cek email verifikasi Anda.')
+                        return render(request, 'reviewer/login.html', {'form': form})
                     auth_login(request, user)
                     return redirect('reviewer:home_reviewer')
                 else:

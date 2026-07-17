@@ -16,7 +16,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+import logging
 
+from master.auth_utils import ensure_unverified_email_address
+from master.email_utils import send_activation_email
 from master.models import CustomUser
 from master.api_serializers import (
     UserSerializer,
@@ -25,6 +28,8 @@ from master.api_serializers import (
     CustomTokenObtainPairSerializer,
     ChangePasswordSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -66,19 +71,17 @@ class RegisterAPIView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Auto-generate JWT token setelah registrasi sukses (auto-login)
-        refresh = RefreshToken.for_user(user)
-        refresh['email'] = user.email
-        refresh['username'] = user.username
-        refresh['role'] = user.role
+        ensure_unverified_email_address(user)
+        try:
+            send_activation_email(request, user)
+            message = 'Registrasi berhasil. Silakan cek email untuk aktivasi akun.'
+        except Exception:
+            logger.exception("Gagal kirim email aktivasi API ke %s", user.email)
+            message = 'Registrasi berhasil, tapi email verifikasi gagal dikirim. Hubungi admin.'
 
         return Response({
-            'message': 'Registrasi berhasil',
+            'message': message,
             'user': UserSerializer(user).data,
-            'tokens': {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            }
         }, status=status.HTTP_201_CREATED)
 
 

@@ -6,6 +6,8 @@ Serializers ini convert Django models <-> JSON format yang bisa dibaca mobile.
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from master.auth_utils import is_email_verified
 from master.models import CustomUser
 
 
@@ -71,7 +73,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm', None)
         password = validated_data.pop('password')
-        user = CustomUser.objects.create_user(password=password, **validated_data)
+        validated_data['role'] = 'guest'
+        user = CustomUser.objects.create_user(
+            password=password,
+            is_active=False,
+            **validated_data
+        )
         return user
 
 
@@ -107,7 +114,10 @@ class LoginSerializer(serializers.Serializer):
             )
 
         if not user.is_active:
-            raise serializers.ValidationError("Akun belum aktif. Hubungi admin.")
+            raise serializers.ValidationError("Akun belum aktif. Silakan verifikasi email terlebih dahulu.")
+
+        if not is_email_verified(user):
+            raise serializers.ValidationError("Email belum diverifikasi. Silakan cek email verifikasi Anda.")
 
         attrs['user'] = user
         return attrs
@@ -132,15 +142,37 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        data = super().validate(attrs)
-        # Tambahin user info di response
-        if not self.user.is_active:
-            from rest_framework import serializers
+        email = attrs.get(self.username_field)
+        password = attrs.get('password')
+
+        user = authenticate(
+            request=self.context.get('request'),
+            username=email,
+            password=password,
+        )
+
+        if user is None:
             raise serializers.ValidationError({
-                'detail': 'Akun lu sudah di-nonaktifkan. Hubungi master.'
+                'detail': 'Email atau password salah.'
             })
-        
-        data['user'] = UserSerializer(self.user).data
+
+        if not user.is_active:
+            raise serializers.ValidationError({
+                'detail': 'Akun belum aktif. Silakan verifikasi email terlebih dahulu.'
+            })
+
+        if not is_email_verified(user):
+            raise serializers.ValidationError({
+                'detail': 'Email belum diverifikasi. Silakan cek email verifikasi Anda.'
+            })
+
+        self.user = user
+        refresh = RefreshToken.for_user(user)
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': UserSerializer(user).data,
+        }
         return data
     
 

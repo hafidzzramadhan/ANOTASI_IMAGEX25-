@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from master.auth_utils import is_email_verified
 from master.models import (
     CustomUser, JobProfile, JobImage,
     Issue, Annotation, Segmentation, PolygonPoint,
@@ -22,6 +23,8 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('Email atau password salah.')
         if not user.is_active:
             raise serializers.ValidationError('Akun tidak aktif.')
+        if not is_email_verified(user):
+            raise serializers.ValidationError('Email belum diverifikasi.')
 
         # Role global (legacy) ATAU punya role reviewer/master di SALAH
         # SATU project (multi-tenant) — saat login belum tentu user sudah

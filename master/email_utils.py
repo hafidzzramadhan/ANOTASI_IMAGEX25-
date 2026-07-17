@@ -7,6 +7,13 @@ Dipake oleh master/views.py dan master/api_password_reset.py biar konsisten
 import logging
 
 from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+
+from .tokens import account_activation_token
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +82,36 @@ def email_logo_url(site_url, filename, *settings_keys):
         logger.warning("File logo tidak ada di server: %s → URL: %s", filename, url)
 
     return url
+
+
+def send_activation_email(request, user):
+    """Kirim email aktivasi akun dengan template master/emails/activation_email.html."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = account_activation_token.make_token(user)
+    activation_path = reverse('master:activate', kwargs={'uidb64': uid, 'token': token})
+    site_url = site_url_for_request(request)
+    activation_url = f"{site_url}{activation_path}"
+
+    html_body = render_to_string('master/emails/activation_email.html', {
+        'user': user,
+        'activation_url': activation_url,
+        'site_name': 'Anotasi Image',
+        'logo1_url': email_logo_url(site_url, 'logo1.png', 'EMAIL_LOGO1_URL', 'EMAIL_LOGO_URL'),
+        'logo3_url': email_logo_url(site_url, 'logo3.png', 'EMAIL_LOGO3_URL'),
+    })
+
+    send_mail(
+        subject='Verifikasi Email — Anotasi Image',
+        message=(
+            f"Halo {user.first_name or user.username},\n\n"
+            f"Terima kasih sudah mendaftar di Anotasi Image. "
+            f"Klik link berikut untuk verifikasi email dan mengaktifkan akun Anda:\n\n"
+            f"{activation_url}\n\n"
+            f"Jika Anda tidak merasa mendaftar, abaikan email ini.\n\n"
+            f"— Tim Anotasi Image"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=html_body,
+        fail_silently=False,
+    )

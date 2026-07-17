@@ -6,9 +6,14 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Prefetch
 from master.forms import SignUpForm
+from master.auth_utils import ensure_unverified_email_address, is_email_verified
+from master.email_utils import send_activation_email
 from master.models import Dataset, DatasetComment, JobImage
 from functools import wraps
+import logging
 import zipfile
+
+logger = logging.getLogger(__name__)
 
 
 def _komisi_access_denied_response(request):
@@ -25,6 +30,9 @@ def komisi_required(view_func):
             return redirect('komisi:login')
         if request.user.role != 'komisi':
             return _komisi_access_denied_response(request)
+        if not request.user.is_active or not is_email_verified(request.user):
+            messages.error(request, 'Email akun Komisi belum diverifikasi.')
+            return redirect('komisi:login')
         if getattr(request.user, 'komisi_approval_status', None) != 'approved':
             messages.error(request, 'Akun komisi Anda belum disetujui admin.')
             return redirect('master:login')
@@ -56,6 +64,9 @@ def login_komisi_view(request):
             messages.error(request, error_message)
         elif user.komisi_approval_status == 'rejected':
             error_message = 'Pendaftaran akun Komisi kamu ditolak admin.'
+            messages.error(request, error_message)
+        elif not is_email_verified(user):
+            error_message = 'Email belum diverifikasi. Silakan cek email verifikasi Anda.'
             messages.error(request, error_message)
         elif user.komisi_approval_status == 'approved':
             login(request, user)
@@ -89,9 +100,21 @@ def signup_komisi_view(request):
             user = form.save(commit=False)
             user.role = 'komisi'
             user.komisi_approval_status = 'pending'
-            user.is_active = True
+            user.is_active = False
             user.save()
-            messages.success(request, 'Pendaftaran akun Komisi berhasil dikirim. Silakan tunggu persetujuan admin.')
+            ensure_unverified_email_address(user)
+            try:
+                send_activation_email(request, user)
+                messages.success(
+                    request,
+                    'Pendaftaran akun Komisi berhasil dikirim. Silakan verifikasi email dan tunggu persetujuan admin.'
+                )
+            except Exception:
+                logger.exception("Gagal kirim email aktivasi komisi ke %s", user.email)
+                messages.warning(
+                    request,
+                    'Pendaftaran akun Komisi berhasil, tapi email verifikasi gagal dikirim. Hubungi admin.'
+                )
             return redirect('komisi:login')
 
         for field in form.errors:
