@@ -157,11 +157,36 @@
     .demo-dot { width: 10px; height: 10px; border-radius: 50%; }
     .demo-title { margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--text); opacity: 0.7; }
     .demo-canvas { position: relative; background: #0E0D1A; aspect-ratio: 16/10; overflow: hidden; }
-    .fake-img { position: absolute; border-radius: 6px; background: linear-gradient(135deg, #1a1830, #221e3a); }
-    .fake-img-1 { top: 15%; left: 10%; width: 28%; height: 35%; }
-    .fake-img-2 { top: 10%; left: 45%; width: 40%; height: 50%; }
-    .fake-img-3 { top: 58%; left: 15%; width: 50%; height: 30%; }
-    .fake-img-4 { top: 55%; left: 70%; width: 22%; height: 38%; }
+    .fake-img { 
+      position: absolute; 
+      border-radius: 6px; 
+      background-color: #221e3a;
+      background-size: cover;
+      background-position: center;
+    }
+    
+    .fake-img-1 { 
+      top: 15%; left: 10%; width: 28%; height: 35%; 
+      background-image: url('https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=400&q=80'); 
+    }
+    
+    .fake-img-2 { 
+      top: 10%; left: 45%; width: 40%; height: 50%; 
+      background-image: url('https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=400&q=80'); 
+    }
+    
+    .fake-img-3 { 
+      top: 58%; left: 15%; width: 50%; height: 30%; 
+      background-image: url('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80'); 
+    }
+
+    .fake-img-4 { 
+      top: 55%; left: 70%; width: 22%; height: 38%; 
+      background-image: url('https://images.unsplash.com/photo-1577975882846-431adc8c2009?auto=format&fit=crop&w=400&q=80'); 
+    }
+    
+  
+    
 
     .ann-box { position: absolute; border: 2px solid; border-radius: 4px; opacity: 0; animation: draw-box 0.4s ease forwards; }
     .ann-label { position: absolute; top: -22px; left: -1px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px 4px 0 0; white-space: nowrap; }
@@ -343,6 +368,7 @@
         <div class="ann-box ann-box-1"><span class="ann-label">Kucing</span></div>
         <div class="ann-box ann-box-2"><span class="ann-label">Anjing</span></div>
         <div class="ann-box ann-box-3"><span class="ann-label">Kendaraan</span></div>
+        
         <div class="ann-box ann-box-4"><span class="ann-label">Orang</span></div>
 
         <div class="cursor-dot"></div>
