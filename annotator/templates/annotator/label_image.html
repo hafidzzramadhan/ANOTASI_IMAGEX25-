@@ -279,6 +279,26 @@
 
 <script>
     // ============================
+    // NAVIGASI GAMBAR (prev/next)
+    // ============================
+    const currentJobId = {{ job.id }};
+    const prevImageId = {{ prev_image_id|default_if_none:'null' }};
+    const nextImageId = {{ next_image_id|default_if_none:'null' }};
+
+    function navigateImage(direction) {
+        const targetImageId = direction === 'next' ? nextImageId : prevImageId;
+
+        if (!targetImageId) {
+            alert(direction === 'next'
+                ? 'Ini sudah gambar terakhir di job ini.'
+                : 'Ini sudah gambar pertama di job ini.');
+            return;
+        }
+
+        window.location.href = `/annotator/label/${currentJobId}/${targetImageId}/`;
+    }
+
+    // ============================
     // STATE VARIABLES
     // ============================
     let currentMode = 'add';
