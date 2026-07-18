@@ -5,6 +5,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth import get_backends
 from django.contrib import messages
@@ -31,9 +34,10 @@ from .models import (
     ProjectMember,
 )
 from .forms import SignUpForm
+from django.utils import timezone
+from django.urls import reverse
 from .tokens import account_activation_token
-from .auth_utils import ensure_unverified_email_address, is_email_verified, mark_email_verified
-from .email_utils import send_activation_email
+from .email_utils import site_url_for_request as _site_url_for_request, email_logo_url as _email_logo_url
 
 
 def create_job_notification(job, recipient, sender):
@@ -314,6 +318,39 @@ def enter_project_view(request, unique_id):
         return redirect('/reviewer/')
     return redirect('master:lobby')
 
+def send_activation_email(request, user):
+    """Kirim email berisi link aktivasi akun (dipakai signup manual)."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = account_activation_token.make_token(user)
+    activation_path = reverse('master:activate', kwargs={'uidb64': uid, 'token': token})
+    site_url = _site_url_for_request(request)
+    activation_url = f"{site_url}{activation_path}"
+
+    html_body = render_to_string('master/emails/activation_email.html', {
+        'user': user,
+        'activation_url': activation_url,
+        'site_name': 'Anotasi Image',
+        'logo1_url': _email_logo_url(site_url, 'logo1.png', 'EMAIL_LOGO1_URL', 'EMAIL_LOGO_URL'),
+        'logo3_url': _email_logo_url(site_url, 'logo3.png', 'EMAIL_LOGO3_URL'),
+    })
+
+    send_mail(
+        subject='Verifikasi Email — Anotasi Image',
+        message=(
+            f"Halo {user.first_name or user.username},\n\n"
+            f"Terima kasih sudah mendaftar di Anotasi Image. "
+            f"Klik link berikut untuk verifikasi email dan mengaktifkan akun Anda:\n\n"
+            f"{activation_url}\n\n"
+            f"Jika Anda tidak merasa mendaftar, abaikan email ini.\n\n"
+            f"— Tim Anotasi Image"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=html_body,
+        fail_silently=False,
+    )
+
+
 def signup_view(request):
     if request.method == "POST":
         data = {
@@ -329,20 +366,25 @@ def signup_view(request):
 
         if form.is_valid():
             user = form.save()  # is_active=False sampai email diverifikasi
-            ensure_unverified_email_address(user)
 
-            try:
-                send_activation_email(request, user)
-                messages.success(
-                    request,
-                    "Akun berhasil dibuat! Cek email Anda untuk verifikasi & aktivasi akun."
-                )
-            except Exception:
-                logger.exception("Gagal kirim email aktivasi ke %s", user.email)
-                messages.warning(
-                    request,
-                    "Akun dibuat, tapi email verifikasi gagal terkirim. Hubungi admin atau coba lagi nanti."
-                )
+            if getattr(settings, "EMAIL_CONFIGURED", False):
+                try:
+                    send_activation_email(request, user)
+                    messages.success(
+                        request,
+                        "Akun berhasil dibuat! Cek email Anda untuk verifikasi & aktivasi akun."
+                    )
+                except Exception:
+                    logger.exception("Gagal kirim email aktivasi ke %s", user.email)
+                    messages.warning(
+                        request,
+                        "Akun dibuat, tapi email verifikasi gagal terkirim. Hubungi admin atau coba lagi nanti."
+                    )
+            else:
+                # Email belum dikonfigurasi di server (mis. dev lokal) — aktifkan langsung
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+                messages.success(request, "Akun berhasil dibuat! Silakan login.")
 
             return redirect("master:login")
         else:
@@ -370,14 +412,9 @@ def login_view(request):
                     messages.error(request, 'Akun Komisi harus masuk melalui portal Komisi.')
                     return redirect("komisi:login")
 
-                if not is_email_verified(user):
-                    error_message = "Email belum diverifikasi. Silakan cek email verifikasi Anda."
-                    messages.error(request, error_message)
-                    return render(request, "master/login.html", {"error_message": error_message})
-
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                return redirect("master:lobby")
+                return redirect("master:index")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -408,23 +445,9 @@ def activate(request, uidb64, token):
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save(update_fields=['is_active'])
-        mark_email_verified(user)
-
-        if user.role == 'komisi':
-            if getattr(user, 'komisi_approval_status', None) != 'approved':
-                messages.success(
-                    request,
-                    "Email berhasil diverifikasi. Akun Komisi Anda masih menunggu persetujuan admin."
-                )
-                return redirect("komisi:login")
-
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, "Email berhasil diverifikasi & akun Komisi aktif.")
-            return redirect("komisi:dashboard")
-
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, "Email berhasil diverifikasi & akun aktif! Selamat datang.")
-        return redirect("master:lobby")
+        return redirect("master:home")
     elif user is not None and user.is_active:
         # Link sudah pernah dipakai sebelumnya (token expired setelah is_active berubah)
         messages.info(request, "Akun ini sudah aktif. Silakan login.")
@@ -1706,6 +1729,40 @@ def update_user_roles(request):
             return JsonResponse({
                 'status': 'error',
                 'message': 'No updates provided'
+            }, status=400)
+
+        # ── Guard: project harus selalu punya minimal 1 master ──
+        # Simulasikan dulu hasil akhir dari semua update dalam batch ini,
+        # supaya master (termasuk diri sendiri) tidak bisa diturunkan
+        # kalau hasilnya bikin project kehilangan master terakhir.
+        current_master_ids = set(
+            ProjectMember.objects
+            .filter(project=current_project, role='master')
+            .values_list('user_id', flat=True)
+        )
+        simulated_master_ids = set(current_master_ids)
+        for update in updates:
+            uid = update.get('userId')
+            new_role = update.get('newRole')
+            if uid is None:
+                continue
+            try:
+                uid = int(uid)
+            except (TypeError, ValueError):
+                continue
+            if new_role == 'master':
+                simulated_master_ids.add(uid)
+            elif new_role in valid_roles:
+                simulated_master_ids.discard(uid)
+
+        if current_master_ids and not simulated_master_ids:
+            return JsonResponse({
+                'status': 'error',
+                'message': (
+                    'Tidak bisa disimpan: project ini akan kehilangan master terakhir. '
+                    'Jadikan member lain sebagai master dulu sebelum mengubah/menurunkan '
+                    'role master yang ada.'
+                ),
             }, status=400)
 
         success_count = 0
