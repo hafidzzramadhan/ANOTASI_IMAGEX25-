@@ -108,10 +108,13 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             ))
 
         if not is_email_verified(user, email):
+            ensure_unverified_email_address(user)
+            send_activation_email(request, user)
             raise ImmediateHttpResponse(self._blocked_response(
                 request,
-                'Email belum diverifikasi. Silakan cek email verifikasi Anda.',
+                'Email belum diverifikasi. Link verifikasi baru sudah dikirim ke email Anda.',
                 'master:login',
+                level='success',
             ))
 
         sociallogin.user = user
