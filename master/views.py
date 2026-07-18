@@ -2120,7 +2120,120 @@ def download_dataset(request, dataset_id):
 
     return redirect(dataset.file_path.url)
 
+@master_required
+@require_http_methods(["POST"])
+def update_user_roles(request):
+    """
+    AJAX endpoint untuk update role member DI PROJECT YANG SEDANG AKTIF.
 
+    Mengubah ProjectMember.role (per-project), BUKAN CustomUser.role (global).
+    Hanya boleh mengubah member yang memang sudah tergabung di project ini
+    (dicek lewat get_current_project_or_redirect, dan setiap update divalidasi
+    membership-nya benar-benar milik project ini).
+    """
+    current_project, current_role, redirect_response = get_current_project_or_redirect(request)
+    if redirect_response:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Project aktif tidak ditemukan. Silakan masuk ke project dari Lobby.',
+        }, status=400)
+
+    valid_roles = {choice[0] for choice in ProjectMember.ROLE_CHOICES}
+
+    try:
+        data = json.loads(request.body)
+        updates = data.get('updates', [])
+
+        if not updates:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No updates provided'
+            }, status=400)
+
+        # ── Guard: project harus selalu punya minimal 1 master ──
+        # Simulasikan dulu hasil akhir dari semua update dalam batch ini,
+        # supaya master (termasuk diri sendiri) tidak bisa diturunkan
+        # kalau hasilnya bikin project kehilangan master terakhir.
+        current_master_ids = set(
+            ProjectMember.objects
+            .filter(project=current_project, role='master')
+            .values_list('user_id', flat=True)
+        )
+        simulated_master_ids = set(current_master_ids)
+        for update in updates:
+            uid = update.get('userId')
+            new_role = update.get('newRole')
+            if uid is None:
+                continue
+            try:
+                uid = int(uid)
+            except (TypeError, ValueError):
+                continue
+            if new_role == 'master':
+                simulated_master_ids.add(uid)
+            elif new_role in valid_roles:
+                simulated_master_ids.discard(uid)
+
+        if current_master_ids and not simulated_master_ids:
+            return JsonResponse({
+                'status': 'error',
+                'message': (
+                    'Tidak bisa disimpan: project ini akan kehilangan master terakhir. '
+                    'Jadikan member lain sebagai master dulu sebelum mengubah/menurunkan '
+                    'role master yang ada.'
+                ),
+            }, status=400)
+
+        success_count = 0
+        errors = []
+
+        for update in updates:
+            user_id = update.get('userId')
+            new_role = update.get('newRole')
+
+            if not user_id or not new_role:
+                errors.append(f'Invalid data for update: {update}')
+                continue
+
+            if new_role not in valid_roles:
+                errors.append(f'Role "{new_role}" tidak valid untuk project (pilihan: {", ".join(sorted(valid_roles))})')
+                continue
+
+            try:
+                # WAJIB filter by project=current_project — supaya master
+                # project A tidak bisa ubah role member di project lain.
+                membership = ProjectMember.objects.select_related('user').get(
+                    project=current_project, user_id=user_id
+                )
+                old_role = membership.role
+                membership.role = new_role
+                membership.save(update_fields=['role'])
+
+                success_count += 1
+                print(f"Updated {membership.user.email} di project '{current_project.name}' dari {old_role} ke {new_role}")
+
+            except ProjectMember.DoesNotExist:
+                errors.append(f'User {user_id} bukan member project ini')
+            except Exception as e:
+                errors.append(f'Error updating user {user_id}: {str(e)}')
+
+        if errors:
+            return JsonResponse({
+                'status': 'partial_success',
+                'message': f'Updated {success_count} users successfully, {len(errors)} errors',
+                'success_count': success_count,
+                'errors': errors
+            })
+        else:
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Successfully updated {success_count} role member di project "{current_project.name}"',
+                'success_count': success_count
+            })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
 @login_required
 @require_http_methods(["POST"])
 def ajukan_publikasi_view(request):
