@@ -461,23 +461,33 @@ def home_view(request):
         project_memberships__project=current_project,
         project_memberships__role__in=['annotator', 'reviewer']
     ).distinct().order_by('email')
-    
+
+    # Role user KHUSUS DI PROJECT INI (bukan CustomUser.role yang global) —
+    # 1 user bisa punya role beda-beda di project berbeda.
+    project_roles = dict(
+        ProjectMember.objects
+        .filter(project=current_project, user__in=annotators_reviewers)
+        .values_list('user_id', 'role')
+    )
+
     # Real status data - determine user status based on job assignments
     status_list = []
     for user in annotators_reviewers:
+        project_role = project_roles.get(user.id)
+
         # Check if user has active job assignments
         has_active_jobs = False
-        if user.role == 'annotator':
+        if project_role == 'annotator':
             has_active_jobs = JobProfile.objects.filter(
                 project=current_project,
                 worker_annotator=user, 
                 status__in=['in_progress']
             ).exists()
-        elif user.role == 'reviewer':
+        elif project_role == 'reviewer':
             has_active_jobs = JobProfile.objects.filter(
                 project=current_project,
                 worker_reviewer=user, 
-                status__in=['in_progress']
+                status__in=['in_progress', 'in_review']
             ).exists()
         
         # Determine status based on job assignments
@@ -487,9 +497,9 @@ def home_view(request):
         else:
             # Check if user has any jobs assigned but not active
             has_any_jobs = False
-            if user.role == 'annotator':
+            if project_role == 'annotator':
                 has_any_jobs = project_jobs.filter(worker_annotator=user).exists()
-            elif user.role == 'reviewer':
+            elif project_role == 'reviewer':
                 has_any_jobs = project_jobs.filter(worker_reviewer=user).exists()
             
             if has_any_jobs:
