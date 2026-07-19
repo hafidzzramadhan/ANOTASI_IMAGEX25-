@@ -8,23 +8,27 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from functools import wraps
 # --- [CATATAN: TAMBAHAN BARU 1] - Import MasterLabel, Segmentation, SegmentationType, AnnotationTool di atas agar rapi ---
-from master.models import JobProfile, JobImage, Notification, Issue, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool, ProjectMember
+from master.models import JobProfile, JobImage, Notification, Issue, IssueComment, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool, ProjectMember
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
 from django.http import HttpResponse
 import requests
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import random
+from master.auth_utils import ensure_unverified_email_address, is_email_verified
+from master.email_utils import send_activation_email
 
 # --- [CATATAN: TAMBAHAN BARU 2] - Import Serializer untuk API Dropdown ---
 # Pastikan file serializers.py sudah ada dan MasterLabelSerializer sudah dibuat di dalamnya
 from .serializers import MasterLabelSerializer
 
 AI_API_URL = getattr(settings, 'AI_API_URL', 'https://hazards-root-taking-res.trycloudflare.com/api/proses-gambar/')
+logger = logging.getLogger(__name__)
 YOLO_TRANSLATIONS = {
     'person': 'orang', 'bicycle': 'sepeda', 'car': 'mobil', 'motorcycle': 'motor',
     'airplane': 'pesawat', 'bus': 'bus', 'train': 'kereta', 'truck': 'truk',
@@ -118,13 +122,26 @@ def signup_view(request):
                 username=username,
                 email=email,
                 password=password,
+                is_active=False,
                 first_name=nama_depan,
                 last_name=nama_belakang
             )
             new_user.role = 'annotator'
             new_user.save()
+            ensure_unverified_email_address(new_user)
 
-            messages.success(request, f'Akun untuk {username} berhasil dibuat! Silakan masuk untuk melanjutkan.')
+            try:
+                send_activation_email(request, new_user)
+                messages.success(
+                    request,
+                    f'Akun untuk {username} berhasil dibuat! Silakan cek email untuk aktivasi.'
+                )
+            except Exception:
+                logger.exception("Gagal kirim email aktivasi annotator ke %s", new_user.email)
+                messages.warning(
+                    request,
+                    'Akun berhasil dibuat, tapi email verifikasi gagal dikirim. Hubungi admin.'
+                )
             return redirect('annotator:signin')
 
         except Exception as e:
@@ -152,6 +169,12 @@ def signin_view(request):
 
         if user is not None:
             if user.role == 'annotator':
+                if not user.is_active:
+                    messages.error(request, 'Akun belum aktif.')
+                    return render(request, 'annotator/signin.html')
+                if not is_email_verified(user):
+                    messages.error(request, 'Email belum diverifikasi. Silakan cek email verifikasi Anda.')
+                    return render(request, 'annotator/signin.html')
                 login(request, user)
                 messages.success(request, f'See you again, {user.username}!')
                 next_url = request.GET.get('next', '/annotator/annotate/')
@@ -204,6 +227,68 @@ def notifications_view(request):
         'notifications': notifications,
     }
     return render(request, 'annotator/notifications.html', context)
+
+@annotator_required
+def dispute_issue_view(request, issue_id):
+    """
+    Annotator dispute issue yang di-reject reviewer (nggak setuju sama hasil review).
+    Efek: issue.status 'open' -> 'eskalasi', dilempar ke master buat arbitrase.
+    Cuma bisa dipanggil kalau issue itu di-assign ke annotator yang sedang login,
+    dan statusnya masih 'open' (bukan yang udah eskalasi/reworking/closed).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    issue = get_object_or_404(Issue, id=issue_id, assigned_to=request.user)
+
+    if issue.status != 'open':
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Issue ini statusnya "{issue.status}". Cuma issue "open" yang bisa di-dispute.'
+        }, status=400)
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        return JsonResponse({'status': 'error', 'message': 'Alasan dispute wajib diisi.'}, status=400)
+
+    issue.status = 'eskalasi'
+    issue.save(update_fields=['status', 'updated_at'])
+
+    IssueComment.objects.create(
+        issue=issue,
+        created_by=request.user,
+        message=f"[DISPUTE oleh annotator]\n\n{reason}",
+    )
+
+    # Notif ke semua master di project ini — mereka yang arbitrase
+    masters = ProjectMember.objects.filter(
+        project=issue.job.project, role='master'
+    ).select_related('user')
+    for pm in masters:
+        Notification.objects.create(
+            recipient=pm.user,
+            sender=request.user,
+            notification_type='issue_updated',
+            title=f'Issue #{issue.id} di-eskalasi',
+            message=f'{request.user.email} dispute issue "{issue.title}". Butuh keputusan kamu.',
+            issue=issue,
+            job=issue.job,
+        )
+
+    # Notif ke reviewer yang bikin issue-nya
+    if issue.created_by and issue.created_by != request.user:
+        Notification.objects.create(
+            recipient=issue.created_by,
+            sender=request.user,
+            notification_type='issue_updated',
+            title=f'Issue #{issue.id} di-dispute annotator',
+            message='Annotator dispute issue ini. Menunggu keputusan master.',
+            issue=issue,
+            job=issue.job,
+        )
+
+    return JsonResponse({'status': 'success', 'message': 'Issue berhasil di-eskalasi ke master.'})
+
 
 @annotator_required
 def job_detail_view(request, job_id):

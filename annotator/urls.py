@@ -9,6 +9,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('annotate/', views.annotate_view, name='annotate'),
     path('job/<int:job_id>/', views.job_detail_view, name='job_detail'),
+    path('issue/<int:issue_id>/dispute/', views.dispute_issue_view, name='dispute_issue'),
 
     # Notifications
     path('notifications/', views.notifications_view, name='notifications'),
@@ -37,5 +38,3 @@ urlpatterns = [
     # Endpoint untuk Bank Label
     path('api/master-labels/', views.MasterLabelAPIView.as_view(), name='api-master-labels'),
 ]
-
-
