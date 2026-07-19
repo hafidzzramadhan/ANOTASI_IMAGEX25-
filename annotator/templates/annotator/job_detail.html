@@ -290,6 +290,14 @@
                                     {% endif %}
                                     <span><i class="fas fa-user mr-1 opacity-70"></i>{{ issue.created_by.username|default:"System" }} · {{ issue.created_by.role|default:"-"|title }}</span>
                                 </div>
+
+                                {% if issue.status == 'open' %}
+                                <button type="button"
+                                    onclick="disputeIssue({{ issue.id }})"
+                                    class="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition">
+                                    <i class="fas fa-gavel mr-1"></i> Dispute ke Master
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -437,6 +445,35 @@
         // Restore view preference
         const saved = localStorage.getItem('annotatorJobDetailView');
         if (saved === 'list') setView('list');
+    }
+
+    // Dispute issue — annotator nggak setuju sama reject reviewer
+    function disputeIssue(issueId) {
+        const reason = prompt('Kenapa kamu nggak setuju sama issue ini? (wajib diisi)');
+        if (reason === null) return; // user cancel
+        if (!reason.trim()) {
+            alert('Alasan dispute wajib diisi.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('reason', reason.trim());
+
+        fetch(`/annotator/issue/${issueId}/dispute/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData,
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Gagal mengirim dispute.');
+                }
+            })
+            .catch(() => alert('Terjadi kesalahan jaringan. Coba lagi.'));
     }
 </script>
 {% endblock %}

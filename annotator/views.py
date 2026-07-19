@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from functools import wraps
 # --- [CATATAN: TAMBAHAN BARU 1] - Import MasterLabel, Segmentation, SegmentationType, AnnotationTool di atas agar rapi ---
-from master.models import JobProfile, JobImage, Notification, Issue, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool, ProjectMember
+from master.models import JobProfile, JobImage, Notification, Issue, IssueComment, Annotation, MasterLabel, Segmentation, SegmentationType, AnnotationTool, ProjectMember
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
@@ -227,6 +227,68 @@ def notifications_view(request):
         'notifications': notifications,
     }
     return render(request, 'annotator/notifications.html', context)
+
+@annotator_required
+def dispute_issue_view(request, issue_id):
+    """
+    Annotator dispute issue yang di-reject reviewer (nggak setuju sama hasil review).
+    Efek: issue.status 'open' -> 'eskalasi', dilempar ke master buat arbitrase.
+    Cuma bisa dipanggil kalau issue itu di-assign ke annotator yang sedang login,
+    dan statusnya masih 'open' (bukan yang udah eskalasi/reworking/closed).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    issue = get_object_or_404(Issue, id=issue_id, assigned_to=request.user)
+
+    if issue.status != 'open':
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Issue ini statusnya "{issue.status}". Cuma issue "open" yang bisa di-dispute.'
+        }, status=400)
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        return JsonResponse({'status': 'error', 'message': 'Alasan dispute wajib diisi.'}, status=400)
+
+    issue.status = 'eskalasi'
+    issue.save(update_fields=['status', 'updated_at'])
+
+    IssueComment.objects.create(
+        issue=issue,
+        created_by=request.user,
+        message=f"[DISPUTE oleh annotator]\n\n{reason}",
+    )
+
+    # Notif ke semua master di project ini — mereka yang arbitrase
+    masters = ProjectMember.objects.filter(
+        project=issue.job.project, role='master'
+    ).select_related('user')
+    for pm in masters:
+        Notification.objects.create(
+            recipient=pm.user,
+            sender=request.user,
+            notification_type='issue_updated',
+            title=f'Issue #{issue.id} di-eskalasi',
+            message=f'{request.user.email} dispute issue "{issue.title}". Butuh keputusan kamu.',
+            issue=issue,
+            job=issue.job,
+        )
+
+    # Notif ke reviewer yang bikin issue-nya
+    if issue.created_by and issue.created_by != request.user:
+        Notification.objects.create(
+            recipient=issue.created_by,
+            sender=request.user,
+            notification_type='issue_updated',
+            title=f'Issue #{issue.id} di-dispute annotator',
+            message='Annotator dispute issue ini. Menunggu keputusan master.',
+            issue=issue,
+            job=issue.job,
+        )
+
+    return JsonResponse({'status': 'success', 'message': 'Issue berhasil di-eskalasi ke master.'})
+
 
 @annotator_required
 def job_detail_view(request, job_id):
