@@ -1,11 +1,19 @@
 from django.urls import path
 from . import views
+from . import mobile_api_views
 
 app_name = 'master'
 
 urlpatterns = [
     # URL untuk Ajukan Publikasi ke Komisi
     path('ajukan-publikasi/', views.ajukan_publikasi_view, name='ajukan_publikasi'),
+    path('api/master-mobile/dashboard/', mobile_api_views.api_dashboard_summary, name='api_mobile_dashboard'),
+    path('api/master-mobile/team-status/', mobile_api_views.api_team_status, name='api_mobile_team_status'),
+    path('api/master-mobile/assign-workers/', mobile_api_views.api_assign_workers, name='api_mobile_assign_workers'),
+    path('api/master-mobile/performance/', mobile_api_views.api_performance_report, name='api_mobile_performance'),
+    path('api/master-mobile/publish-dataset/', mobile_api_views.api_publish_dataset, name='api_mobile_publish_dataset'),
+    path('api/master-mobile/issues/', mobile_api_views.api_issue_list, name='api_mobile_issues'),
+    path('api/master-mobile/issues/<int:issue_id>/decide/', mobile_api_views.api_issue_decide, name='api_mobile_issue_decide'),
     path('explore/', views.explore_datasets, name='explore'),
     path('explore/dataset/<int:dataset_id>/', views.dataset_detail, name='dataset_detail'),
     path('explore/dataset/<int:dataset_id>/download/', views.download_dataset, name='download_dataset'),

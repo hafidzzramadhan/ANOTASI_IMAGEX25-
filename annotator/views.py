@@ -666,31 +666,3 @@ def delete_annotation(request, image_id):
 
         return JsonResponse({'status': 'deleted'})
     return JsonResponse({'error': 'invalid'})
-
-# --- [CATATAN: TAMBAHAN BARU 5] - API untuk mengambil dan menambah Bank Label dari Dropdown ---
-class MasterLabelAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        labels = MasterLabel.objects.all()
-        serializer = MasterLabelSerializer(labels, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        name = request.data.get('name')
-        if not name:
-            return Response({"error": "Nama label wajib diisi!"}, status=status.HTTP_400_BAD_REQUEST)
-
-        clean_name = name.strip().lower()
-        random_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-        label, created = MasterLabel.objects.get_or_create(
-            name=clean_name,
-            defaults={'color': random_color}
-        )
-
-        serializer = MasterLabelSerializer(label)
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
