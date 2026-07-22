@@ -265,6 +265,8 @@ class JobAssignSerializer(serializers.Serializer):
 class IssueListSerializer(serializers.ModelSerializer):
     """Buat list issue di master."""
     job_title = serializers.CharField(source='job.title', read_only=True)
+    project_id = serializers.UUIDField(source='job.project.unique_id', read_only=True)
+    project_name = serializers.CharField(source='job.project.name', read_only=True)
     image_id = serializers.IntegerField(source='image.id', read_only=True, allow_null=True)
     assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
@@ -273,7 +275,7 @@ class IssueListSerializer(serializers.ModelSerializer):
         model = Issue
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'job', 'job_title', 'image_id',
+            'job', 'job_title', 'project_id', 'project_name', 'image_id',
             'assigned_to', 'assigned_to_name',
             'created_by', 'created_by_name',
             'created_at', 'updated_at', 'resolved_at',

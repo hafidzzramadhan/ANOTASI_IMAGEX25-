@@ -10,6 +10,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from uuid import UUID
 
 from master.models import (
     CustomUser, JobProfile, JobImage, Issue, Notification
@@ -633,7 +634,11 @@ class MasterIssueListAPIView(generics.ListAPIView):
 
         project_id = self.request.query_params.get('project_id')
         if project_id:
-            qs = qs.filter(job__project_id=project_id)
+            try:
+                project_uuid = UUID(str(project_id))
+            except (TypeError, ValueError):
+                return qs.none()
+            qs = qs.filter(job__project__unique_id=project_uuid)
 
         return qs
 
