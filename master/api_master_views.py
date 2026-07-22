@@ -66,6 +66,38 @@ class IsMaster(permissions.BasePermission):
         ).exists()
 
 
+def get_job_for_master(request, pk):
+    """
+    Ambil JobProfile berdasarkan pk, TAPI sekaligus pastikan requester
+    beneran master di project TEMPAT JOB ITU BERADA — bukan cuma lolos
+    IsMaster.has_permission() (yang cuma ngecek "master di project MANA
+    PUN" atau master global). Tanpa ini, master project A bisa akses job
+    project B asal tau/nebak pk-nya (IsMaster nggak punya object-level
+    check).
+
+    Return (job, None) kalau boleh akses, atau (None, Response 403/404).
+    """
+    from master.models import ProjectMember
+
+    job = get_object_or_404(JobProfile, pk=pk)
+    user = request.user
+
+    if getattr(user, 'role', None) == 'master':
+        return job, None
+
+    is_master_of_job_project = ProjectMember.objects.filter(
+        project=job.project,
+        user=user,
+        role='master',
+    ).exists()
+    if not is_master_of_job_project:
+        return None, Response(
+            {'detail': 'Job ini bukan bagian dari project yang kamu kelola.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    return job, None
+
+
 # ============================================================
 # CUSTOM PAGINATION
 # ============================================================
@@ -172,6 +204,14 @@ class JobListCreateAPIView(generics.ListCreateAPIView):
             'worker_annotator', 'worker_reviewer'
         ).prefetch_related('images').order_by('-date_created')
 
+        # project_id WAJIB buat filter data-nya juga — sebelumnya cuma
+        # dipakai IsMaster buat cek IZIN AKSES, tapi nggak pernah dipakai
+        # buat nge-filter query jobs-nya. Itu penyebab semua job dari semua
+        # project ikut kebawa walau ?project_id= sudah diisi.
+        project_id = self.request.query_params.get('project_id')
+        if project_id:
+            qs = qs.filter(project__unique_id=project_id)
+
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -213,8 +253,19 @@ class JobDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     DELETE /api/master/jobs/<id>/   - Hapus job
     """
     permission_classes = [permissions.IsAuthenticated, IsMaster]
-    queryset = JobProfile.objects.all()
     lookup_field = 'pk'
+
+    def get_queryset(self):
+        # Cuma buat keperluan schema introspection (drf-spectacular) —
+        # kontrol akses SEBENARNYA ada di get_object() lewat get_job_for_master().
+        return JobProfile.objects.all()
+
+    def get_object(self):
+        job, err = get_job_for_master(self.request, self.kwargs['pk'])
+        if err:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(err.data.get('detail'))
+        return job
 
     def get_serializer_class(self):
         if self.request.method in ['PATCH', 'PUT']:
@@ -237,7 +288,9 @@ class JobAssignAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsMaster]
 
     def post(self, request, pk):
-        job = get_object_or_404(JobProfile, pk=pk)
+        job, err = get_job_for_master(request, pk)
+        if err:
+            return err
         serializer = JobAssignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -298,7 +351,9 @@ class JobImageListUploadAPIView(APIView):
     pagination_class = StandardPagination
 
     def get(self, request, pk):
-        job = get_object_or_404(JobProfile, pk=pk)
+        job, err = get_job_for_master(request, pk)
+        if err:
+            return err
         images = job.images.select_related('annotator').order_by('id')
 
         # Pagination
@@ -308,7 +363,9 @@ class JobImageListUploadAPIView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, pk):
-        job = get_object_or_404(JobProfile, pk=pk)
+        job, err = get_job_for_master(request, pk)
+        if err:
+            return err
 
         files = request.FILES.getlist('images')
         if not files:

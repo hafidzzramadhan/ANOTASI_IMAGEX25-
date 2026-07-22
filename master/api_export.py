@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from master.models import JobProfile
-from master.api_master_views import IsMaster
+from master.api_master_views import IsMaster, get_job_for_master
 
 
 class ExportJobAPIView(APIView):
@@ -28,7 +28,9 @@ class ExportJobAPIView(APIView):
     permission_classes = [IsAuthenticated, IsMaster]
 
     def get(self, request, pk):
-        job = get_object_or_404(JobProfile, pk=pk)
+        job, err = get_job_for_master(request, pk)
+        if err:
+            return err
         # NOTE: pake 'fmt' (bukan 'format') krn 'format' di-reserve DRF content negotiation
         fmt = request.GET.get('fmt', 'json').lower()
 
