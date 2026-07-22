@@ -608,6 +608,7 @@ class MasterIssueListAPIView(generics.ListAPIView):
     - status: open/eskalasi/reworking/closed
     - priority: low/medium/high
     - job_id: filter by job
+    - project_id: filter by project (lewat job.project)
     """
     permission_classes = [permissions.IsAuthenticated, IsMaster]
     serializer_class = IssueListSerializer
@@ -615,7 +616,7 @@ class MasterIssueListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = Issue.objects.select_related(
-            'job', 'image', 'assigned_to', 'created_by'
+            'job', 'job__project', 'image', 'assigned_to', 'created_by'
         ).order_by('-created_at')
 
         status_filter = self.request.query_params.get('status')
@@ -629,6 +630,10 @@ class MasterIssueListAPIView(generics.ListAPIView):
         job_id = self.request.query_params.get('job_id')
         if job_id:
             qs = qs.filter(job_id=job_id)
+
+        project_id = self.request.query_params.get('project_id')
+        if project_id:
+            qs = qs.filter(job__project_id=project_id)
 
         return qs
 
