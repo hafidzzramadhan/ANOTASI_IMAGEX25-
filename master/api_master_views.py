@@ -10,10 +10,9 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
-from uuid import UUID
 
 from master.models import (
-    CustomUser, JobProfile, JobImage, Issue, Notification
+    CustomUser, JobProfile, JobImage, Issue, Notification, Project
 )
 from master.api_master_serializers import (
     UserListSerializer, UserBriefSerializer,
@@ -235,7 +234,17 @@ class JobListCreateAPIView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        job = serializer.save()
+
+        # project_id dari query param harus di-resolve jadi objek Project
+        # dan di-attach ke job barunya. Sebelumnya serializer.save() dipanggil
+        # polos tanpa project= sama sekali, jadi job baru selalu project=null
+        # walau ?project_id= sudah diisi di request-nya.
+        project = None
+        project_id = request.query_params.get('project_id')
+        if project_id:
+            project = get_object_or_404(Project, unique_id=project_id)
+
+        job = serializer.save(project=project)
 
         # Auto-set status kalo annotator/reviewer udah di-assign
         if job.worker_annotator and job.worker_reviewer:
@@ -634,11 +643,7 @@ class MasterIssueListAPIView(generics.ListAPIView):
 
         project_id = self.request.query_params.get('project_id')
         if project_id:
-            try:
-                project_uuid = UUID(str(project_id))
-            except (TypeError, ValueError):
-                return qs.none()
-            qs = qs.filter(job__project__unique_id=project_uuid)
+            qs = qs.filter(job__project_id=project_id)
 
         return qs
 
