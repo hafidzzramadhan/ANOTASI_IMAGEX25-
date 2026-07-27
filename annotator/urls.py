@@ -53,4 +53,5 @@ urlpatterns = [
     path('api/notifications/', api_views.api_notification_list, name='api_notification_list'),
     path('api/notifications/<int:notification_id>/accept/', api_views.api_notification_accept, name='api_notification_accept'),
     path('api/labels/', api_views.MasterLabelAPIView.as_view(), name='api_labels'),
+    path('api/dashboard/', api_views.api_dashboard, name='api_dashboard'),
 ]

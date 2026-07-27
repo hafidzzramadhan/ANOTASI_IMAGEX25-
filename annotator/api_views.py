@@ -369,3 +369,40 @@ class MasterLabelAPIView(APIView):
             MasterLabelSerializer(label).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_dashboard(request):
+    """GET /api/dashboard/
+    Ringkasan job & gambar milik annotator yang lagi login.
+    NOTE: nilai status ('in_progress', 'finish', 'not_assign', dst) aku samain
+    sama yang dipakai di JobProfileListSerializer/api_image_finish. Kalau di
+    model kamu choice-nya beda persis penulisannya, tinggal disesuaikan di sini.
+    """
+    err = annotator_only(request)
+    if err:
+        return err
+ 
+    jobs = _assigned_jobs(request)
+    total_jobs = jobs.count()
+    in_progress_jobs = jobs.filter(status='in_progress').count()
+    finished_jobs = jobs.filter(status='finish').count()
+    not_started_jobs = jobs.filter(status='not_assign').count()
+ 
+    images = _assigned_images(request)
+    total_images = images.count()
+    annotated_images = images.filter(status__in=['annotated', 'in_review', 'finished']).count()
+    in_review_images = images.filter(status='in_review').count()
+    issue_images = images.filter(status__in=['issue', 'in_rework']).count()
+ 
+    return Response({
+        'total_jobs': total_jobs,
+        'in_progress_jobs': in_progress_jobs,
+        'finished_jobs': finished_jobs,
+        'not_started_jobs': not_started_jobs,
+        'total_images': total_images,
+        'annotated_images': annotated_images,
+        'in_review_images': in_review_images,
+        'issue_images': issue_images,
+    }, status=status.HTTP_200_OK)
