@@ -234,27 +234,16 @@ class JobAssignSerializer(serializers.Serializer):
     reviewer_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate_annotator_id(self, value):
-        if value is not None:
-            try:
-                user = CustomUser.objects.get(id=value)
-                if user.role != 'annotator':
-                    raise serializers.ValidationError(
-                        f"User #{value} bukan annotator (role: {user.role})."
-                    )
-            except CustomUser.DoesNotExist:
-                raise serializers.ValidationError(f"User #{value} gak ada.")
+        # Validasi role SENGAJA gak di sini — role user bisa scoped per
+        # project (ProjectMember), jadi pengecekannya dilakuin di view
+        # (JobAssignAPIView) yang punya akses ke job.project.
+        if value is not None and not CustomUser.objects.filter(id=value).exists():
+            raise serializers.ValidationError(f"User #{value} gak ada.")
         return value
 
     def validate_reviewer_id(self, value):
-        if value is not None:
-            try:
-                user = CustomUser.objects.get(id=value)
-                if user.role != 'reviewer':
-                    raise serializers.ValidationError(
-                        f"User #{value} bukan reviewer (role: {user.role})."
-                    )
-            except CustomUser.DoesNotExist:
-                raise serializers.ValidationError(f"User #{value} gak ada.")
+        if value is not None and not CustomUser.objects.filter(id=value).exists():
+            raise serializers.ValidationError(f"User #{value} gak ada.")
         return value
 
 
@@ -265,8 +254,6 @@ class JobAssignSerializer(serializers.Serializer):
 class IssueListSerializer(serializers.ModelSerializer):
     """Buat list issue di master."""
     job_title = serializers.CharField(source='job.title', read_only=True)
-    project_id = serializers.UUIDField(source='job.project.unique_id', read_only=True)
-    project_name = serializers.CharField(source='job.project.name', read_only=True)
     image_id = serializers.IntegerField(source='image.id', read_only=True, allow_null=True)
     assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
@@ -275,7 +262,7 @@ class IssueListSerializer(serializers.ModelSerializer):
         model = Issue
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'job', 'job_title', 'project_id', 'project_name', 'image_id',
+            'job', 'job_title', 'image_id',
             'assigned_to', 'assigned_to_name',
             'created_by', 'created_by_name',
             'created_at', 'updated_at', 'resolved_at',
@@ -353,3 +340,4 @@ class DashboardStatsSerializer(serializers.Serializer):
 
     # Notif
     unread_notifications = serializers.IntegerField()
+    

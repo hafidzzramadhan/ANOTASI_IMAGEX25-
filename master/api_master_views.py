@@ -307,10 +307,36 @@ class JobAssignAPIView(APIView):
         annotator_id = serializer.validated_data.get('annotator_id')
         reviewer_id = serializer.validated_data.get('reviewer_id')
 
+        from master.models import ProjectMember
+
+        def _has_role(user, role):
+            # Role global (legacy) ATAU role di project tempat job ini
+            # berada (ProjectMember) — soalnya user hasil invite project
+            # role-nya kesimpen di ProjectMember, bukan di CustomUser.role
+            # (yang defaultnya 'guest' dan gak pernah diupdate pas invite
+            # di-accept).
+            if user.role == role:
+                return True
+            return bool(job.project) and ProjectMember.objects.filter(
+                project=job.project, user=user, role=role,
+            ).exists()
+
         if annotator_id is not None:
-            job.worker_annotator = CustomUser.objects.get(id=annotator_id)
+            annotator = CustomUser.objects.get(id=annotator_id)
+            if not _has_role(annotator, 'annotator'):
+                return Response(
+                    {'annotator_id': f"User #{annotator_id} bukan annotator di project ini."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            job.worker_annotator = annotator
         if reviewer_id is not None:
-            job.worker_reviewer = CustomUser.objects.get(id=reviewer_id)
+            reviewer = CustomUser.objects.get(id=reviewer_id)
+            if not _has_role(reviewer, 'reviewer'):
+                return Response(
+                    {'reviewer_id': f"User #{reviewer_id} bukan reviewer di project ini."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            job.worker_reviewer = reviewer
 
         # Auto-update status
         if job.worker_annotator and job.worker_reviewer and job.status == 'not_assign':
